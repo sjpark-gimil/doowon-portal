@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - 대시보드</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo"><a href="https://www.dwdcc.com/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
+        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+        <div class="menu-container">
+            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+        </div>                  
+    </header>
+
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="dashboard-content">
+            <div class="welcome-section">
+                <h2>환영합니다, <%= username %>님!</h2>
+                <p>두원공조 포탈에 오신 것을 환영합니다. 아래 메뉴에서 원하는 기능을 선택해주세요.</p>
+            </div>
+
+            <div class="assigned-section">
+                <div class="section-header">
+                    <h3>📋 나에게 할당된 업무</h3>
+                    <div class="assigned-header-right">
+                        <span class="assigned-count" id="assignedCount">로딩 중...</span>
+                        <button class="btn-small btn-secondary" id="viewAllBtn" onclick="viewAllAssigned()" style="display: none;">전체보기</button>
+                    </div>
+                </div>
+                <div class="assigned-items-container">
+                    <div class="assigned-items" id="assignedItems">
+                        <div class="loading-spinner">로딩 중...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">📊</div>
+                    <h3>주간보고관리</h3>
+                    <p>주간 보고서 작성, 제출 및 관리</p>
+                    <a href="/weekly-reports" class="card-button">바로가기</a>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-icon">✈️</div>
+                    <h3>출장보고관리</h3>
+                    <p>출장 보고서 작성, 승인 및 관리</p>
+                    <a href="/travel-reports" class="card-button">바로가기</a>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-icon">💻</div>
+                    <h3>하드웨어관리</h3>
+                    <p>하드웨어 자산 등록, 관리 및 추적</p>
+                    <a href="/hardware-management" class="card-button">바로가기</a>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <h3>빠른 작업</h3>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="window.location.href='/weekly-reports'">
+                        <span class="btn-icon">📝</span>
+                        <span>새 주간보고 작성</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/travel-reports'">
+                        <span class="btn-icon">📋</span>
+                        <span>새 출장보고 작성</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/hardware-management'">
+                        <span class="btn-icon">🔧</span>
+                        <span>하드웨어 등록</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogout() {
+            fetch('/logout', { method: 'GET' })
+                .then(() => window.location.href = '/login')
+                .catch(error => console.error('Logout error:', error));
+        }
+
+        // Load assigned items when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAssignedItems();
+        });
+
+        async function loadAssignedItems() {
+            try {
+                const response = await fetch('/api/assigned-to-me', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAssignedItems(data.items);
+                    document.getElementById('assignedCount').textContent = `${data.total}건`;
+                    
+                    // Show "View All" button if there are more items
+                    if (data.hasMore) {
+                        document.getElementById('viewAllBtn').style.display = 'inline-block';
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to load assigned items');
+                }
+            } catch (error) {
+                console.error('Error loading assigned items:', error);
+                document.getElementById('assignedItems').innerHTML = 
+                    '<div class="error-message">할당된 업무를 불러오는데 실패했습니다.</div>';
+                document.getElementById('assignedCount').textContent = '오류';
+            }
+        }
+
+        function displayAssignedItems(items) {
+            const container = document.getElementById('assignedItems');
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="no-items">할당된 업무가 없습니다.</div>';
+                return;
+            }
+
+            const itemsHTML = items.map(item => `
+                <div class="assigned-item">
+                    <div class="item-header">
+                        <h4>${item.title}</h4>
+                        <span class="item-type ${item.type}">${getTypeLabel(item.type)}</span>
+                    </div>
+                    <div class="item-details">
+                        <span class="item-status ${item.status}">${getStatusLabel(item.status)}</span>
+                        <span class="item-priority ${item.priority}">${getPriorityLabel(item.priority)}</span>
+                        <span class="item-due-date">마감: ${item.dueDate}</span>
+                        <span class="item-assigner">할당자: ${item.assigner}</span>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.type}')">보기</button>
+                        <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.type}')">처리</button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = itemsHTML;
+        }
+
+        function getTypeLabel(type) {
+            const labels = {
+                'weekly-report': '주간보고',
+                'travel-report': '출장보고',
+                'hardware': '하드웨어'
+            };
+            return labels[type] || type;
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': '대기',
+                'in-progress': '진행중',
+                'completed': '완료',
+                'cancelled': '취소'
+            };
+            return labels[status] || status;
+        }
+
+        function getPriorityLabel(priority) {
+            const labels = {
+                'high': '높음',
+                'medium': '보통',
+                'low': '낮음'
+            };
+            return labels[priority] || priority;
+        }
+
+        function viewItem(id, type) {
+            console.log('Viewing item:', id, type);
+            // Navigate to appropriate section based on type
+            switch(type) {
+                case 'weekly-report':
+                    window.location.href = '/weekly-reports';
+                    break;
+                case 'travel-report':
+                    window.location.href = '/travel-reports';
+                    break;
+                case 'hardware':
+                    window.location.href = '/hardware-management';
+                    break;
+                default:
+                    console.log('Unknown item type:', type);
+            }
+        }
+
+        function processItem(id, type) {
+            console.log('Processing item:', id, type);
+            // This would open a modal or navigate to process the item
+            alert(`${getTypeLabel(type)} 항목을 처리합니다. (ID: ${id})`);
+        }
+
+        function viewAllAssigned() {
+            // Navigate to a dedicated page showing all assigned items
+            // For now, we'll show an alert with the total count
+            const totalCount = document.getElementById('assignedCount').textContent;
+            alert(`전체 ${totalCount}개의 할당된 업무가 있습니다. 향후 전체 목록 페이지로 이동할 예정입니다.`);
+        }
+    </script>
+</body>
+</html>

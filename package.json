@@ -1,0 +1,25 @@
+{
+  "name": "doowon-portal",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": ["portal", "company", "management", "codebeamer"],
+  "author": "Doowon",
+  "license": "ISC",
+  "description": "Doowon Company Portal - 주간보고관리, 출장보고관리, 하드웨어관리 시스템",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "form-data": "^4.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - 주간보고관리</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo"><a href="https://www.dwdcc.com/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
+        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+        <div class="menu-container">
+            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+        </div>                  
+    </header>
+
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h2>📊 주간보고관리</h2>
+            <p>주간 보고서를 작성, 제출 및 관리할 수 있습니다.</p>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>새 주간보고 작성</h3>
+                <button class="btn-primary" onclick="showCreateForm()">+ 새 보고서 작성</button>
+            </div>
+
+            <div class="create-form" id="createForm" style="display: none;">
+                <form id="weeklyReportForm">
+                    <div class="form-group">
+                        <label for="reportTitle">보고서 제목</label>
+                        <input type="text" id="reportTitle" name="title" required placeholder="주간보고서 제목을 입력하세요">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reportWeek">보고 주차</label>
+                            <input type="week" id="reportWeek" name="week" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportDate">작성일</label>
+                            <input type="date" id="reportDate" name="date" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessDivision">사업부</label>
+                        <select id="businessDivision" name="businessDivision" required>
+                            <option value="">사업부를 선택하세요</option>
+                            <option value="기술개발부">기술개발부</option>
+                            <option value="영업부">영업부</option>
+                            <option value="생산부">생산부</option>
+                            <option value="품질관리부">품질관리부</option>
+                            <option value="인사부">인사부</option>
+                            <option value="총무부">총무부</option>
+                            <option value="재무부">재무부</option>
+                            <option value="마케팅부">마케팅부</option>
+                            <option value="구매부">구매부</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>보고 내용</label>
+                        <div class="report-tabs">
+                            <div class="tab-buttons">
+                                <button type="button" class="tab-btn active" onclick="switchTab('thisWeek')">금주 주간보고</button>
+                                <button type="button" class="tab-btn" onclick="switchTab('nextWeek')">차주 주간보고</button>
+                            </div>
+                            <div class="tab-content">
+                                <div id="thisWeekTab" class="tab-pane active">
+                                    <textarea id="thisWeekContent" name="thisWeekContent" rows="8" placeholder="이번 주 주요 업무 내용을 작성하세요..."></textarea>
+                                </div>
+                                <div id="nextWeekTab" class="tab-pane">
+                                    <textarea id="nextWeekContent" name="nextWeekContent" rows="8" placeholder="다음 주 계획 및 예정 업무를 작성하세요..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reportAttachments">첨부파일</label>
+                        <input type="file" id="reportAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+                        <small>지원 형식: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
+                        <button type="submit" class="btn-primary">보고서 저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>주간보고 목록</h3>
+                <div class="filter-controls">
+                    <select id="statusFilter" onchange="filterReports()">
+                        <option value="">전체 상태</option>
+                        <option value="draft">임시저장</option>
+                        <option value="submitted">제출됨</option>
+                        <option value="approved">승인됨</option>
+                        <option value="rejected">반려됨</option>
+                    </select>
+                    <input type="month" id="monthFilter" onchange="filterReports()" placeholder="월별 필터">
+                </div>
+            </div>
+
+            <div class="reports-list" id="reportsList">
+                <div class="report-item">
+                    <div class="report-header">
+                        <h4>2024년 1월 1주차 주간보고</h4>
+                        <span class="report-status status-draft">임시저장</span>
+                    </div>
+                    <div class="report-meta">
+                        <span>작성일: 2024-01-05</span>
+                        <span>보고주차: 2024-W01</span>
+                        <span>사업부: 기술개발부</span>
+                    </div>
+                    <div class="report-actions">
+                        <button class="btn-small btn-primary" onclick="editReport(1)">수정</button>
+                        <button class="btn-small btn-success" onclick="submitReport(1)">제출</button>
+                        <button class="btn-small btn-danger" onclick="deleteReport(1)">삭제</button>
+                    </div>
+                </div>
+
+                <div class="report-item">
+                    <div class="report-header">
+                        <h4>2023년 12월 4주차 주간보고</h4>
+                        <span class="report-status status-submitted">제출됨</span>
+                    </div>
+                    <div class="report-meta">
+                        <span>작성일: 2023-12-28</span>
+                        <span>보고주차: 2023-W52</span>
+                        <span>사업부: 영업부</span>
+                    </div>
+                    <div class="report-actions">
+                        <button class="btn-small btn-info" onclick="viewReport(2)">보기</button>
+                        <button class="btn-small btn-secondary" onclick="downloadReport(2)">다운로드</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogout() {
+            fetch('/logout', { method: 'GET' })
+                .then(() => window.location.href = '/login')
+                .catch(error => console.error('Logout error:', error));
+        }
+
+        function showCreateForm() {
+            document.getElementById('createForm').style.display = 'block';
+            document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').style.display = 'none';
+            document.getElementById('weeklyReportForm').reset();
+        }
+
+        function filterReports() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+            
+            console.log('Filtering reports by status:', statusFilter, 'month:', monthFilter);
+        }
+
+        function editReport(id) {
+            console.log('Editing report:', id);
+            showCreateForm();
+        }
+
+        function submitReport(id) {
+            console.log('Submitting report:', id);
+        }
+
+        function deleteReport(id) {
+            if (confirm('정말로 이 보고서를 삭제하시겠습니까?')) {
+                console.log('Deleting report:', id);
+            }
+        }
+
+        function viewReport(id) {
+            console.log('Viewing report:', id);
+        }
+
+        function downloadReport(id) {
+            console.log('Downloading report:', id);
+        }
+
+        function switchTab(tabName) {
+            // Remove active class from all tabs and panes
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            // Add active class to selected tab and pane
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        document.getElementById('weeklyReportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = {
+                title: document.getElementById('reportTitle').value,
+                week: document.getElementById('reportWeek').value,
+                date: document.getElementById('reportDate').value,
+                businessDivision: document.getElementById('businessDivision').value,
+                thisWeekContent: document.getElementById('thisWeekContent').value,
+                nextWeekContent: document.getElementById('nextWeekContent').value,
+                attachments: document.getElementById('reportAttachments').files
+            };
+            
+            console.log('Saving weekly report with form data:', formData);
+            hideCreateForm();
+        });
+    </script>
+</body>
+</html>

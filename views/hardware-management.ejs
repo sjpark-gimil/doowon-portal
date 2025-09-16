@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - 하드웨어관리</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo"><a href="https://www.dwdcc.com/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
+        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+        <div class="menu-container">
+            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+        </div>                  
+    </header>
+
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h2>💻 하드웨어관리</h2>
+            <p>하드웨어 자산을 등록, 관리 및 추적할 수 있습니다.</p>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>새 하드웨어 등록</h3>
+                <button class="btn-primary" onclick="showCreateForm()">+ 새 하드웨어 등록</button>
+            </div>
+
+            <div class="create-form" id="createForm" style="display: none;">
+                <form id="hardwareForm">
+                    <div class="form-group">
+                        <label for="hardwareName">하드웨어명</label>
+                        <input type="text" id="hardwareName" name="name" required placeholder="하드웨어명을 입력하세요">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category">카테고리</label>
+                            <select id="category" name="category" required>
+                                <option value="">선택하세요</option>
+                                <option value="desktop">데스크톱</option>
+                                <option value="laptop">노트북</option>
+                                <option value="monitor">모니터</option>
+                                <option value="printer">프린터</option>
+                                <option value="network">네트워크 장비</option>
+                                <option value="server">서버</option>
+                                <option value="other">기타</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="brand">브랜드</label>
+                            <input type="text" id="brand" name="brand" required placeholder="브랜드명을 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model">모델명</label>
+                            <input type="text" id="model" name="model" required placeholder="모델명을 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label for="serialNumber">시리얼 번호</label>
+                            <input type="text" id="serialNumber" name="serialNumber" required placeholder="시리얼 번호를 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchaseDate">구매일</label>
+                            <input type="date" id="purchaseDate" name="purchaseDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="warrantyExpiry">보증만료일</label>
+                            <input type="date" id="warrantyExpiry" name="warrantyExpiry">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="assignedTo">사용자</label>
+                            <input type="text" id="assignedTo" name="assignedTo" placeholder="사용자명을 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label for="location">위치</label>
+                            <input type="text" id="location" name="location" placeholder="위치를 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="specifications">사양</label>
+                        <textarea id="specifications" name="specifications" rows="4" placeholder="하드웨어 사양을 입력하세요..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">비고</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="추가 메모를 입력하세요..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
+                        <button type="submit" class="btn-primary">하드웨어 등록</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>하드웨어 목록</h3>
+                <div class="filter-controls">
+                    <select id="categoryFilter" onchange="filterHardware()">
+                        <option value="">전체 카테고리</option>
+                        <option value="desktop">데스크톱</option>
+                        <option value="laptop">노트북</option>
+                        <option value="monitor">모니터</option>
+                        <option value="printer">프린터</option>
+                        <option value="network">네트워크 장비</option>
+                        <option value="server">서버</option>
+                        <option value="other">기타</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterHardware()">
+                        <option value="">전체 상태</option>
+                        <option value="active">사용중</option>
+                        <option value="inactive">미사용</option>
+                        <option value="maintenance">수리중</option>
+                        <option value="retired">폐기</option>
+                    </select>
+                    <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="검색...">
+                </div>
+            </div>
+
+            <div class="hardware-list" id="hardwareList">
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>Dell OptiPlex 7090</h4>
+                        <span class="hardware-status status-active">사용중</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>카테고리: 데스크톱</span>
+                        <span>시리얼: DL123456789</span>
+                        <span>사용자: 김철수</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>구매일: 2023-03-15</span>
+                        <span>위치: 3층 사무실</span>
+                        <span>보증만료: 2026-03-15</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editHardware(1)">수정</button>
+                        <button class="btn-small btn-info" onclick="viewHardware(1)">상세보기</button>
+                        <button class="btn-small btn-warning" onclick="maintenanceHardware(1)">수리</button>
+                        <button class="btn-small btn-danger" onclick="deleteHardware(1)">삭제</button>
+                    </div>
+                </div>
+
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>HP LaserJet Pro M404n</h4>
+                        <span class="hardware-status status-maintenance">수리중</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>카테고리: 프린터</span>
+                        <span>시리얼: HP987654321</span>
+                        <span>사용자: 공용</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>구매일: 2022-08-20</span>
+                        <span>위치: 2층 복사실</span>
+                        <span>보증만료: 2025-08-20</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editHardware(2)">수정</button>
+                        <button class="btn-small btn-info" onclick="viewHardware(2)">상세보기</button>
+                        <button class="btn-small btn-success" onclick="completeMaintenance(2)">수리완료</button>
+                        <button class="btn-small btn-danger" onclick="deleteHardware(2)">삭제</button>
+                    </div>
+                </div>
+
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>MacBook Pro 14"</h4>
+                        <span class="hardware-status status-inactive">미사용</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>카테고리: 노트북</span>
+                        <span>시리얼: MB123456789</span>
+                        <span>사용자: 미배정</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>구매일: 2023-11-10</span>
+                        <span>위치: 창고</span>
+                        <span>보증만료: 2026-11-10</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editHardware(3)">수정</button>
+                        <button class="btn-small btn-info" onclick="viewHardware(3)">상세보기</button>
+                        <button class="btn-small btn-success" onclick="assignHardware(3)">배정</button>
+                        <button class="btn-small btn-danger" onclick="deleteHardware(3)">삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogout() {
+            fetch('/logout', { method: 'GET' })
+                .then(() => window.location.href = '/login')
+                .catch(error => console.error('Logout error:', error));
+        }
+
+        function showCreateForm() {
+            document.getElementById('createForm').style.display = 'block';
+            document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').style.display = 'none';
+            document.getElementById('hardwareForm').reset();
+        }
+
+        function filterHardware() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            
+            console.log('Filtering hardware by category:', categoryFilter, 'status:', statusFilter, 'search:', searchFilter);
+        }
+
+        function editHardware(id) {
+            console.log('Editing hardware:', id);
+            showCreateForm();
+        }
+
+        function viewHardware(id) {
+            console.log('Viewing hardware details:', id);
+        }
+
+        function maintenanceHardware(id) {
+            console.log('Setting hardware to maintenance:', id);
+        }
+
+        function completeMaintenance(id) {
+            console.log('Completing maintenance for hardware:', id);
+        }
+
+        function assignHardware(id) {
+            console.log('Assigning hardware:', id);
+        }
+
+        function deleteHardware(id) {
+            if (confirm('정말로 이 하드웨어를 삭제하시겠습니까?')) {
+                console.log('Deleting hardware:', id);
+            }
+        }
+
+        document.getElementById('hardwareForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Saving hardware...');
+            hideCreateForm();
+        });
+    </script>
+</body>
+</html>
