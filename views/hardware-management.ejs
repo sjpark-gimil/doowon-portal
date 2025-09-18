@@ -11,7 +11,7 @@
 
 <body>
     <header class="header">
-        <div class="logo"><a href="https://www.dwdcc.com/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
+        <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
         <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
         <div class="menu-container">
             <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
@@ -37,6 +37,14 @@
                 <img src="images/settings.svg" alt="Hardware Management" />
                 <span>하드웨어관리</span>
             </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span>장비관리</span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span>외부교육관리</span>
+            </a>
         </div>
     </nav>
 
@@ -54,77 +62,51 @@
 
             <div class="create-form" id="createForm" style="display: none;">
                 <form id="hardwareForm">
+                    <input type="hidden" id="hardwareId" name="id">
+                    
                     <div class="form-group">
-                        <label for="hardwareName">하드웨어명</label>
+                        <label for="hardwareName">하드웨어명 *</label>
                         <input type="text" id="hardwareName" name="name" required placeholder="하드웨어명을 입력하세요">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="category">카테고리</label>
-                            <select id="category" name="category" required>
+                            <label for="hwVersion">H/W 버전 *</label>
+                            <input type="text" id="hwVersion" name="hwVersion" required placeholder="하드웨어 버전을 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label for="swVersion">S/W 버전</label>
+                            <input type="text" id="swVersion" name="swVersion" placeholder="소프트웨어 버전을 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vehicleType">차종</label>
+                            <select id="vehicleType" name="vehicleType">
                                 <option value="">선택하세요</option>
-                                <option value="desktop">데스크톱</option>
-                                <option value="laptop">노트북</option>
-                                <option value="monitor">모니터</option>
-                                <option value="printer">프린터</option>
-                                <option value="network">네트워크 장비</option>
-                                <option value="server">서버</option>
-                                <option value="other">기타</option>
+                                <option value="NQ6">NQ6</option>
+                                <option value="LT2">LT2</option>
+                                <option value="HE1I">HE1I</option>
+                                <option value="OV1">OV1</option>
+                                <option value="SW">SW</option>
+                                <option value="SX3">SX3</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="brand">브랜드</label>
-                            <input type="text" id="brand" name="brand" required placeholder="브랜드명을 입력하세요">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="model">모델명</label>
-                            <input type="text" id="model" name="model" required placeholder="모델명을 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="serialNumber">시리얼 번호</label>
-                            <input type="text" id="serialNumber" name="serialNumber" required placeholder="시리얼 번호를 입력하세요">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="purchaseDate">구매일</label>
-                            <input type="date" id="purchaseDate" name="purchaseDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="warrantyExpiry">보증만료일</label>
-                            <input type="date" id="warrantyExpiry" name="warrantyExpiry">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="assignedTo">사용자</label>
-                            <input type="text" id="assignedTo" name="assignedTo" placeholder="사용자명을 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="location">위치</label>
-                            <input type="text" id="location" name="location" placeholder="위치를 입력하세요">
+                            <label for="releaseDate">Release 일자</label>
+                            <input type="date" id="releaseDate" name="releaseDate">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="specifications">사양</label>
-                        <textarea id="specifications" name="specifications" rows="4" placeholder="하드웨어 사양을 입력하세요..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="notes">비고</label>
-                        <textarea id="notes" name="notes" rows="3" placeholder="추가 메모를 입력하세요..."></textarea>
+                        <label for="description">설명 *</label>
+                        <textarea id="description" name="description" rows="4" required placeholder="하드웨어에 대한 설명을 입력하세요..."></textarea>
                     </div>
 
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="submit" class="btn-primary">하드웨어 등록</button>
+                        <button type="submit" class="btn-primary" id="submitButton">하드웨어 등록</button>
                     </div>
                 </form>
             </div>
@@ -134,156 +116,262 @@
             <div class="section-header">
                 <h3>하드웨어 목록</h3>
                 <div class="filter-controls">
-                    <select id="categoryFilter" onchange="filterHardware()">
-                        <option value="">전체 카테고리</option>
-                        <option value="desktop">데스크톱</option>
-                        <option value="laptop">노트북</option>
-                        <option value="monitor">모니터</option>
-                        <option value="printer">프린터</option>
-                        <option value="network">네트워크 장비</option>
-                        <option value="server">서버</option>
-                        <option value="other">기타</option>
+                    <select id="vehicleTypeFilter" onchange="filterHardware()">
+                        <option value="">전체 차종</option>
+                        <option value="NQ6">NQ6</option>
+                        <option value="LT2">LT2</option>
+                        <option value="HE1I">HE1I</option>
+                        <option value="OV1">OV1</option>
+                        <option value="SW">SW</option>
+                        <option value="SX3">SX3</option>
                     </select>
                     <select id="statusFilter" onchange="filterHardware()">
                         <option value="">전체 상태</option>
-                        <option value="active">사용중</option>
-                        <option value="inactive">미사용</option>
-                        <option value="maintenance">수리중</option>
-                        <option value="retired">폐기</option>
+                        <option value="ToDo">ToDo</option>
+                        <option value="In progress">In progress</option>
+                        <option value="To verify">To verify</option>
+                        <option value="Done">Done</option>
                     </select>
-                    <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="검색...">
+                    <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="하드웨어명, 버전, 차종으로 검색...">
                 </div>
             </div>
 
             <div class="hardware-list" id="hardwareList">
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>Dell OptiPlex 7090</h4>
-                        <span class="hardware-status status-active">사용중</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>카테고리: 데스크톱</span>
-                        <span>시리얼: DL123456789</span>
-                        <span>사용자: 김철수</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>구매일: 2023-03-15</span>
-                        <span>위치: 3층 사무실</span>
-                        <span>보증만료: 2026-03-15</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editHardware(1)">수정</button>
-                        <button class="btn-small btn-info" onclick="viewHardware(1)">상세보기</button>
-                        <button class="btn-small btn-warning" onclick="maintenanceHardware(1)">수리</button>
-                        <button class="btn-small btn-danger" onclick="deleteHardware(1)">삭제</button>
-                    </div>
+                <div class="loading" id="loadingIndicator" style="display: none;">
+                    <p>하드웨어 목록을 불러오는 중...</p>
                 </div>
-
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>HP LaserJet Pro M404n</h4>
-                        <span class="hardware-status status-maintenance">수리중</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>카테고리: 프린터</span>
-                        <span>시리얼: HP987654321</span>
-                        <span>사용자: 공용</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>구매일: 2022-08-20</span>
-                        <span>위치: 2층 복사실</span>
-                        <span>보증만료: 2025-08-20</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editHardware(2)">수정</button>
-                        <button class="btn-small btn-info" onclick="viewHardware(2)">상세보기</button>
-                        <button class="btn-small btn-success" onclick="completeMaintenance(2)">수리완료</button>
-                        <button class="btn-small btn-danger" onclick="deleteHardware(2)">삭제</button>
-                    </div>
-                </div>
-
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>MacBook Pro 14"</h4>
-                        <span class="hardware-status status-inactive">미사용</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>카테고리: 노트북</span>
-                        <span>시리얼: MB123456789</span>
-                        <span>사용자: 미배정</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>구매일: 2023-11-10</span>
-                        <span>위치: 창고</span>
-                        <span>보증만료: 2026-11-10</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editHardware(3)">수정</button>
-                        <button class="btn-small btn-info" onclick="viewHardware(3)">상세보기</button>
-                        <button class="btn-small btn-success" onclick="assignHardware(3)">배정</button>
-                        <button class="btn-small btn-danger" onclick="deleteHardware(3)">삭제</button>
-                    </div>
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <p>등록된 하드웨어가 없습니다.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        let hardwareItems = [];
+        let editingId = null;
+
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
                 .then(() => window.location.href = '/login')
                 .catch(error => console.error('Logout error:', error));
         }
 
+        async function loadHardwareItems() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const emptyState = document.getElementById('emptyState');
+            const hardwareList = document.getElementById('hardwareList');
+            
+            loadingIndicator.style.display = 'block';
+            emptyState.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/hardware');
+                const data = await response.json();
+                
+                if (data.success) {
+                    hardwareItems = data.items;
+                    renderHardwareList();
+                } else {
+                    console.error('Failed to load hardware items:', data.error);
+                    showError('하드웨어 목록을 불러오는데 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('Error loading hardware items:', error);
+                showError('하드웨어 목록을 불러오는 중 오류가 발생했습니다.');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function renderHardwareList() {
+            const hardwareList = document.getElementById('hardwareList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (hardwareItems.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            const filteredItems = filterHardwareItems();
+            
+            hardwareList.innerHTML = filteredItems.map(item => `
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>${item.name}</h4>
+                        <span class="hardware-status status-${getStatusClass(item.status)}">${item.status}</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>H/W 버전: ${item.hwVersion || 'N/A'}</span>
+                        <span>S/W 버전: ${item.swVersion || 'N/A'}</span>
+                        <span>차종: ${item.vehicleType || 'N/A'}</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>Release 일자: ${item.releaseDate || 'N/A'}</span>
+                        <span>등록자: ${item.submittedBy || 'N/A'}</span>
+                        <span>수정일: ${item.modifiedAt ? new Date(item.modifiedAt).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editHardware(${item.id})">수정</button>
+                        <button class="btn-small btn-info" onclick="viewHardware(${item.id})">상세보기</button>
+                        <button class="btn-small btn-danger" onclick="deleteHardware(${item.id})">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'ToDo': return 'inactive';
+                case 'In progress': return 'active';
+                case 'To verify': return 'warning';
+                case 'Done': return 'success';
+                default: return 'inactive';
+            }
+        }
+
+        function filterHardwareItems() {
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            const vehicleTypeFilter = document.getElementById('vehicleTypeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            return hardwareItems.filter(item => {
+                const matchesSearch = !searchFilter || 
+                    item.name.toLowerCase().includes(searchFilter) ||
+                    item.hwVersion.toLowerCase().includes(searchFilter) ||
+                    item.swVersion.toLowerCase().includes(searchFilter) ||
+                    item.vehicleType.toLowerCase().includes(searchFilter);
+                
+                const matchesVehicleType = !vehicleTypeFilter || item.vehicleType === vehicleTypeFilter;
+                const matchesStatus = !statusFilter || item.status === statusFilter;
+                
+                return matchesSearch && matchesVehicleType && matchesStatus;
+            });
+        }
+
         function showCreateForm() {
+            editingId = null;
             document.getElementById('createForm').style.display = 'block';
-            document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('hardwareForm').reset();
+            document.getElementById('submitButton').textContent = '하드웨어 등록';
         }
 
         function hideCreateForm() {
             document.getElementById('createForm').style.display = 'none';
             document.getElementById('hardwareForm').reset();
+            editingId = null;
         }
 
         function filterHardware() {
-            const categoryFilter = document.getElementById('categoryFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
-            
-            console.log('Filtering hardware by category:', categoryFilter, 'status:', statusFilter, 'search:', searchFilter);
+            renderHardwareList();
         }
 
-        function editHardware(id) {
-            console.log('Editing hardware:', id);
-            showCreateForm();
+        async function editHardware(id) {
+            const item = hardwareItems.find(h => h.id === id);
+            if (!item) return;
+            
+            editingId = id;
+            document.getElementById('createForm').style.display = 'block';
+            document.getElementById('hardwareId').value = item.id;
+            document.getElementById('hardwareName').value = item.name;
+            document.getElementById('hwVersion').value = item.hwVersion || '';
+            document.getElementById('swVersion').value = item.swVersion || '';
+            document.getElementById('vehicleType').value = item.vehicleType || '';
+            document.getElementById('releaseDate').value = item.releaseDate || '';
+            document.getElementById('description').value = item.description || '';
+            document.getElementById('submitButton').textContent = '하드웨어 수정';
         }
 
         function viewHardware(id) {
-            console.log('Viewing hardware details:', id);
+            const item = hardwareItems.find(h => h.id === id);
+            if (!item) return;
+            
+            alert(`하드웨어 상세정보:\n\n이름: ${item.name}\nH/W 버전: ${item.hwVersion || 'N/A'}\nS/W 버전: ${item.swVersion || 'N/A'}\n차종: ${item.vehicleType || 'N/A'}\nRelease 일자: ${item.releaseDate || 'N/A'}\n상태: ${item.status}\n설명: ${item.description || 'N/A'}`);
         }
 
-        function maintenanceHardware(id) {
-            console.log('Setting hardware to maintenance:', id);
-        }
-
-        function completeMaintenance(id) {
-            console.log('Completing maintenance for hardware:', id);
-        }
-
-        function assignHardware(id) {
-            console.log('Assigning hardware:', id);
-        }
-
-        function deleteHardware(id) {
-            if (confirm('정말로 이 하드웨어를 삭제하시겠습니까?')) {
-                console.log('Deleting hardware:', id);
+        async function deleteHardware(id) {
+            if (!confirm('정말로 이 하드웨어를 삭제하시겠습니까?')) {
+                return;
             }
+            
+            try {
+                const response = await fetch(`/api/hardware/${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('하드웨어가 삭제되었습니다.');
+                    loadHardwareItems();
+                } else {
+                    showError('하드웨어 삭제에 실패했습니다: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error deleting hardware:', error);
+                showError('하드웨어 삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function saveHardware(formData) {
+            const url = editingId ? `/api/hardware/${editingId}` : '/api/hardware';
+            const method = editingId ? 'PUT' : 'POST';
+            
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(editingId ? '하드웨어가 수정되었습니다.' : '하드웨어가 등록되었습니다.');
+                    hideCreateForm();
+                    loadHardwareItems();
+                } else {
+                    showError('저장에 실패했습니다: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving hardware:', error);
+                showError('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        function showSuccess(message) {
+            alert('성공: ' + message);
+        }
+
+        function showError(message) {
+            alert('오류: ' + message);
         }
 
         document.getElementById('hardwareForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            console.log('Saving hardware...');
-            hideCreateForm();
+            
+            const formData = {
+                name: document.getElementById('hardwareName').value,
+                description: document.getElementById('description').value,
+                hwVersion: document.getElementById('hwVersion').value,
+                swVersion: document.getElementById('swVersion').value,
+                vehicleType: document.getElementById('vehicleType').value,
+                releaseDate: document.getElementById('releaseDate').value
+            };
+            
+            if (!formData.name || !formData.hwVersion) {
+                showError('하드웨어명과 H/W 버전은 필수 입력 항목입니다.');
+                return;
+            }
+            
+            saveHardware(formData);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHardwareItems();
         });
     </script>
 </body>

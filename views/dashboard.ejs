@@ -11,7 +11,7 @@
 
 <body>
     <header class="header">
-        <div class="logo"><a href="https://www.dwdcc.com/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
+        <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
         <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
         <div class="menu-container">
             <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
@@ -37,14 +37,44 @@
                 <img src="images/settings.svg" alt="Hardware Management" />
                 <span>하드웨어관리</span>
             </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span>장비관리</span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span>외부교육관리</span>
+            </a>
         </div>
     </nav>
 
     <div class="main-container">
         <div class="dashboard-content">
-            <div class="welcome-section">
-                <h2>환영합니다, <%= username %>님!</h2>
-                <p>두원공조 포탈에 오신 것을 환영합니다. 아래 메뉴에서 원하는 기능을 선택해주세요.</p>
+
+            <div class="quick-actions">
+                <h3>빠른 작업</h3>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="window.location.href='/weekly-reports'">
+                        <span class="btn-icon">📝</span>
+                        <span>새 주간보고 작성</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/travel-reports'">
+                        <span class="btn-icon">📋</span>
+                        <span>새 출장보고 작성</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/hardware-management'">
+                        <span class="btn-icon">🔧</span>
+                        <span>하드웨어 등록</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/equipment-management'">
+                        <span class="btn-icon">⚙️</span>
+                        <span>장비 등록</span>
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='/external-training'">
+                        <span class="btn-icon">📚</span>
+                        <span>교육 신청</span>
+                    </button>
+                </div>
             </div>
 
             <div class="assigned-section">
@@ -83,25 +113,24 @@
                     <p>하드웨어 자산 등록, 관리 및 추적</p>
                     <a href="/hardware-management" class="card-button">바로가기</a>
                 </div>
-            </div>
 
-            <div class="quick-actions">
-                <h3>빠른 작업</h3>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="window.location.href='/weekly-reports'">
-                        <span class="btn-icon">📝</span>
-                        <span>새 주간보고 작성</span>
-                    </button>
-                    <button class="action-btn" onclick="window.location.href='/travel-reports'">
-                        <span class="btn-icon">📋</span>
-                        <span>새 출장보고 작성</span>
-                    </button>
-                    <button class="action-btn" onclick="window.location.href='/hardware-management'">
-                        <span class="btn-icon">🔧</span>
-                        <span>하드웨어 등록</span>
-                    </button>
+                <div class="dashboard-card">
+                    <div class="card-icon">🔧</div>
+                    <h3>장비관리</h3>
+                    <p>공장 장비 등록, 관리 및 추적</p>
+                    <a href="/equipment-management" class="card-button">바로가기</a>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-icon">🎓</div>
+                    <h3>외부교육관리</h3>
+                    <p>외부 교육 신청, 참석 및 수료 관리</p>
+                    <a href="/external-training" class="card-button">바로가기</a>
                 </div>
             </div>
+
+
+
         </div>
     </div>
 
@@ -183,7 +212,9 @@
             const labels = {
                 'weekly-report': '주간보고',
                 'travel-report': '출장보고',
-                'hardware': '하드웨어'
+                'hardware': '하드웨어',
+                'equipment': '장비',
+                'training': '외부교육'
             };
             return labels[type] || type;
         }
@@ -219,6 +250,12 @@
                     break;
                 case 'hardware':
                     window.location.href = '/hardware-management';
+                    break;
+                case 'equipment':
+                    window.location.href = '/equipment-management';
+                    break;
+                case 'training':
+                    window.location.href = '/external-training';
                     break;
                 default:
                     console.log('Unknown item type:', type);

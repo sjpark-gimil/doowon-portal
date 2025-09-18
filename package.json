@@ -6,7 +6,12 @@
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
-  "keywords": ["portal", "company", "management", "codebeamer"],
+  "keywords": [
+    "portal",
+    "company",
+    "management",
+    "codebeamer"
+  ],
   "author": "Doowon",
   "license": "ISC",
   "description": "Doowon Company Portal - 주간보고관리, 출장보고관리, 하드웨어관리 시스템",

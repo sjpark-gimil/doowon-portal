@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - 장비관리</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
+        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+        <div class="menu-container">
+            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+        </div>                  
+    </header>
+
+    <nav class="main-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span>장비관리</span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span>외부교육관리</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h2>🔧 장비관리</h2>
+            <p>공장 장비를 등록, 관리 및 추적할 수 있습니다.</p>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>새 장비 등록</h3>
+                <button class="btn-primary" onclick="showCreateForm()">+ 새 장비 등록</button>
+            </div>
+
+            <div class="create-form" id="createForm" style="display: none;">
+                <form id="equipmentForm">
+                    <div class="form-group">
+                        <label for="equipmentName">장비명</label>
+                        <input type="text" id="equipmentName" name="name" required placeholder="장비명을 입력하세요">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category">카테고리</label>
+                            <select id="category" name="category" required>
+                                <option value="">선택하세요</option>
+                                <option value="production">생산장비</option>
+                                <option value="testing">측정장비</option>
+                                <option value="safety">안전장비</option>
+                                <option value="maintenance">정비장비</option>
+                                <option value="utility">유틸리티</option>
+                                <option value="other">기타</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="manufacturer">제조사</label>
+                            <input type="text" id="manufacturer" name="manufacturer" required placeholder="제조사명을 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model">모델명</label>
+                            <input type="text" id="model" name="model" required placeholder="모델명을 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label for="serialNumber">시리얼 번호</label>
+                            <input type="text" id="serialNumber" name="serialNumber" required placeholder="시리얼 번호를 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="purchaseDate">구매일</label>
+                            <input type="date" id="purchaseDate" name="purchaseDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="warrantyExpiry">보증만료일</label>
+                            <input type="date" id="warrantyExpiry" name="warrantyExpiry">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">설치위치</label>
+                            <input type="text" id="location" name="location" placeholder="설치위치를 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label for="responsible">담당자</label>
+                            <input type="text" id="responsible" name="responsible" placeholder="담당자명을 입력하세요">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="specifications">사양</label>
+                        <textarea id="specifications" name="specifications" rows="4" placeholder="장비 사양을 입력하세요..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">비고</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="추가 메모를 입력하세요..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
+                        <button type="submit" class="btn-primary">장비 등록</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h3>장비 목록</h3>
+                <div class="filter-controls">
+                    <select id="categoryFilter" onchange="filterEquipment()">
+                        <option value="">전체 카테고리</option>
+                        <option value="production">생산장비</option>
+                        <option value="testing">측정장비</option>
+                        <option value="safety">안전장비</option>
+                        <option value="maintenance">정비장비</option>
+                        <option value="utility">유틸리티</option>
+                        <option value="other">기타</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterEquipment()">
+                        <option value="">전체 상태</option>
+                        <option value="operational">가동중</option>
+                        <option value="maintenance">정비중</option>
+                        <option value="idle">대기중</option>
+                        <option value="broken">고장</option>
+                        <option value="retired">폐기</option>
+                    </select>
+                    <input type="text" id="searchFilter" onkeyup="filterEquipment()" placeholder="검색...">
+                </div>
+            </div>
+
+            <div class="hardware-list" id="equipmentList">
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>CNC 밀링 머신</h4>
+                        <span class="hardware-status status-active">가동중</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>카테고리: 생산장비</span>
+                        <span>시리얼: CNC123456789</span>
+                        <span>담당자: 김기술</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>구매일: 2023-03-15</span>
+                        <span>위치: 1공장 A라인</span>
+                        <span>보증만료: 2026-03-15</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editEquipment(1)">수정</button>
+                        <button class="btn-small btn-info" onclick="viewEquipment(1)">상세보기</button>
+                        <button class="btn-small btn-warning" onclick="maintenanceEquipment(1)">정비</button>
+                        <button class="btn-small btn-danger" onclick="deleteEquipment(1)">삭제</button>
+                    </div>
+                </div>
+
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>온도 측정기</h4>
+                        <span class="hardware-status status-maintenance">정비중</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>카테고리: 측정장비</span>
+                        <span>시리얼: TEMP987654321</span>
+                        <span>담당자: 이품질</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>구매일: 2022-08-20</span>
+                        <span>위치: 품질관리실</span>
+                        <span>보증만료: 2025-08-20</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editEquipment(2)">수정</button>
+                        <button class="btn-small btn-info" onclick="viewEquipment(2)">상세보기</button>
+                        <button class="btn-small btn-success" onclick="completeMaintenance(2)">정비완료</button>
+                        <button class="btn-small btn-danger" onclick="deleteEquipment(2)">삭제</button>
+                    </div>
+                </div>
+
+                <div class="hardware-item">
+                    <div class="hardware-header">
+                        <h4>안전벨트</h4>
+                        <span class="hardware-status status-inactive">대기중</span>
+                    </div>
+                    <div class="hardware-meta">
+                        <span>카테고리: 안전장비</span>
+                        <span>시리얼: SAFE123456789</span>
+                        <span>담당자: 박안전</span>
+                    </div>
+                    <div class="hardware-details">
+                        <span>구매일: 2023-11-10</span>
+                        <span>위치: 안전장비실</span>
+                        <span>보증만료: 2026-11-10</span>
+                    </div>
+                    <div class="hardware-actions">
+                        <button class="btn-small btn-primary" onclick="editEquipment(3)">수정</button>
+                        <button class="btn-small btn-info" onclick="viewEquipment(3)">상세보기</button>
+                        <button class="btn-small btn-success" onclick="assignEquipment(3)">배정</button>
+                        <button class="btn-small btn-danger" onclick="deleteEquipment(3)">삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogout() {
+            fetch('/logout', { method: 'GET' })
+                .then(() => window.location.href = '/login')
+                .catch(error => console.error('Logout error:', error));
+        }
+
+        function showCreateForm() {
+            document.getElementById('createForm').style.display = 'block';
+            document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').style.display = 'none';
+            document.getElementById('equipmentForm').reset();
+        }
+
+        function filterEquipment() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            
+            console.log('Filtering equipment by category:', categoryFilter, 'status:', statusFilter, 'search:', searchFilter);
+        }
+
+        function editEquipment(id) {
+            console.log('Editing equipment:', id);
+            showCreateForm();
+        }
+
+        function viewEquipment(id) {
+            console.log('Viewing equipment details:', id);
+        }
+
+        function maintenanceEquipment(id) {
+            console.log('Setting equipment to maintenance:', id);
+        }
+
+        function completeMaintenance(id) {
+            console.log('Completing maintenance for equipment:', id);
+        }
+
+        function assignEquipment(id) {
+            console.log('Assigning equipment:', id);
+        }
+
+        function deleteEquipment(id) {
+            if (confirm('정말로 이 장비를 삭제하시겠습니까?')) {
+                console.log('Deleting equipment:', id);
+            }
+        }
+
+        document.getElementById('equipmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Saving equipment...');
+            hideCreateForm();
+        });
+    </script>
+</body>
+</html>

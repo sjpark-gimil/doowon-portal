@@ -294,6 +294,24 @@ app.get('/hardware-management', requireAuth, (req, res) => {
     });
 });
 
+app.get('/equipment-management', requireAuth, (req, res) => {
+    res.render('equipment-management', {
+        currentPath: '/equipment-management',
+        username: req.session.username || '',
+        serverUrl: defaults.cbApiUrl,
+        cbBaseUrl: process.env.CB_BASE_URL || ''
+    });
+});
+
+app.get('/external-training', requireAuth, (req, res) => {
+    res.render('external-training', {
+        currentPath: '/external-training',
+        username: req.session.username || '',
+        serverUrl: defaults.cbApiUrl,
+        cbBaseUrl: process.env.CB_BASE_URL || ''
+    });
+});
+
 app.get('/api/codebeamer/projects', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
         return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
@@ -440,6 +458,216 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
     } catch (error) {
         console.error('Error fetching items:', error.message);
         res.status(500).json({ error: 'Failed to fetch items' });
+    }
+});
+
+// Hardware Management API Routes
+const HARDWARE_TRACKER_ID = 780996;
+
+app.get('/api/hardware', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${HARDWARE_TRACKER_ID}/items`;
+        console.log('Fetching hardware items from:', codebeamerUrl);
+        
+        const response = await axios.get(codebeamerUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        const items = Array.isArray(response.data) ? response.data : response.data.itemRefs || [];
+        
+        const hardwareItems = items.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            status: item.status?.name || 'Unknown',
+            hwVersion: item.customFields?.find(f => f.field?.name === 'H/W 버전')?.value || '',
+            swVersion: item.customFields?.find(f => f.field?.name === 'S/W 버전')?.value || '',
+            vehicleType: item.customFields?.find(f => f.field?.name === '차종')?.value || '',
+            releaseDate: item.customFields?.find(f => f.field?.name === 'Release 일자')?.value || '',
+            submittedAt: item.submittedAt,
+            submittedBy: item.submittedBy?.name || '',
+            modifiedAt: item.modifiedAt,
+            modifiedBy: item.modifiedBy?.name || ''
+        }));
+
+        res.json({
+            success: true,
+            items: hardwareItems
+        });
+    } catch (error) {
+        console.error('Error fetching hardware items:', error.message);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch hardware items: ' + error.message 
+        });
+    }
+});
+
+app.post('/api/hardware', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { name, description, hwVersion, swVersion, vehicleType, releaseDate } = req.body;
+        
+        if (!name || !hwVersion) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Name and H/W Version are required' 
+            });
+        }
+
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${HARDWARE_TRACKER_ID}/items`;
+        console.log('Creating hardware item at:', codebeamerUrl);
+        
+        const itemData = {
+            name: name,
+            description: description || '',
+            customFields: [
+                {
+                    field: { name: 'H/W 버전' },
+                    value: hwVersion
+                },
+                {
+                    field: { name: 'S/W 버전' },
+                    value: swVersion || ''
+                },
+                {
+                    field: { name: '차종' },
+                    value: vehicleType || ''
+                },
+                {
+                    field: { name: 'Release 일자' },
+                    value: releaseDate || ''
+                }
+            ]
+        };
+
+        const response = await axios.post(codebeamerUrl, itemData, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        res.json({
+            success: true,
+            item: response.data,
+            message: 'Hardware item created successfully'
+        });
+    } catch (error) {
+        console.error('Error creating hardware item:', error.message);
+        if (error.response) {
+            console.error('Error response:', error.response.data);
+        }
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to create hardware item: ' + error.message 
+        });
+    }
+});
+
+app.put('/api/hardware/:id', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { id } = req.params;
+        const { name, description, hwVersion, swVersion, vehicleType, releaseDate } = req.body;
+        
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/items/${id}`;
+        console.log('Updating hardware item at:', codebeamerUrl);
+        
+        const itemData = {
+            name: name,
+            description: description || '',
+            customFields: [
+                {
+                    field: { name: 'H/W 버전' },
+                    value: hwVersion || ''
+                },
+                {
+                    field: { name: 'S/W 버전' },
+                    value: swVersion || ''
+                },
+                {
+                    field: { name: '차종' },
+                    value: vehicleType || ''
+                },
+                {
+                    field: { name: 'Release 일자' },
+                    value: releaseDate || ''
+                }
+            ]
+        };
+
+        const response = await axios.put(codebeamerUrl, itemData, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        res.json({
+            success: true,
+            item: response.data,
+            message: 'Hardware item updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating hardware item:', error.message);
+        if (error.response) {
+            console.error('Error response:', error.response.data);
+        }
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to update hardware item: ' + error.message 
+        });
+    }
+});
+
+app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { id } = req.params;
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/items/${id}`;
+        console.log('Deleting hardware item at:', codebeamerUrl);
+        
+        await axios.delete(codebeamerUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Hardware item deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting hardware item:', error.message);
+        if (error.response) {
+            console.error('Error response:', error.response.data);
+        }
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to delete hardware item: ' + error.message 
+        });
     }
 });
 
