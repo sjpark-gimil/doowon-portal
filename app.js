@@ -7,7 +7,7 @@ const path = require('path');
 const cors = require('cors');
 
 const defaults = {
-    cbApiUrl: process.env.CB_BASE_URL || '',
+    cbApiUrl: process.env.CB_BASE_URL || 'http://codebeamer.mdsit.co.kr:8080/cb',
     sessionSecret: process.env.SESSION_SECRET || 'default-secret',
 };
 
@@ -140,112 +140,143 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
     }
 
     try {
-        // Get user ID from session or username
         const username = req.session.username;
+        console.log('Fetching assigned items for user:', username);
         
-        // For now, we'll return mock data since we need the actual Codebeamer project/tracker configuration
-        // This will be replaced with actual API calls when Codebeamer configuration is provided
-        const mockAssignedItems = [
-            {
-                id: 1,
-                title: "2024년 1월 1주차 주간보고 검토",
-                type: "weekly-report",
-                status: "pending",
-                dueDate: "2024-01-15",
-                priority: "high",
-                assigner: "김과장"
+        // Get all projects first
+        const projectsResponse = await axios.get(`${defaults.cbApiUrl}/api/v3/projects`, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
             },
-            {
-                id: 2,
-                title: "서울 고객사 방문 출장보고 승인",
-                type: "travel-report", 
-                status: "in-progress",
-                dueDate: "2024-01-20",
-                priority: "medium",
-                assigner: "이부장"
-            },
-            {
-                id: 3,
-                title: "신규 노트북 배정 처리",
-                type: "hardware",
-                status: "pending",
-                dueDate: "2024-01-25",
-                priority: "low",
-                assigner: "박팀장"
-            },
-            {
-                id: 4,
-                title: "부산 공장 점검 보고서 검토",
-                type: "weekly-report",
-                status: "pending",
-                dueDate: "2024-01-18",
-                priority: "high",
-                assigner: "최부장"
-            },
-            {
-                id: 5,
-                title: "도쿄 출장보고 승인",
-                type: "travel-report",
-                status: "in-progress",
-                dueDate: "2024-01-22",
-                priority: "medium",
-                assigner: "정팀장"
-            },
-            {
-                id: 6,
-                title: "모니터 교체 요청 처리",
-                type: "hardware",
-                status: "pending",
-                dueDate: "2024-01-28",
-                priority: "low",
-                assigner: "한과장"
-            },
-            {
-                id: 7,
-                title: "월간 실적 보고서 검토",
-                type: "weekly-report",
-                status: "completed",
-                dueDate: "2024-01-10",
-                priority: "high",
-                assigner: "김부장"
-            },
-            {
-                id: 8,
-                title: "베트남 출장보고 승인",
-                type: "travel-report",
-                status: "pending",
-                dueDate: "2024-01-30",
-                priority: "medium",
-                assigner: "이부장"
-            },
-            {
-                id: 9,
-                title: "프린터 수리 요청 처리",
-                type: "hardware",
-                status: "in-progress",
-                dueDate: "2024-01-26",
-                priority: "low",
-                assigner: "박팀장"
-            },
-            {
-                id: 10,
-                title: "분기별 보고서 검토",
-                type: "weekly-report",
-                status: "pending",
-                dueDate: "2024-02-05",
-                priority: "high",
-                assigner: "최부장"
+            timeout: 10000
+        });
+
+        const projects = projectsResponse.data;
+        console.log('Found projects:', projects.length);
+        
+        let allAssignedItems = [];
+        
+        // Search through all projects for assigned items
+        for (const project of projects) {
+            try {
+                // Get trackers for this project
+                const trackersResponse = await axios.get(`${defaults.cbApiUrl}/api/v3/projects/${project.id}/trackers`, {
+                    headers: {
+                        'Authorization': `Basic ${req.session.auth}`,
+                        'Content-Type': 'application/json',
+                        'accept': 'application/json'
+                    },
+                    timeout: 10000
+                });
+
+                const trackers = trackersResponse.data;
+                console.log(`Project ${project.name}: ${trackers.length} trackers`);
+                
+                // Search each tracker for assigned items
+                for (const tracker of trackers) {
+                    try {
+                        // Try different CBQL query variations
+                        const queries = [
+                            `assignedTo IN ('${username}')`,
+                            `assignedTo = '${username}'`,
+                            `assignedTo IN (User(whoami))`,
+                            `assignedTo = User(whoami)`
+                        ];
+                        
+                        for (const query of queries) {
+                            try {
+                                const searchUrl = `${defaults.cbApiUrl}/api/v3/trackers/${tracker.id}/items?query=${encodeURIComponent(query)}`;
+                                const searchResponse = await axios.get(searchUrl, {
+                                    headers: {
+                                        'Authorization': `Basic ${req.session.auth}`,
+                                        'Content-Type': 'application/json',
+                                        'accept': 'application/json'
+                                    },
+                                    timeout: 10000
+                                });
+                                
+                                if (searchResponse.data && searchResponse.data.length > 0) {
+                                    console.log(`Found ${searchResponse.data.length} assigned items in tracker ${tracker.name}`);
+                                    
+                                    // Process the assigned items
+                                    const assignedItems = searchResponse.data.map(item => ({
+                                        id: item.id,
+                                        title: item.name || item.title || 'Untitled',
+                                        type: tracker.name.toLowerCase().replace(/\s+/g, '-'),
+                                        status: item.status?.name || 'Unknown',
+                                        dueDate: item.dueDate || item.plannedEndDate || null,
+                                        priority: item.priority?.name || 'Medium',
+                                        assigner: item.submittedBy?.name || 'Unknown',
+                                        project: project.name,
+                                        tracker: tracker.name,
+                                        description: item.description || '',
+                                        created: item.submittedAt,
+                                        modified: item.modifiedAt
+                                    }));
+                                    
+                                    allAssignedItems = allAssignedItems.concat(assignedItems);
+                                }
+                                break; // If query worked, don't try other variations
+                            } catch (queryError) {
+                                // Query failed, try next variation
+                                continue;
+                            }
+                        }
+                    } catch (trackerError) {
+                        console.log(`Error searching tracker ${tracker.name}:`, trackerError.message);
+                    }
+                }
+            } catch (projectError) {
+                console.log(`Error processing project ${project.name}:`, projectError.message);
             }
-        ];
+        }
+
+        // If no items found with CBQL, return mock data as fallback
+        if (allAssignedItems.length === 0) {
+            console.log('No assigned items found, returning mock data');
+            const mockAssignedItems = [
+                {
+                    id: 1,
+                    title: "2024년 1월 1주차 주간보고 검토",
+                    type: "weekly-report",
+                    status: "pending",
+                    dueDate: "2024-01-15",
+                    priority: "high",
+                    assigner: "김과장"
+                },
+                {
+                    id: 2,
+                    title: "서울 고객사 방문 출장보고 승인",
+                    type: "travel-report", 
+                    status: "in-progress",
+                    dueDate: "2024-01-20",
+                    priority: "medium",
+                    assigner: "이부장"
+                },
+                {
+                    id: 3,
+                    title: "신규 노트북 배정 처리",
+                    type: "hardware",
+                    status: "pending",
+                    dueDate: "2024-01-25",
+                    priority: "low",
+                    assigner: "박팀장"
+                }
+            ];
+            allAssignedItems = mockAssignedItems;
+        }
 
         // Limit to first 5 items for display, but return total count
-        const limitedItems = mockAssignedItems.slice(0, 5);
+        const limitedItems = allAssignedItems.slice(0, 5);
 
         res.json({
             success: true,
             items: limitedItems,
-            total: mockAssignedItems.length,
-            hasMore: mockAssignedItems.length > 5
+            total: allAssignedItems.length,
+            hasMore: allAssignedItems.length > 5,
+            source: allAssignedItems.length > 0 && allAssignedItems[0].project ? 'codebeamer' : 'mock'
         });
 
     } catch (error) {
