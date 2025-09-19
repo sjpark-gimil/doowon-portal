@@ -462,7 +462,30 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
 });
 
 // Hardware Management API Routes
-const HARDWARE_TRACKER_ID = 780996;
+const HARDWARE_TRACKER_ID = 19601; // Version tracker for hardware/software version management
+
+// Helper functions to map choice values to IDs
+function getVehicleTypeId(vehicleType) {
+    const vehicleTypeMap = {
+        'SW': 1,
+        'OV1': 2,
+        'HE1i': 3,
+        'SX3': 4,
+        'NQ6': 5,
+        'LT2': 6
+    };
+    return vehicleTypeMap[vehicleType] || null;
+}
+
+function getChangeTypeId(changeType) {
+    const changeTypeMap = {
+        'H/W': 1,  // Maps to "HW" in the tracker
+        'S/W': 2,  // Maps to "SW" in the tracker
+        'HW': 1,
+        'SW': 2
+    };
+    return changeTypeMap[changeType] || null;
+}
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
@@ -483,20 +506,91 @@ app.get('/api/hardware', requireAuth, async (req, res) => {
 
         const items = Array.isArray(response.data) ? response.data : response.data.itemRefs || [];
         
-        const hardwareItems = items.map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            status: item.status?.name || 'Unknown',
-            hwVersion: item.customFields?.find(f => f.field?.name === 'H/W 버전')?.value || '',
-            swVersion: item.customFields?.find(f => f.field?.name === 'S/W 버전')?.value || '',
-            vehicleType: item.customFields?.find(f => f.field?.name === '차종')?.value || '',
-            releaseDate: item.customFields?.find(f => f.field?.name === 'Release 일자')?.value || '',
-            submittedAt: item.submittedAt,
-            submittedBy: item.submittedBy?.name || '',
-            modifiedAt: item.modifiedAt,
-            modifiedBy: item.modifiedBy?.name || ''
-        }));
+        // Fetch detailed information for each item
+        const hardwareItems = [];
+        for (const item of items) {
+            try {
+                const itemDetailUrl = `${defaults.cbApiUrl}/api/v3/items/${item.id}`;
+                const itemResponse = await axios.get(itemDetailUrl, {
+                    headers: {
+                        'Authorization': `Basic ${req.session.auth}`,
+                        'Content-Type': 'application/json',
+                        'accept': 'application/json'
+                    }
+                });
+                
+                const itemDetail = itemResponse.data;
+                console.log('Item detail structure:', JSON.stringify(itemDetail, null, 2));
+                
+                // Debug: Log the custom fields structure
+                console.log('Custom fields:', itemDetail.customFields);
+                
+                // Debug: Log each field individually
+                if (itemDetail.customFields) {
+                    itemDetail.customFields.forEach((field, index) => {
+                        console.log(`Field ${index}:`, {
+                            fieldId: field.field?.id,
+                            referenceId: field.field?.referenceId,
+                            name: field.field?.name,
+                            value: field.value,
+                            values: field.values,
+                            type: field.type
+                        });
+                    });
+                }
+                
+                // Helper function to extract field value
+                const getFieldValue = (referenceId, fieldName = null) => {
+                    const field = itemDetail.customFields?.find(f => f.field?.referenceId === referenceId);
+                    if (!field) return '';
+                    
+                    // Try different value access patterns
+                    if (field.value) return field.value;
+                    if (field.values && field.values.length > 0) {
+                        if (field.values[0].name) return field.values[0].name;
+                        if (field.values[0].value) return field.values[0].value;
+                        return field.values[0];
+                    }
+                    return '';
+                };
+                
+                hardwareItems.push({
+                    id: itemDetail.id,
+                    name: itemDetail.name,
+                    description: itemDetail.description,
+                    status: itemDetail.status?.name || 'Unknown',
+                    hwVersion: getFieldValue(3),
+                    swVersion: getFieldValue(10002),
+                    vehicleType: getFieldValue(1000),
+                    changeType: getFieldValue(1001),
+                    changeReason: getFieldValue(10005),
+                    releaseDate: getFieldValue(10006),
+                    submittedAt: itemDetail.submittedAt,
+                    submittedBy: itemDetail.submittedBy?.name || '',
+                    modifiedAt: itemDetail.modifiedAt,
+                    modifiedBy: itemDetail.modifiedBy?.name || ''
+                });
+            } catch (error) {
+                console.error(`Error fetching details for item ${item.id}:`, error.message);
+                // Add item with basic info if detail fetch fails
+                hardwareItems.push({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description || '',
+                    status: item.status?.name || 'Unknown',
+                    hwVersion: 'Error',
+                    swVersion: 'Error',
+                    vehicleType: 'Error',
+                    changeType: 'Error',
+                    changeReason: 'Error',
+                    releaseDate: 'Error',
+                    submittedAt: item.submittedAt,
+                    submittedBy: item.submittedBy?.name || '',
+                    modifiedAt: item.modifiedAt,
+                    modifiedBy: item.modifiedBy?.name || ''
+                });
+            }
+        }
 
         res.json({
             success: true,
@@ -517,7 +611,7 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
     }
 
     try {
-        const { name, description, hwVersion, swVersion, vehicleType, releaseDate } = req.body;
+        const { name, description, hwVersion, swVersion, vehicleType, changeType, changeReason, releaseDate } = req.body;
         
         if (!name || !hwVersion) {
             return res.status(400).json({ 
@@ -530,24 +624,48 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
         console.log('Creating hardware item at:', codebeamerUrl);
         
         const itemData = {
-            name: name,
+            name: hwVersion, // HW 버전 becomes the item name
             description: description || '',
             customFields: [
                 {
-                    field: { name: 'H/W 버전' },
-                    value: hwVersion
+                    fieldId: 3, // HW 버전 (typeId: 0 = text, mandatory)
+                    name: "HW 버전",
+                    value: hwVersion,
+                    type: 'TextFieldValue'
                 },
                 {
-                    field: { name: 'S/W 버전' },
-                    value: swVersion || ''
+                    fieldId: 10002, // SW 버전 (typeId: 0 = text)
+                    name: "SW 버전",
+                    value: swVersion || '',
+                    type: 'TextFieldValue'
                 },
                 {
-                    field: { name: '차종' },
-                    value: vehicleType || ''
+                    fieldId: 1000, // 차종 (typeId: 6 = choice)
+                    name: "차종",
+                    values: vehicleType ? [{ id: getVehicleTypeId(vehicleType), name: vehicleType, type: 'ChoiceOptionReference' }] : [],
+                    type: 'ChoiceFieldValue'
                 },
                 {
-                    field: { name: 'Release 일자' },
-                    value: releaseDate || ''
+                    fieldId: 1001, // 변경사항 (typeId: 6 = choice)
+                    name: "변경사항",
+                    values: changeType ? [{ 
+                        id: getChangeTypeId(changeType), 
+                        name: changeType === 'H/W' ? 'HW' : changeType === 'S/W' ? 'SW' : changeType, 
+                        type: 'ChoiceOptionReference' 
+                    }] : [],
+                    type: 'ChoiceFieldValue'
+                },
+                {
+                    fieldId: 10005, // 변경 사유 (typeId: 10 = text, mandatory)
+                    name: "변경 사유",
+                    value: changeReason || '',
+                    type: 'TextFieldValue'
+                },
+                {
+                    fieldId: 10006, // Release 일자 (typeId: 3 = date)
+                    name: "Release 일자",
+                    value: releaseDate ? new Date(releaseDate).toISOString() : '',
+                    type: 'DateFieldValue'
                 }
             ]
         };
@@ -577,65 +695,8 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
     }
 });
 
-app.put('/api/hardware/:id', requireAuth, async (req, res) => {
-    if (!req.session || !req.session.auth) {
-        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
-    }
-
-    try {
-        const { id } = req.params;
-        const { name, description, hwVersion, swVersion, vehicleType, releaseDate } = req.body;
-        
-        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/items/${id}`;
-        console.log('Updating hardware item at:', codebeamerUrl);
-        
-        const itemData = {
-            name: name,
-            description: description || '',
-            customFields: [
-                {
-                    field: { name: 'H/W 버전' },
-                    value: hwVersion || ''
-                },
-                {
-                    field: { name: 'S/W 버전' },
-                    value: swVersion || ''
-                },
-                {
-                    field: { name: '차종' },
-                    value: vehicleType || ''
-                },
-                {
-                    field: { name: 'Release 일자' },
-                    value: releaseDate || ''
-                }
-            ]
-        };
-
-        const response = await axios.put(codebeamerUrl, itemData, {
-            headers: {
-                'Authorization': `Basic ${req.session.auth}`,
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        });
-
-        res.json({
-            success: true,
-            item: response.data,
-            message: 'Hardware item updated successfully'
-        });
-    } catch (error) {
-        console.error('Error updating hardware item:', error.message);
-        if (error.response) {
-            console.error('Error response:', error.response.data);
-        }
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to update hardware item: ' + error.message 
-        });
-    }
-});
+// Note: CodeBeamer does not support PUT API for updating items
+// Items can only be created (POST) or deleted (DELETE)
 
 app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {

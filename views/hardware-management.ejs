@@ -7,6 +7,82 @@
     <title>Doowon Portal - 하드웨어관리</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <style>
+        .hardware-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .hardware-table th {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+        }
+        
+        .hardware-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+        
+        .hardware-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.status-inactive {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+        
+        .status-badge.status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-badge.status-success {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            margin: 2px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
@@ -65,17 +141,17 @@
                     <input type="hidden" id="hardwareId" name="id">
                     
                     <div class="form-group">
-                        <label for="hardwareName">하드웨어명 *</label>
-                        <input type="text" id="hardwareName" name="name" required placeholder="하드웨어명을 입력하세요">
+                        <label for="hardwareName">하드웨어명 (HW 버전과 동일)</label>
+                        <input type="text" id="hardwareName" name="name" readonly placeholder="HW 버전을 입력하면 자동으로 설정됩니다">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="hwVersion">H/W 버전 *</label>
+                            <label for="hwVersion">HW 버전 *</label>
                             <input type="text" id="hwVersion" name="hwVersion" required placeholder="하드웨어 버전을 입력하세요">
                         </div>
                         <div class="form-group">
-                            <label for="swVersion">S/W 버전</label>
+                            <label for="swVersion">SW 버전</label>
                             <input type="text" id="swVersion" name="swVersion" placeholder="소프트웨어 버전을 입력하세요">
                         </div>
                     </div>
@@ -85,13 +161,28 @@
                             <label for="vehicleType">차종</label>
                             <select id="vehicleType" name="vehicleType">
                                 <option value="">선택하세요</option>
+                                <option value="SW">SW</option>
+                                <option value="OV1">OV1</option>
+                                <option value="HE1i">HE1i</option>
+                                <option value="SX3">SX3</option>
                                 <option value="NQ6">NQ6</option>
                                 <option value="LT2">LT2</option>
-                                <option value="HE1I">HE1I</option>
-                                <option value="OV1">OV1</option>
-                                <option value="SW">SW</option>
-                                <option value="SX3">SX3</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="changeType">변경사항</label>
+                            <select id="changeType" name="changeType">
+                                <option value="">선택하세요</option>
+                                <option value="H/W">HW</option>
+                                <option value="S/W">SW</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="changeReason">변경 사유 *</label>
+                            <input type="text" id="changeReason" name="changeReason" required placeholder="변경 사유를 입력하세요">
                         </div>
                         <div class="form-group">
                             <label for="releaseDate">Release 일자</label>
@@ -118,12 +209,17 @@
                 <div class="filter-controls">
                     <select id="vehicleTypeFilter" onchange="filterHardware()">
                         <option value="">전체 차종</option>
+                        <option value="SW">SW</option>
+                        <option value="OV1">OV1</option>
+                        <option value="HE1i">HE1i</option>
+                        <option value="SX3">SX3</option>
                         <option value="NQ6">NQ6</option>
                         <option value="LT2">LT2</option>
-                        <option value="HE1I">HE1I</option>
-                        <option value="OV1">OV1</option>
-                        <option value="SW">SW</option>
-                        <option value="SX3">SX3</option>
+                    </select>
+                    <select id="changeTypeFilter" onchange="filterHardware()">
+                        <option value="">전체 변경사항</option>
+                        <option value="H/W">HW</option>
+                        <option value="S/W">SW</option>
                     </select>
                     <select id="statusFilter" onchange="filterHardware()">
                         <option value="">전체 상태</option>
@@ -149,7 +245,6 @@
 
     <script>
         let hardwareItems = [];
-        let editingId = null;
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
@@ -162,8 +257,8 @@
             const emptyState = document.getElementById('emptyState');
             const hardwareList = document.getElementById('hardwareList');
             
-            loadingIndicator.style.display = 'block';
-            emptyState.style.display = 'none';
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
             
             try {
                 const response = await fetch('/api/hardware');
@@ -180,7 +275,7 @@
                 console.error('Error loading hardware items:', error);
                 showError('하드웨어 목록을 불러오는 중 오류가 발생했습니다.');
             } finally {
-                loadingIndicator.style.display = 'none';
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
         }
 
@@ -188,38 +283,56 @@
             const hardwareList = document.getElementById('hardwareList');
             const emptyState = document.getElementById('emptyState');
             
+            if (!hardwareList) return;
+            
             if (hardwareItems.length === 0) {
-                emptyState.style.display = 'block';
+                if (emptyState) emptyState.style.display = 'block';
                 return;
             }
             
-            emptyState.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'none';
             
             const filteredItems = filterHardwareItems();
             
-            hardwareList.innerHTML = filteredItems.map(item => `
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>${item.name}</h4>
-                        <span class="hardware-status status-${getStatusClass(item.status)}">${item.status}</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>H/W 버전: ${item.hwVersion || 'N/A'}</span>
-                        <span>S/W 버전: ${item.swVersion || 'N/A'}</span>
-                        <span>차종: ${item.vehicleType || 'N/A'}</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>Release 일자: ${item.releaseDate || 'N/A'}</span>
-                        <span>등록자: ${item.submittedBy || 'N/A'}</span>
-                        <span>수정일: ${item.modifiedAt ? new Date(item.modifiedAt).toLocaleDateString() : 'N/A'}</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editHardware(${item.id})">수정</button>
-                        <button class="btn-small btn-info" onclick="viewHardware(${item.id})">상세보기</button>
-                        <button class="btn-small btn-danger" onclick="deleteHardware(${item.id})">삭제</button>
-                    </div>
-                </div>
-            `).join('');
+            hardwareList.innerHTML = `
+                <table class="hardware-table">
+                    <thead>
+                        <tr>
+                            <th>하드웨어명</th>
+                            <th>상태</th>
+                            <th>HW 버전</th>
+                            <th>SW 버전</th>
+                            <th>차종</th>
+                            <th>변경사항</th>
+                            <th>변경 사유</th>
+                            <th>Release 일자</th>
+                            <th>등록자</th>
+                            <th>수정일</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredItems.map(item => `
+                            <tr>
+                                <td><strong>${item.name}</strong></td>
+                                <td><span class="status-badge status-${getStatusClass(item.status)}">${item.status}</span></td>
+                                <td>${item.hwVersion || 'N/A'}</td>
+                                <td>${item.swVersion || 'N/A'}</td>
+                                <td>${item.vehicleType || 'N/A'}</td>
+                                <td>${item.changeType || 'N/A'}</td>
+                                <td>${item.changeReason || 'N/A'}</td>
+                                <td>${item.releaseDate || 'N/A'}</td>
+                                <td>${item.submittedBy || 'N/A'}</td>
+                                <td>${item.modifiedAt ? new Date(item.modifiedAt).toLocaleDateString() : 'N/A'}</td>
+                                <td>
+                                    <button class="btn-small btn-info" onclick="viewHardware(${item.id})">상세보기</button>
+                                    <button class="btn-small btn-danger" onclick="deleteHardware(${item.id})">삭제</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
 
         function getStatusClass(status) {
@@ -235,24 +348,26 @@
         function filterHardwareItems() {
             const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
             const vehicleTypeFilter = document.getElementById('vehicleTypeFilter').value;
+            const changeTypeFilter = document.getElementById('changeTypeFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             
             return hardwareItems.filter(item => {
                 const matchesSearch = !searchFilter || 
                     item.name.toLowerCase().includes(searchFilter) ||
-                    item.hwVersion.toLowerCase().includes(searchFilter) ||
-                    item.swVersion.toLowerCase().includes(searchFilter) ||
-                    item.vehicleType.toLowerCase().includes(searchFilter);
+                    (item.hwVersion && item.hwVersion.toLowerCase().includes(searchFilter)) ||
+                    (item.swVersion && item.swVersion.toLowerCase().includes(searchFilter)) ||
+                    (item.vehicleType && item.vehicleType.toLowerCase().includes(searchFilter)) ||
+                    (item.changeReason && item.changeReason.toLowerCase().includes(searchFilter));
                 
                 const matchesVehicleType = !vehicleTypeFilter || item.vehicleType === vehicleTypeFilter;
+                const matchesChangeType = !changeTypeFilter || item.changeType === changeTypeFilter;
                 const matchesStatus = !statusFilter || item.status === statusFilter;
                 
-                return matchesSearch && matchesVehicleType && matchesStatus;
+                return matchesSearch && matchesVehicleType && matchesChangeType && matchesStatus;
             });
         }
 
         function showCreateForm() {
-            editingId = null;
             document.getElementById('createForm').style.display = 'block';
             document.getElementById('hardwareForm').reset();
             document.getElementById('submitButton').textContent = '하드웨어 등록';
@@ -261,34 +376,19 @@
         function hideCreateForm() {
             document.getElementById('createForm').style.display = 'none';
             document.getElementById('hardwareForm').reset();
-            editingId = null;
         }
 
         function filterHardware() {
             renderHardwareList();
         }
 
-        async function editHardware(id) {
-            const item = hardwareItems.find(h => h.id === id);
-            if (!item) return;
-            
-            editingId = id;
-            document.getElementById('createForm').style.display = 'block';
-            document.getElementById('hardwareId').value = item.id;
-            document.getElementById('hardwareName').value = item.name;
-            document.getElementById('hwVersion').value = item.hwVersion || '';
-            document.getElementById('swVersion').value = item.swVersion || '';
-            document.getElementById('vehicleType').value = item.vehicleType || '';
-            document.getElementById('releaseDate').value = item.releaseDate || '';
-            document.getElementById('description').value = item.description || '';
-            document.getElementById('submitButton').textContent = '하드웨어 수정';
-        }
+        // Note: CodeBeamer does not support updating items, only creating and deleting
 
         function viewHardware(id) {
             const item = hardwareItems.find(h => h.id === id);
             if (!item) return;
             
-            alert(`하드웨어 상세정보:\n\n이름: ${item.name}\nH/W 버전: ${item.hwVersion || 'N/A'}\nS/W 버전: ${item.swVersion || 'N/A'}\n차종: ${item.vehicleType || 'N/A'}\nRelease 일자: ${item.releaseDate || 'N/A'}\n상태: ${item.status}\n설명: ${item.description || 'N/A'}`);
+            alert(`하드웨어 상세정보:\n\n이름: ${item.name}\nH/W 버전: ${item.hwVersion || 'N/A'}\nS/W 버전: ${item.swVersion || 'N/A'}\n차종: ${item.vehicleType || 'N/A'}\n변경사항: ${item.changeType || 'N/A'}\n변경 사유: ${item.changeReason || 'N/A'}\nRelease 일자: ${item.releaseDate || 'N/A'}\n상태: ${item.status}\n설명: ${item.description || 'N/A'}`);
         }
 
         async function deleteHardware(id) {
@@ -315,12 +415,9 @@
         }
 
         async function saveHardware(formData) {
-            const url = editingId ? `/api/hardware/${editingId}` : '/api/hardware';
-            const method = editingId ? 'PUT' : 'POST';
-            
             try {
-                const response = await fetch(url, {
-                    method: method,
+                const response = await fetch('/api/hardware', {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -330,7 +427,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showSuccess(editingId ? '하드웨어가 수정되었습니다.' : '하드웨어가 등록되었습니다.');
+                    showSuccess('하드웨어가 등록되었습니다.');
                     hideCreateForm();
                     loadHardwareItems();
                 } else {
@@ -359,19 +456,35 @@
                 hwVersion: document.getElementById('hwVersion').value,
                 swVersion: document.getElementById('swVersion').value,
                 vehicleType: document.getElementById('vehicleType').value,
+                changeType: document.getElementById('changeType').value,
+                changeReason: document.getElementById('changeReason').value,
                 releaseDate: document.getElementById('releaseDate').value
             };
             
-            if (!formData.name || !formData.hwVersion) {
-                showError('하드웨어명과 H/W 버전은 필수 입력 항목입니다.');
+            if (!formData.hwVersion || !formData.description || !formData.changeReason) {
+                showError('H/W 버전, 설명, 변경 사유는 필수 입력 항목입니다.');
                 return;
             }
+            
+            // Set hardware name to H/W version
+            formData.name = formData.hwVersion;
             
             saveHardware(formData);
         });
 
+        // Auto-update hardware name when H/W version changes
+        document.getElementById('hwVersion').addEventListener('input', function() {
+            document.getElementById('hardwareName').value = this.value;
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             loadHardwareItems();
+            
+            // Check if we should show create form
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'create') {
+                showCreateForm();
+            }
         });
     </script>
 </body>

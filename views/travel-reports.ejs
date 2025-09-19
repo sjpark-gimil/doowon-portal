@@ -7,6 +7,7 @@
     <title>Doowon Portal - 출장보고관리</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
 </head>
 
 <body>
@@ -158,46 +159,52 @@
             </div>
 
             <div class="reports-list" id="reportsList">
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>서울 고객사 방문 출장보고</h4>
-                        <span class="report-status status-submitted">제출됨</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>출장지: 서울시 강남구</span>
-                        <span>기간: 2024-01-15 ~ 2024-01-16</span>
-                        <span>목적: 고객 미팅</span>
-                    </div>
-                    <div class="report-summary">
-                        <span>총 경비: 150,000원</span>
-                        <span>동행자: 김철수, 이영희</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-info" onclick="viewReport(1)">보기</button>
-                        <button class="btn-small btn-secondary" onclick="downloadReport(1)">다운로드</button>
-                    </div>
-                </div>
-
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>부산 공장 점검 출장보고</h4>
-                        <span class="report-status status-draft">임시저장</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>출장지: 부산시 사상구</span>
-                        <span>기간: 2024-01-20 ~ 2024-01-22</span>
-                        <span>목적: 설비 점검</span>
-                    </div>
-                    <div class="report-summary">
-                        <span>총 경비: 320,000원</span>
-                        <span>동행자: 없음</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-primary" onclick="editReport(2)">수정</button>
-                        <button class="btn-small btn-success" onclick="submitReport(2)">제출</button>
-                        <button class="btn-small btn-danger" onclick="deleteReport(2)">삭제</button>
-                    </div>
-                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>출장보고 제목</th>
+                            <th>상태</th>
+                            <th>출장지</th>
+                            <th>기간</th>
+                            <th>목적</th>
+                            <th>총 경비</th>
+                            <th>동행자</th>
+                            <th>작성자</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>서울 고객사 방문 출장보고</strong></td>
+                            <td><span class="status-badge status-submitted">제출됨</span></td>
+                            <td>서울시 강남구</td>
+                            <td>2024-01-15 ~ 2024-01-16</td>
+                            <td>고객 미팅</td>
+                            <td>150,000원</td>
+                            <td>김철수, 이영희</td>
+                            <td>박출장</td>
+                            <td>
+                                <button class="btn-small btn-info" onclick="viewReport(1)">보기</button>
+                                <button class="btn-small btn-warning" onclick="downloadReport(1)">다운로드</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>부산 공장 점검 출장보고</strong></td>
+                            <td><span class="status-badge status-draft">임시저장</span></td>
+                            <td>부산시 사상구</td>
+                            <td>2024-01-20 ~ 2024-01-22</td>
+                            <td>설비 점검</td>
+                            <td>320,000원</td>
+                            <td>없음</td>
+                            <td>이점검</td>
+                            <td>
+                                <button class="btn-small btn-primary" onclick="editReport(2)">수정</button>
+                                <button class="btn-small btn-success" onclick="submitReport(2)">제출</button>
+                                <button class="btn-small btn-danger" onclick="deleteReport(2)">삭제</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -255,6 +262,14 @@
             e.preventDefault();
             console.log('Saving travel report...');
             hideCreateForm();
+        });
+
+        // Check if we should show create form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'create') {
+                showCreateForm();
+            }
         });
     </script>
 </body>

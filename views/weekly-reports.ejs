@@ -7,6 +7,7 @@
     <title>Doowon Portal - 주간보고관리</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
 </head>
 
 <body>
@@ -143,38 +144,46 @@
             </div>
 
             <div class="reports-list" id="reportsList">
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>2024년 1월 1주차 주간보고</h4>
-                        <span class="report-status status-draft">임시저장</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>작성일: 2024-01-05</span>
-                        <span>보고주차: 2024-W01</span>
-                        <span>사업부: 기술개발부</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-primary" onclick="editReport(1)">수정</button>
-                        <button class="btn-small btn-success" onclick="submitReport(1)">제출</button>
-                        <button class="btn-small btn-danger" onclick="deleteReport(1)">삭제</button>
-                    </div>
-                </div>
-
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>2023년 12월 4주차 주간보고</h4>
-                        <span class="report-status status-submitted">제출됨</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>작성일: 2023-12-28</span>
-                        <span>보고주차: 2023-W52</span>
-                        <span>사업부: 영업부</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-info" onclick="viewReport(2)">보기</button>
-                        <button class="btn-small btn-secondary" onclick="downloadReport(2)">다운로드</button>
-                    </div>
-                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>보고서 제목</th>
+                            <th>상태</th>
+                            <th>작성일</th>
+                            <th>보고주차</th>
+                            <th>사업부</th>
+                            <th>작성자</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>2024년 1월 1주차 주간보고</strong></td>
+                            <td><span class="status-badge status-draft">임시저장</span></td>
+                            <td>2024-01-05</td>
+                            <td>2024-W01</td>
+                            <td>기술개발부</td>
+                            <td>김개발</td>
+                            <td>
+                                <button class="btn-small btn-primary" onclick="editReport(1)">수정</button>
+                                <button class="btn-small btn-success" onclick="submitReport(1)">제출</button>
+                                <button class="btn-small btn-danger" onclick="deleteReport(1)">삭제</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>2023년 12월 4주차 주간보고</strong></td>
+                            <td><span class="status-badge status-submitted">제출됨</span></td>
+                            <td>2023-12-28</td>
+                            <td>2023-W52</td>
+                            <td>영업부</td>
+                            <td>이영업</td>
+                            <td>
+                                <button class="btn-small btn-info" onclick="viewReport(2)">보기</button>
+                                <button class="btn-small btn-warning" onclick="downloadReport(2)">다운로드</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -252,6 +261,14 @@
             
             console.log('Saving weekly report with form data:', formData);
             hideCreateForm();
+        });
+
+        // Check if we should show create form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'create') {
+                showCreateForm();
+            }
         });
     </script>
 </body>

@@ -7,6 +7,7 @@
     <title>Doowon Portal - 외부교육관리</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
 </head>
 
 <body>
@@ -180,66 +181,66 @@
             </div>
 
             <div class="reports-list" id="trainingsList">
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>CNC 프로그래밍 고급과정</h4>
-                        <span class="report-status status-submitted">신청됨</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>교육기관: 한국기술교육원</span>
-                        <span>기간: 2024-02-15 ~ 2024-02-20</span>
-                        <span>유형: 기술교육</span>
-                    </div>
-                    <div class="report-summary">
-                        <span>총 비용: 500,000원</span>
-                        <span>참석자: 김기술, 이공정</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-info" onclick="viewTraining(1)">보기</button>
-                        <button class="btn-small btn-secondary" onclick="downloadTraining(1)">다운로드</button>
-                    </div>
-                </div>
-
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>안전보건교육</h4>
-                        <span class="report-status status-draft">임시저장</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>교육기관: 산업안전보건공단</span>
-                        <span>기간: 2024-03-01 ~ 2024-03-03</span>
-                        <span>유형: 안전교육</span>
-                    </div>
-                    <div class="report-summary">
-                        <span>총 비용: 200,000원</span>
-                        <span>참석자: 박안전, 최품질</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-primary" onclick="editTraining(2)">수정</button>
-                        <button class="btn-small btn-success" onclick="submitTraining(2)">신청</button>
-                        <button class="btn-small btn-danger" onclick="deleteTraining(2)">삭제</button>
-                    </div>
-                </div>
-
-                <div class="report-item">
-                    <div class="report-header">
-                        <h4>ISO 9001 품질경영시스템</h4>
-                        <span class="report-status status-completed">수료</span>
-                    </div>
-                    <div class="report-meta">
-                        <span>교육기관: 한국품질재단</span>
-                        <span>기간: 2024-01-10 ~ 2024-01-12</span>
-                        <span>유형: 자격증교육</span>
-                    </div>
-                    <div class="report-summary">
-                        <span>총 비용: 300,000원</span>
-                        <span>참석자: 정품질, 한관리</span>
-                    </div>
-                    <div class="report-actions">
-                        <button class="btn-small btn-info" onclick="viewTraining(3)">보기</button>
-                        <button class="btn-small btn-success" onclick="downloadCertificate(3)">수료증</button>
-                    </div>
-                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>교육명</th>
+                            <th>상태</th>
+                            <th>교육기관</th>
+                            <th>기간</th>
+                            <th>유형</th>
+                            <th>총 비용</th>
+                            <th>참석자</th>
+                            <th>신청자</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CNC 프로그래밍 고급과정</strong></td>
+                            <td><span class="status-badge status-submitted">신청됨</span></td>
+                            <td>한국기술교육원</td>
+                            <td>2024-02-15 ~ 2024-02-20</td>
+                            <td>기술교육</td>
+                            <td>500,000원</td>
+                            <td>김기술, 이공정</td>
+                            <td>김기술</td>
+                            <td>
+                                <button class="btn-small btn-info" onclick="viewTraining(1)">보기</button>
+                                <button class="btn-small btn-warning" onclick="downloadTraining(1)">다운로드</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>안전보건교육</strong></td>
+                            <td><span class="status-badge status-draft">임시저장</span></td>
+                            <td>산업안전보건공단</td>
+                            <td>2024-03-01 ~ 2024-03-03</td>
+                            <td>안전교육</td>
+                            <td>200,000원</td>
+                            <td>박안전, 최품질</td>
+                            <td>박안전</td>
+                            <td>
+                                <button class="btn-small btn-primary" onclick="editTraining(2)">수정</button>
+                                <button class="btn-small btn-success" onclick="submitTraining(2)">신청</button>
+                                <button class="btn-small btn-danger" onclick="deleteTraining(2)">삭제</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ISO 9001 품질경영시스템</strong></td>
+                            <td><span class="status-badge status-success">수료</span></td>
+                            <td>한국품질재단</td>
+                            <td>2024-01-10 ~ 2024-01-12</td>
+                            <td>자격증교육</td>
+                            <td>300,000원</td>
+                            <td>정품질, 한관리</td>
+                            <td>정품질</td>
+                            <td>
+                                <button class="btn-small btn-info" onclick="viewTraining(3)">보기</button>
+                                <button class="btn-small btn-success" onclick="downloadCertificate(3)">수료증</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -302,6 +303,14 @@
             e.preventDefault();
             console.log('Saving training...');
             hideCreateForm();
+        });
+
+        // Check if we should show create form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'create') {
+                showCreateForm();
+            }
         });
     </script>
 </body>

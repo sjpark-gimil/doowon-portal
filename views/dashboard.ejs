@@ -7,6 +7,7 @@
     <title>Doowon Portal - 대시보드</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
 </head>
 
 <body>
@@ -54,23 +55,23 @@
             <div class="quick-actions">
                 <h3>빠른 작업</h3>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="window.location.href='/weekly-reports'">
+                    <button class="action-btn" onclick="createWeeklyReport()">
                         <span class="btn-icon">📝</span>
                         <span>새 주간보고 작성</span>
                     </button>
-                    <button class="action-btn" onclick="window.location.href='/travel-reports'">
+                    <button class="action-btn" onclick="createTravelReport()">
                         <span class="btn-icon">📋</span>
                         <span>새 출장보고 작성</span>
                     </button>
-                    <button class="action-btn" onclick="window.location.href='/hardware-management'">
+                    <button class="action-btn" onclick="createHardware()">
                         <span class="btn-icon">🔧</span>
                         <span>하드웨어 등록</span>
                     </button>
-                    <button class="action-btn" onclick="window.location.href='/equipment-management'">
+                    <button class="action-btn" onclick="createEquipment()">
                         <span class="btn-icon">⚙️</span>
                         <span>장비 등록</span>
                     </button>
-                    <button class="action-btn" onclick="window.location.href='/external-training'">
+                    <button class="action-btn" onclick="createTraining()">
                         <span class="btn-icon">📚</span>
                         <span>교육 신청</span>
                     </button>
@@ -139,6 +140,27 @@
             fetch('/logout', { method: 'GET' })
                 .then(() => window.location.href = '/login')
                 .catch(error => console.error('Logout error:', error));
+        }
+
+        // Quick action functions that navigate to pages and show create forms
+        function createWeeklyReport() {
+            window.location.href = '/weekly-reports?action=create';
+        }
+
+        function createTravelReport() {
+            window.location.href = '/travel-reports?action=create';
+        }
+
+        function createHardware() {
+            window.location.href = '/hardware-management?action=create';
+        }
+
+        function createEquipment() {
+            window.location.href = '/equipment-management?action=create';
+        }
+
+        function createTraining() {
+            window.location.href = '/external-training?action=create';
         }
 
         // Load assigned items when page loads

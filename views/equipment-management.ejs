@@ -7,6 +7,7 @@
     <title>Doowon Portal - 장비관리</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
 </head>
 
 <body>
@@ -163,74 +164,71 @@
             </div>
 
             <div class="hardware-list" id="equipmentList">
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>CNC 밀링 머신</h4>
-                        <span class="hardware-status status-active">가동중</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>카테고리: 생산장비</span>
-                        <span>시리얼: CNC123456789</span>
-                        <span>담당자: 김기술</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>구매일: 2023-03-15</span>
-                        <span>위치: 1공장 A라인</span>
-                        <span>보증만료: 2026-03-15</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editEquipment(1)">수정</button>
-                        <button class="btn-small btn-info" onclick="viewEquipment(1)">상세보기</button>
-                        <button class="btn-small btn-warning" onclick="maintenanceEquipment(1)">정비</button>
-                        <button class="btn-small btn-danger" onclick="deleteEquipment(1)">삭제</button>
-                    </div>
-                </div>
-
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>온도 측정기</h4>
-                        <span class="hardware-status status-maintenance">정비중</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>카테고리: 측정장비</span>
-                        <span>시리얼: TEMP987654321</span>
-                        <span>담당자: 이품질</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>구매일: 2022-08-20</span>
-                        <span>위치: 품질관리실</span>
-                        <span>보증만료: 2025-08-20</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editEquipment(2)">수정</button>
-                        <button class="btn-small btn-info" onclick="viewEquipment(2)">상세보기</button>
-                        <button class="btn-small btn-success" onclick="completeMaintenance(2)">정비완료</button>
-                        <button class="btn-small btn-danger" onclick="deleteEquipment(2)">삭제</button>
-                    </div>
-                </div>
-
-                <div class="hardware-item">
-                    <div class="hardware-header">
-                        <h4>안전벨트</h4>
-                        <span class="hardware-status status-inactive">대기중</span>
-                    </div>
-                    <div class="hardware-meta">
-                        <span>카테고리: 안전장비</span>
-                        <span>시리얼: SAFE123456789</span>
-                        <span>담당자: 박안전</span>
-                    </div>
-                    <div class="hardware-details">
-                        <span>구매일: 2023-11-10</span>
-                        <span>위치: 안전장비실</span>
-                        <span>보증만료: 2026-11-10</span>
-                    </div>
-                    <div class="hardware-actions">
-                        <button class="btn-small btn-primary" onclick="editEquipment(3)">수정</button>
-                        <button class="btn-small btn-info" onclick="viewEquipment(3)">상세보기</button>
-                        <button class="btn-small btn-success" onclick="assignEquipment(3)">배정</button>
-                        <button class="btn-small btn-danger" onclick="deleteEquipment(3)">삭제</button>
-                    </div>
-                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>장비명</th>
+                            <th>상태</th>
+                            <th>카테고리</th>
+                            <th>시리얼번호</th>
+                            <th>담당자</th>
+                            <th>구매일</th>
+                            <th>위치</th>
+                            <th>보증만료</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CNC 밀링 머신</strong></td>
+                            <td><span class="status-badge status-active">가동중</span></td>
+                            <td>생산장비</td>
+                            <td>CNC123456789</td>
+                            <td>김기술</td>
+                            <td>2023-03-15</td>
+                            <td>1공장 A라인</td>
+                            <td>2026-03-15</td>
+                            <td>
+                                <button class="btn-small btn-primary" onclick="editEquipment(1)">수정</button>
+                                <button class="btn-small btn-info" onclick="viewEquipment(1)">상세보기</button>
+                                <button class="btn-small btn-warning" onclick="maintenanceEquipment(1)">정비</button>
+                                <button class="btn-small btn-danger" onclick="deleteEquipment(1)">삭제</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>온도 측정기</strong></td>
+                            <td><span class="status-badge status-warning">정비중</span></td>
+                            <td>측정장비</td>
+                            <td>TEMP987654321</td>
+                            <td>이품질</td>
+                            <td>2022-08-20</td>
+                            <td>품질관리실</td>
+                            <td>2025-08-20</td>
+                            <td>
+                                <button class="btn-small btn-primary" onclick="editEquipment(2)">수정</button>
+                                <button class="btn-small btn-info" onclick="viewEquipment(2)">상세보기</button>
+                                <button class="btn-small btn-success" onclick="completeMaintenance(2)">정비완료</button>
+                                <button class="btn-small btn-danger" onclick="deleteEquipment(2)">삭제</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>안전벨트</strong></td>
+                            <td><span class="status-badge status-inactive">대기중</span></td>
+                            <td>안전장비</td>
+                            <td>SAFE123456789</td>
+                            <td>박안전</td>
+                            <td>2023-11-10</td>
+                            <td>안전장비실</td>
+                            <td>2026-11-10</td>
+                            <td>
+                                <button class="btn-small btn-primary" onclick="editEquipment(3)">수정</button>
+                                <button class="btn-small btn-info" onclick="viewEquipment(3)">상세보기</button>
+                                <button class="btn-small btn-success" onclick="assignEquipment(3)">배정</button>
+                                <button class="btn-small btn-danger" onclick="deleteEquipment(3)">삭제</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -291,6 +289,14 @@
             e.preventDefault();
             console.log('Saving equipment...');
             hideCreateForm();
+        });
+
+        // Check if we should show create form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'create') {
+                showCreateForm();
+            }
         });
     </script>
 </body>

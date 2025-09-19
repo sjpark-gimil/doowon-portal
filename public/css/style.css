@@ -2018,7 +2018,7 @@ select.report-select option {
 .nav-item img {
     width: 18px;
     height: 18px;
-    opacity: 0.7;
+    opacity: 1;
 }
 
 .nav-item.active img {
