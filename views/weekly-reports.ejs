@@ -47,6 +47,33 @@
                 <span>외부교육관리</span>
             </a>
         </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span>장비관리</span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span>외부교육관리</span>
+            </a>
+        </div>
     </nav>
 
     <div class="main-container">
@@ -184,6 +211,66 @@
                         </tr>
                     </tbody>
                 </table>
+                
+                <!-- Mobile Cards -->
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <div class="mobile-card-title">2024년 1월 1주차 주간보고</div>
+                        <span class="mobile-card-status status-draft">임시저장</span>
+                    </div>
+                    <div class="mobile-card-details">
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">작성일</div>
+                            <div class="mobile-card-detail-value">2024-01-05</div>
+                        </div>
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">보고주차</div>
+                            <div class="mobile-card-detail-value">2024-W01</div>
+                        </div>
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">사업부</div>
+                            <div class="mobile-card-detail-value">기술개발부</div>
+                        </div>
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">작성자</div>
+                            <div class="mobile-card-detail-value">김개발</div>
+                        </div>
+                    </div>
+                    <div class="mobile-card-actions">
+                        <button class="btn-small btn-primary" onclick="editReport(1)">수정</button>
+                        <button class="btn-small btn-success" onclick="submitReport(1)">제출</button>
+                        <button class="btn-small btn-danger" onclick="deleteReport(1)">삭제</button>
+                    </div>
+                </div>
+                
+                <div class="mobile-card">
+                    <div class="mobile-card-header">
+                        <div class="mobile-card-title">2023년 12월 4주차 주간보고</div>
+                        <span class="mobile-card-status status-submitted">제출됨</span>
+                    </div>
+                    <div class="mobile-card-details">
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">작성일</div>
+                            <div class="mobile-card-detail-value">2023-12-28</div>
+                        </div>
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">보고주차</div>
+                            <div class="mobile-card-detail-value">2023-W52</div>
+                        </div>
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">사업부</div>
+                            <div class="mobile-card-detail-value">영업부</div>
+                        </div>
+                        <div class="mobile-card-detail">
+                            <div class="mobile-card-detail-label">작성자</div>
+                            <div class="mobile-card-detail-value">이영업</div>
+                        </div>
+                    </div>
+                    <div class="mobile-card-actions">
+                        <button class="btn-small btn-info" onclick="viewReport(2)">보기</button>
+                        <button class="btn-small btn-warning" onclick="downloadReport(2)">다운로드</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -194,6 +281,23 @@
                 .then(() => window.location.href = '/login')
                 .catch(error => console.error('Logout error:', error));
         }
+
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNav');
+            mobileNav.classList.toggle('active');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileNav = document.getElementById('mobileNav');
+            const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (mobileNav && mobileMenuToggle && 
+                !mobileNav.contains(event.target) && 
+                !mobileMenuToggle.contains(event.target)) {
+                mobileNav.classList.remove('active');
+            }
+        });
 
         function showCreateForm() {
             document.getElementById('createForm').style.display = 'block';

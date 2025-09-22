@@ -47,6 +47,33 @@
                 <span>외부교육관리</span>
             </a>
         </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span>장비관리</span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span>외부교육관리</span>
+            </a>
+        </div>
     </nav>
 
     <div class="main-container">
@@ -80,10 +107,12 @@
 
             <div class="assigned-section">
                 <div class="section-header">
-                    <h3>📋 나에게 할당된 업무</h3>
-                    <div class="assigned-header-right">
+                    <div class="assigned-title-container">
+                        <h3>📋 나에게 할당된 업무</h3>
                         <span class="assigned-count" id="assignedCount">로딩 중...</span>
-                        <button class="btn-small btn-secondary" id="viewAllBtn" onclick="viewAllAssigned()" style="display: none;">전체보기</button>
+                    </div>
+                    <div class="assigned-header-right">
+                        <button class="btn-small btn-secondary" id="viewAllBtn" onclick="viewAllAssigned()" style="display: none;">더보기</button>
                     </div>
                 </div>
                 <div class="assigned-items-container">
@@ -133,6 +162,16 @@
                     <p>외부 교육 신청, 참석 및 수료 관리</p>
                     <a href="/external-training" class="card-button">바로가기</a>
                 </div>
+
+                <div class="dashboard-card">
+                    <div class="card-icon">🔗</div>
+                    <h3>외부시스템 바로가기</h3>
+                    <p>외부 시스템 및 도구 접근</p>
+                    <div class="card-buttons">
+                        <a href="#" class="card-button" onclick="openFileUploader()">파일업로더</a>
+                        <a href="#" class="card-button" onclick="openGanttChart()">간트</a>
+                    </div>
+                </div>
             </div>
 
 
@@ -146,6 +185,23 @@
                 .then(() => window.location.href = '/login')
                 .catch(error => console.error('Logout error:', error));
         }
+
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNav');
+            mobileNav.classList.toggle('active');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileNav = document.getElementById('mobileNav');
+            const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (mobileNav && mobileMenuToggle && 
+                !mobileNav.contains(event.target) && 
+                !mobileMenuToggle.contains(event.target)) {
+                mobileNav.classList.remove('active');
+            }
+        });
 
         // Quick action functions that navigate to pages and show create forms
         function createWeeklyReport() {
@@ -168,6 +224,20 @@
             window.location.href = '/external-training?action=create';
         }
 
+        function openFileUploader() {
+            // External redirection to file uploader (different port)
+            // You can update the port number as needed
+            const fileUploaderUrl = 'http://' + window.location.hostname + ':3001';
+            window.open(fileUploaderUrl, '_blank');
+        }
+
+        function openGanttChart() {
+            // External redirection to Gantt chart system
+            // You can update the URL as needed
+            const ganttUrl = 'http://' + window.location.hostname + ':3002';
+            window.open(ganttUrl, '_blank');
+        }
+
         // Global variables for pagination
         let currentPage = 1;
         let totalPages = 1;
@@ -178,9 +248,9 @@
             loadAssignedItems(1);
         });
 
-        async function loadAssignedItems(page = 1) {
+        async function loadAssignedItems(page = 1, pageSize = 5) {
             try {
-                const response = await fetch(`/api/assigned-to-me?page=${page}&pageSize=5`, {
+                const response = await fetch(`/api/assigned-to-me?page=${page}&pageSize=${pageSize}`, {
                     method: 'GET',
                     credentials: 'include'
                 });
@@ -239,32 +309,83 @@
                 return;
             }
 
-            const itemsHTML = items.map(item => {
-                const submittedDate = new Date(item.submittedAt).toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+            const itemsHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>업무명</th>
+                            <th>상태</th>
+                            <th>타입</th>
+                            <th>제출일</th>
+                            <th>작성자</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(item => {
+                            const submittedDate = new Date(item.submittedAt).toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
 
-                return `
-                    <div class="assigned-item">
-                        <div class="item-header">
-                            <h4>${item.name}</h4>
-                            <span class="item-id">ID: ${item.id}</span>
+                            return `
+                                <tr>
+                                    <td><strong>${item.name}</strong></td>
+                                    <td><span class="status-badge status-${item.status.toLowerCase().replace(/\s+/g, '-')}">${item.status}</span></td>
+                                    <td>${item.typeName}</td>
+                                    <td>${submittedDate}</td>
+                                    <td>${item.submittedBy || 'N/A'}</td>
+                                    <td>
+                                        <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.typeName}')">보기</button>
+                                        <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.typeName}')">처리</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                
+                <!-- Mobile Cards -->
+                ${items.map(item => {
+                    const submittedDate = new Date(item.submittedAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    return `
+                        <div class="mobile-card">
+                            <div class="mobile-card-header">
+                                <div class="mobile-card-title">${item.name}</div>
+                                <span class="mobile-card-status status-${item.status.toLowerCase().replace(/\s+/g, '-')}">${item.status}</span>
+                            </div>
+                            <div class="mobile-card-details">
+                                <div class="mobile-card-detail">
+                                    <div class="mobile-card-detail-label">타입</div>
+                                    <div class="mobile-card-detail-value">${item.typeName}</div>
+                                </div>
+                                <div class="mobile-card-detail">
+                                    <div class="mobile-card-detail-label">제출일</div>
+                                    <div class="mobile-card-detail-value">${submittedDate}</div>
+                                </div>
+                                <div class="mobile-card-detail">
+                                    <div class="mobile-card-detail-label">작성자</div>
+                                    <div class="mobile-card-detail-value">${item.submittedBy || 'N/A'}</div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-actions">
+                                <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.typeName}')">보기</button>
+                                <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.typeName}')">처리</button>
+                            </div>
                         </div>
-                        <div class="item-details">
-                            <span class="item-status ${item.status.toLowerCase().replace(/\s+/g, '-')}">${item.status}</span>
-                            <span class="item-submitted">제출일: ${submittedDate}</span>
-                        </div>
-                        <div class="item-actions">
-                            <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.typeName}')">보기</button>
-                            <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.typeName}')">처리</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('')}
+            `;
 
             container.innerHTML = itemsHTML;
         }
@@ -329,11 +450,22 @@
             alert(`${getTypeLabel(type)} 항목을 처리합니다. (ID: ${id})`);
         }
 
+        let showingAllItems = false;
+        
         function viewAllAssigned() {
-            // Navigate to a dedicated page showing all assigned items
-            // For now, we'll show an alert with the total count
-            const totalCount = document.getElementById('assignedCount').textContent;
-            alert(`전체 ${totalCount}개의 할당된 업무가 있습니다. 향후 전체 목록 페이지로 이동할 예정입니다.`);
+            const button = document.getElementById('viewAllBtn');
+            
+            if (showingAllItems) {
+                // Switch back to showing only 5 items
+                loadAssignedItems(1, 5);
+                button.textContent = '더보기';
+                showingAllItems = false;
+            } else {
+                // Show all items (25 per page)
+                loadAssignedItems(1, 25);
+                button.textContent = '간략보기';
+                showingAllItems = true;
+            }
         }
     </script>
 </body>

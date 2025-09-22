@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - Admin Login</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="/css/darkmode.css" />
+</head>
+
+<body class="admin-login-body">
+    <div class="admin-login-container">
+        <div class="admin-login-box">
+            <div class="admin-login-header">
+                <h1>🔐 Admin Login</h1>
+                <p>관리자 전용 로그인</p>
+            </div>
+            
+            <% if (error) { %>
+                <div class="admin-error-message">
+                    <%= error %>
+                </div>
+            <% } %>
+            
+            <form method="POST" action="/admin/login" class="admin-login-form">
+                <div class="admin-form-group">
+                    <label for="username">사용자명</label>
+                    <input type="text" id="username" name="username" required placeholder="admin">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" required placeholder="1234">
+                </div>
+                
+                <button type="submit" class="btn-admin-login">로그인</button>
+            </form>
+            
+            <div class="admin-back-link">
+                <a href="/">← 메인 포탈로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

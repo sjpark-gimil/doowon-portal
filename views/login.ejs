@@ -20,7 +20,7 @@
         <form class="login-form" action="/login" method="POST">
             <input type="text" name="username" placeholder="Username" autocomplete="username" required>
             <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
-            <button type="submit">Login</button>
+            <button type="submit" style="background: #201B87; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.3s ease; text-decoration: none; display: inline-block;">Login</button>
         </form>
         <% if (error) { %>
             <p class="error-message"><%= error %></p>

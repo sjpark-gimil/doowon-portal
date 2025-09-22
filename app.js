@@ -71,6 +71,14 @@ function requireAuth(req, res, next) {
     }
 }
 
+function requireAdminAuth(req, res, next) {
+    if (req.session && req.session.adminAuth) {
+        next();
+    } else {
+        res.redirect('/admin/login');
+    }
+}
+
 app.get('/login', (req, res) => {
     res.render('login', { error: null });
 });
@@ -307,6 +315,50 @@ app.get('/external-training', requireAuth, (req, res) => {
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || ''
+    });
+});
+
+// Admin Routes
+app.get('/admin/login', (req, res) => {
+    res.render('admin-login', { error: null });
+});
+
+app.post('/admin/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === 'admin' && password === '1234') {
+        req.session.adminAuth = true;
+        req.session.adminUsername = username;
+        req.session.save((err) => {
+            if (err) {
+                console.error('Admin session save error:', err);
+                return res.render('admin-login', { 
+                    error: 'Session error occurred'
+                });
+            }
+            res.redirect('/admin');
+        });
+    } else {
+        res.render('admin-login', { 
+            error: 'Invalid admin credentials'
+        });
+    }
+});
+
+app.get('/admin', requireAdminAuth, (req, res) => {
+    res.render('admin', {
+        currentPath: '/admin',
+        username: req.session.adminUsername || '',
+        serverUrl: defaults.cbApiUrl,
+        cbBaseUrl: process.env.CB_BASE_URL || ''
+    });
+});
+
+app.get('/admin/logout', (req, res) => {
+    req.session.adminAuth = false;
+    req.session.adminUsername = null;
+    req.session.save((err) => {
+        if (err) { console.error('Error destroying admin session:', err); }
+        res.redirect('/admin/login');
     });
 });
 
@@ -726,6 +778,122 @@ app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
         res.status(500).json({ 
             success: false,
             error: 'Failed to delete hardware item: ' + error.message 
+        });
+    }
+});
+
+// Vehicle Type Configuration API Routes
+const VEHICLE_TYPES_FILE = path.join(__dirname, 'data', 'vehicle-types.json');
+
+// Ensure data directory exists
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Default vehicle types
+const DEFAULT_VEHICLE_TYPES = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
+
+// Load vehicle types from file
+function loadVehicleTypes() {
+    try {
+        if (fs.existsSync(VEHICLE_TYPES_FILE)) {
+            const data = fs.readFileSync(VEHICLE_TYPES_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading vehicle types:', error);
+    }
+    return { vehicleTypes: DEFAULT_VEHICLE_TYPES };
+}
+
+// Save vehicle types to file
+function saveVehicleTypes(vehicleTypes) {
+    try {
+        const data = { vehicleTypes, lastUpdated: new Date().toISOString() };
+        fs.writeFileSync(VEHICLE_TYPES_FILE, JSON.stringify(data, null, 2));
+        return true;
+    } catch (error) {
+        console.error('Error saving vehicle types:', error);
+        return false;
+    }
+}
+
+// GET vehicle types
+app.get('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
+    try {
+        const data = loadVehicleTypes();
+        res.json({
+            success: true,
+            vehicleTypes: data.vehicleTypes
+        });
+    } catch (error) {
+        console.error('Error getting vehicle types:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load vehicle types: ' + error.message
+        });
+    }
+});
+
+// POST vehicle types
+app.post('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
+    try {
+        const { vehicleTypes } = req.body;
+        
+        if (!vehicleTypes || !Array.isArray(vehicleTypes) || vehicleTypes.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Vehicle types array is required and cannot be empty'
+            });
+        }
+
+        // Validate vehicle types
+        const validVehicleTypes = vehicleTypes.filter(type => 
+            typeof type === 'string' && type.trim().length > 0
+        );
+
+        if (validVehicleTypes.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'At least one valid vehicle type is required'
+            });
+        }
+
+        if (saveVehicleTypes(validVehicleTypes)) {
+            res.json({
+                success: true,
+                message: 'Vehicle types saved successfully',
+                vehicleTypes: validVehicleTypes
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to save vehicle types'
+            });
+        }
+    } catch (error) {
+        console.error('Error saving vehicle types:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save vehicle types: ' + error.message
+        });
+    }
+});
+
+// GET vehicle types for hardware management (public endpoint)
+app.get('/api/vehicle-types', (req, res) => {
+    try {
+        const data = loadVehicleTypes();
+        res.json({
+            success: true,
+            vehicleTypes: data.vehicleTypes
+        });
+    } catch (error) {
+        console.error('Error getting vehicle types:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load vehicle types: ' + error.message
         });
     }
 });

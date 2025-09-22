@@ -122,6 +122,33 @@
                 <span>외부교육관리</span>
             </a>
         </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span>주간보고관리</span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span>출장보고관리</span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span>하드웨어관리</span>
+            </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span>장비관리</span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span>외부교육관리</span>
+            </a>
+        </div>
     </nav>
 
     <div class="main-container">
@@ -161,12 +188,6 @@
                             <label for="vehicleType">차종</label>
                             <select id="vehicleType" name="vehicleType">
                                 <option value="">선택하세요</option>
-                                <option value="SW">SW</option>
-                                <option value="OV1">OV1</option>
-                                <option value="HE1i">HE1i</option>
-                                <option value="SX3">SX3</option>
-                                <option value="NQ6">NQ6</option>
-                                <option value="LT2">LT2</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -209,12 +230,6 @@
                 <div class="filter-controls">
                     <select id="vehicleTypeFilter" onchange="filterHardware()">
                         <option value="">전체 차종</option>
-                        <option value="SW">SW</option>
-                        <option value="OV1">OV1</option>
-                        <option value="HE1i">HE1i</option>
-                        <option value="SX3">SX3</option>
-                        <option value="NQ6">NQ6</option>
-                        <option value="LT2">LT2</option>
                     </select>
                     <select id="changeTypeFilter" onchange="filterHardware()">
                         <option value="">전체 변경사항</option>
@@ -245,12 +260,80 @@
 
     <script>
         let hardwareItems = [];
+        let vehicleTypes = [];
+
+        // Load vehicle types from API
+        async function loadVehicleTypes() {
+            try {
+                const response = await fetch('/api/vehicle-types');
+                const data = await response.json();
+                
+                if (data.success) {
+                    vehicleTypes = data.vehicleTypes;
+                    populateVehicleTypeSelects();
+                } else {
+                    console.error('Failed to load vehicle types:', data.error);
+                    // Fallback to default types
+                    vehicleTypes = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
+                    populateVehicleTypeSelects();
+                }
+            } catch (error) {
+                console.error('Error loading vehicle types:', error);
+                // Fallback to default types
+                vehicleTypes = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
+                populateVehicleTypeSelects();
+            }
+        }
+
+        // Populate vehicle type select elements
+        function populateVehicleTypeSelects() {
+            const formSelect = document.getElementById('vehicleType');
+            const filterSelect = document.getElementById('vehicleTypeFilter');
+            
+            // Clear existing options (except first option)
+            if (formSelect) {
+                formSelect.innerHTML = '<option value="">선택하세요</option>';
+                vehicleTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    formSelect.appendChild(option);
+                });
+            }
+            
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">전체 차종</option>';
+                vehicleTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    filterSelect.appendChild(option);
+                });
+            }
+        }
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
                 .then(() => window.location.href = '/login')
                 .catch(error => console.error('Logout error:', error));
         }
+
+        function toggleMobileMenu() {
+            const mobileNav = document.getElementById('mobileNav');
+            mobileNav.classList.toggle('active');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileNav = document.getElementById('mobileNav');
+            const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (mobileNav && mobileMenuToggle && 
+                !mobileNav.contains(event.target) && 
+                !mobileMenuToggle.contains(event.target)) {
+                mobileNav.classList.remove('active');
+            }
+        });
 
         async function loadHardwareItems() {
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -332,6 +415,54 @@
                         `).join('')}
                     </tbody>
                 </table>
+                
+                <!-- Mobile Cards -->
+                ${filteredItems.map(item => `
+                    <div class="mobile-card">
+                        <div class="mobile-card-header">
+                            <div class="mobile-card-title">${item.name}</div>
+                            <span class="mobile-card-status status-${getStatusClass(item.status)}">${item.status}</span>
+                        </div>
+                        <div class="mobile-card-details">
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">HW 버전</div>
+                                <div class="mobile-card-detail-value">${item.hwVersion || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">SW 버전</div>
+                                <div class="mobile-card-detail-value">${item.swVersion || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">차종</div>
+                                <div class="mobile-card-detail-value">${item.vehicleType || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">변경사항</div>
+                                <div class="mobile-card-detail-value">${item.changeType || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">변경 사유</div>
+                                <div class="mobile-card-detail-value">${item.changeReason || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">Release 일자</div>
+                                <div class="mobile-card-detail-value">${item.releaseDate || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">등록자</div>
+                                <div class="mobile-card-detail-value">${item.submittedBy || 'N/A'}</div>
+                            </div>
+                            <div class="mobile-card-detail">
+                                <div class="mobile-card-detail-label">수정일</div>
+                                <div class="mobile-card-detail-value">${item.modifiedAt ? new Date(item.modifiedAt).toLocaleDateString() : 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="mobile-card-actions">
+                            <button class="btn-small btn-info" onclick="viewHardware(${item.id})">상세보기</button>
+                            <button class="btn-small btn-danger" onclick="deleteHardware(${item.id})">삭제</button>
+                        </div>
+                    </div>
+                `).join('')}
             `;
         }
 
@@ -478,6 +609,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            loadVehicleTypes();
             loadHardwareItems();
             
             // Check if we should show create form
