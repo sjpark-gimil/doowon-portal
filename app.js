@@ -141,10 +141,18 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
 
     try {
         const username = req.session.username;
-        console.log('Fetching assigned items for user:', username);
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 25;
         
-        // Get all projects first
-        const projectsResponse = await axios.get(`${defaults.cbApiUrl}/api/v3/projects`, {
+        console.log('Fetching assigned items for user:', username, 'page:', page, 'pageSize:', pageSize);
+        
+        // Use the correct Codebeamer API endpoint for assigned items
+        const queryString = `assignedTo IN ('${username}')`;
+        const apiUrl = `${defaults.cbApiUrl}/api/v3/items/query?page=${page}&pageSize=${pageSize}&queryString=${encodeURIComponent(queryString)}`;
+        
+        console.log('API URL:', apiUrl);
+        
+        const response = await axios.get(apiUrl, {
             headers: {
                 'Authorization': `Basic ${req.session.auth}`,
                 'Content-Type': 'application/json',
@@ -153,134 +161,93 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
             timeout: 10000
         });
 
-        const projects = projectsResponse.data;
-        console.log('Found projects:', projects.length);
-        
-        let allAssignedItems = [];
-        
-        // Search through all projects for assigned items
-        for (const project of projects) {
-            try {
-                // Get trackers for this project
-                const trackersResponse = await axios.get(`${defaults.cbApiUrl}/api/v3/projects/${project.id}/trackers`, {
-                    headers: {
-                        'Authorization': `Basic ${req.session.auth}`,
-                        'Content-Type': 'application/json',
-                        'accept': 'application/json'
-                    },
-                    timeout: 10000
-                });
+        console.log('Response status:', response.status);
+        console.log('Response data structure:', {
+            page: response.data.page,
+            pageSize: response.data.pageSize,
+            total: response.data.total,
+            itemsCount: response.data.items ? response.data.items.length : 0
+        });
 
-                const trackers = trackersResponse.data;
-                console.log(`Project ${project.name}: ${trackers.length} trackers`);
-                
-                // Search each tracker for assigned items
-                for (const tracker of trackers) {
-                    try {
-                        // Try different CBQL query variations
-                        const queries = [
-                            `assignedTo IN ('${username}')`,
-                            `assignedTo = '${username}'`,
-                            `assignedTo IN (User(whoami))`,
-                            `assignedTo = User(whoami)`
-                        ];
-                        
-                        for (const query of queries) {
-                            try {
-                                const searchUrl = `${defaults.cbApiUrl}/api/v3/trackers/${tracker.id}/items?query=${encodeURIComponent(query)}`;
-                                const searchResponse = await axios.get(searchUrl, {
-                                    headers: {
-                                        'Authorization': `Basic ${req.session.auth}`,
-                                        'Content-Type': 'application/json',
-                                        'accept': 'application/json'
-                                    },
-                                    timeout: 10000
-                                });
-                                
-                                if (searchResponse.data && searchResponse.data.length > 0) {
-                                    console.log(`Found ${searchResponse.data.length} assigned items in tracker ${tracker.name}`);
-                                    
-                                    // Process the assigned items
-                                    const assignedItems = searchResponse.data.map(item => ({
-                                        id: item.id,
-                                        title: item.name || item.title || 'Untitled',
-                                        type: tracker.name.toLowerCase().replace(/\s+/g, '-'),
-                                        status: item.status?.name || 'Unknown',
-                                        dueDate: item.dueDate || item.plannedEndDate || null,
-                                        priority: item.priority?.name || 'Medium',
-                                        assigner: item.submittedBy?.name || 'Unknown',
-                                        project: project.name,
-                                        tracker: tracker.name,
-                                        description: item.description || '',
-                                        created: item.submittedAt,
-                                        modified: item.modifiedAt
-                                    }));
-                                    
-                                    allAssignedItems = allAssignedItems.concat(assignedItems);
-                                }
-                                break; // If query worked, don't try other variations
-                            } catch (queryError) {
-                                // Query failed, try next variation
-                                continue;
-                            }
-                        }
-                    } catch (trackerError) {
-                        console.log(`Error searching tracker ${tracker.name}:`, trackerError.message);
-                    }
-                }
-            } catch (projectError) {
-                console.log(`Error processing project ${project.name}:`, projectError.message);
-            }
-        }
+        if (response.data && response.data.items) {
+            // Process the assigned items according to the required format
+            const assignedItems = response.data.items.map(item => ({
+                id: item.id,
+                name: item.name || 'Untitled',
+                status: item.status?.name || 'Unset',
+                submittedAt: item.createdAt || item.submittedAt,
+                submittedBy: item.createdBy?.displayName || item.createdBy?.name || 'Unknown',
+                modifiedAt: item.modifiedAt,
+                modifiedBy: item.modifiedBy?.displayName || item.modifiedBy?.name || 'Unknown',
+                tracker: item.tracker?.name || 'Unknown',
+                typeName: item.typeName || 'Unknown'
+            }));
 
-        // If no items found with CBQL, return mock data as fallback
-        if (allAssignedItems.length === 0) {
+            res.json({
+                success: true,
+                items: assignedItems,
+                page: response.data.page,
+                pageSize: response.data.pageSize,
+                total: response.data.total,
+                hasMore: response.data.page * response.data.pageSize < response.data.total,
+                source: 'codebeamer'
+            });
+        } else {
+            // Fallback to mock data if no items found
             console.log('No assigned items found, returning mock data');
             const mockAssignedItems = [
                 {
                     id: 1,
-                    title: "2024년 1월 1주차 주간보고 검토",
-                    type: "weekly-report",
-                    status: "pending",
-                    dueDate: "2024-01-15",
-                    priority: "high",
-                    assigner: "김과장"
+                    name: "2024년 1월 1주차 주간보고 검토",
+                    status: "Pending",
+                    submittedAt: "2024-01-08T09:00:00.000Z",
+                    submittedBy: "김과장",
+                    modifiedAt: "2024-01-08T09:00:00.000Z",
+                    modifiedBy: "김과장",
+                    tracker: "Weekly Reports",
+                    typeName: "Report"
                 },
                 {
                     id: 2,
-                    title: "서울 고객사 방문 출장보고 승인",
-                    type: "travel-report", 
-                    status: "in-progress",
-                    dueDate: "2024-01-20",
-                    priority: "medium",
-                    assigner: "이부장"
+                    name: "서울 고객사 방문 출장보고 승인",
+                    status: "In Progress",
+                    submittedAt: "2024-01-10T14:30:00.000Z",
+                    submittedBy: "이부장",
+                    modifiedAt: "2024-01-10T14:30:00.000Z",
+                    modifiedBy: "이부장",
+                    tracker: "Travel Reports",
+                    typeName: "Report"
                 },
                 {
                     id: 3,
-                    title: "신규 노트북 배정 처리",
-                    type: "hardware",
-                    status: "pending",
-                    dueDate: "2024-01-25",
-                    priority: "low",
-                    assigner: "박팀장"
+                    name: "신규 노트북 배정 처리",
+                    status: "Pending",
+                    submittedAt: "2024-01-12T11:15:00.000Z",
+                    submittedBy: "박팀장",
+                    modifiedAt: "2024-01-12T11:15:00.000Z",
+                    modifiedBy: "박팀장",
+                    tracker: "Hardware Management",
+                    typeName: "Task"
                 }
             ];
-            allAssignedItems = mockAssignedItems;
+
+            res.json({
+                success: true,
+                items: mockAssignedItems,
+                page: 1,
+                pageSize: 25,
+                total: mockAssignedItems.length,
+                hasMore: false,
+                source: 'mock'
+            });
         }
-
-        // Limit to first 5 items for display, but return total count
-        const limitedItems = allAssignedItems.slice(0, 5);
-
-        res.json({
-            success: true,
-            items: limitedItems,
-            total: allAssignedItems.length,
-            hasMore: allAssignedItems.length > 5,
-            source: allAssignedItems.length > 0 && allAssignedItems[0].project ? 'codebeamer' : 'mock'
-        });
 
     } catch (error) {
         console.error('Error fetching assigned items:', error.message);
+        if (error.response) {
+            console.error('Error response status:', error.response.status);
+            console.error('Error response data:', error.response.data);
+        }
         res.status(500).json({ 
             success: false,
             error: 'Failed to fetch assigned items: ' + error.message 

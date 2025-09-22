@@ -2655,6 +2655,33 @@ select.report-select option {
     transform: translateY(-1px);
 }
 
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 6px 6px;
+}
+
+.page-info {
+    font-size: 0.9em;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-controls button:disabled:hover {
+    background-color: #6c757d;
+    transform: none;
+}
+
 .item-header {
     display: flex;
     justify-content: space-between;

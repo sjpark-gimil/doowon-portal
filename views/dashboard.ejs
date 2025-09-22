@@ -90,6 +90,11 @@
                     <div class="assigned-items" id="assignedItems">
                         <div class="loading-spinner">로딩 중...</div>
                     </div>
+                    <div class="pagination-controls" id="paginationControls" style="display: none;">
+                        <button class="btn-small btn-secondary" id="prevPageBtn" onclick="loadAssignedItems(currentPage - 1)">이전</button>
+                        <span class="page-info" id="pageInfo">페이지 1 / 1</span>
+                        <button class="btn-small btn-secondary" id="nextPageBtn" onclick="loadAssignedItems(currentPage + 1)">다음</button>
+                    </div>
                 </div>
             </div>
 
@@ -163,14 +168,19 @@
             window.location.href = '/external-training?action=create';
         }
 
+        // Global variables for pagination
+        let currentPage = 1;
+        let totalPages = 1;
+        let totalItems = 0;
+
         // Load assigned items when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadAssignedItems();
+            loadAssignedItems(1);
         });
 
-        async function loadAssignedItems() {
+        async function loadAssignedItems(page = 1) {
             try {
-                const response = await fetch('/api/assigned-to-me', {
+                const response = await fetch(`/api/assigned-to-me?page=${page}&pageSize=5`, {
                     method: 'GET',
                     credentials: 'include'
                 });
@@ -182,7 +192,12 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    currentPage = data.page;
+                    totalItems = data.total;
+                    totalPages = Math.ceil(data.total / data.pageSize);
+                    
                     displayAssignedItems(data.items);
+                    updatePaginationControls();
                     document.getElementById('assignedCount').textContent = `${data.total}건`;
                     
                     // Show "View All" button if there are more items
@@ -200,6 +215,22 @@
             }
         }
 
+        function updatePaginationControls() {
+            const paginationControls = document.getElementById('paginationControls');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+
+            if (totalPages > 1) {
+                paginationControls.style.display = 'flex';
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+                pageInfo.textContent = `페이지 ${currentPage} / ${totalPages}`;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
         function displayAssignedItems(items) {
             const container = document.getElementById('assignedItems');
             
@@ -208,24 +239,32 @@
                 return;
             }
 
-            const itemsHTML = items.map(item => `
-                <div class="assigned-item">
-                    <div class="item-header">
-                        <h4>${item.title}</h4>
-                        <span class="item-type ${item.type}">${getTypeLabel(item.type)}</span>
+            const itemsHTML = items.map(item => {
+                const submittedDate = new Date(item.submittedAt).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <div class="assigned-item">
+                        <div class="item-header">
+                            <h4>${item.name}</h4>
+                            <span class="item-id">ID: ${item.id}</span>
+                        </div>
+                        <div class="item-details">
+                            <span class="item-status ${item.status.toLowerCase().replace(/\s+/g, '-')}">${item.status}</span>
+                            <span class="item-submitted">제출일: ${submittedDate}</span>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.typeName}')">보기</button>
+                            <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.typeName}')">처리</button>
+                        </div>
                     </div>
-                    <div class="item-details">
-                        <span class="item-status ${item.status}">${getStatusLabel(item.status)}</span>
-                        <span class="item-priority ${item.priority}">${getPriorityLabel(item.priority)}</span>
-                        <span class="item-due-date">마감: ${item.dueDate}</span>
-                        <span class="item-assigner">할당자: ${item.assigner}</span>
-                    </div>
-                    <div class="item-actions">
-                        <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.type}')">보기</button>
-                        <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.type}')">처리</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             container.innerHTML = itemsHTML;
         }
