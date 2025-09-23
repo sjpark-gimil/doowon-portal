@@ -115,8 +115,9 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/api/debug/ping', async (req, res) => {
+    const pingUrl = `${defaults.cbApiUrl}/ping`;
+    
     try {
-        const pingUrl = `${defaults.cbApiUrl}/ping`;
         console.log('Pinging Codebeamer at:', pingUrl);
         
         const response = await axios.get(pingUrl, {
@@ -282,6 +283,15 @@ app.get('/weekly-reports', requireAuth, (req, res) => {
     });
 });
 
+app.get('/weekly-reports/dynamic', requireAuth, (req, res) => {
+    res.render('weekly-reports-dynamic', {
+        currentPath: '/weekly-reports/dynamic',
+        username: req.session.username || '',
+        serverUrl: defaults.cbApiUrl,
+        cbBaseUrl: process.env.CB_BASE_URL || ''
+    });
+});
+
 app.get('/travel-reports', requireAuth, (req, res) => {
     res.render('travel-reports', {
         currentPath: '/travel-reports',
@@ -345,7 +355,7 @@ app.post('/admin/login', (req, res) => {
 });
 
 app.get('/admin', requireAdminAuth, (req, res) => {
-    res.render('admin', {
+    res.render('admin-dynamic', {
         currentPath: '/admin',
         username: req.session.adminUsername || '',
         serverUrl: defaults.cbApiUrl,
@@ -894,6 +904,310 @@ app.get('/api/vehicle-types', (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to load vehicle types: ' + error.message
+        });
+    }
+});
+
+// Dynamic Field Configuration API Routes
+const FIELD_CONFIGS_FILE = path.join(__dirname, 'data', 'field-configs.json');
+
+// Default field configurations
+const DEFAULT_FIELD_CONFIGS = {
+    'weekly-reports': [
+        { id: 1, name: '보고서 제목', codebeamerId: 'name', type: 'string', required: true, readonly: true },
+        { id: 2, name: '보고 주차', codebeamerId: 'custom_field_1', type: 'string', required: true, readonly: false },
+        { id: 3, name: '작성일', codebeamerId: 'submittedAt', type: 'calendar', required: true, readonly: true },
+        { id: 4, name: '사업부', codebeamerId: 'custom_field_2', type: 'string', required: false, readonly: false },
+        { id: 5, name: '금주 주간보고', codebeamerId: 'custom_field_3', type: 'string', required: true, readonly: false },
+        { id: 6, name: '차주 주간보고', codebeamerId: 'custom_field_4', type: 'string', required: false, readonly: false },
+        { id: 7, name: '첨부파일', codebeamerId: 'attachments', type: 'string', required: false, readonly: true },
+        { id: 8, name: '상태', codebeamerId: 'status', type: 'string', required: true, readonly: true },
+        { id: 9, name: '우선순위', codebeamerId: 'custom_field_50', type: 'selector', required: false, readonly: false, options: ['높음', '보통', '낮음'] },
+        { id: 10, name: '진행률', codebeamerId: 'custom_field_51', type: 'number', required: false, readonly: false }
+    ],
+    'travel-reports': [
+        { id: 1, name: '보고서 제목', codebeamerId: 'name', type: 'string', required: true, readonly: true },
+        { id: 2, name: '출장지', codebeamerId: 'custom_field_5', type: 'string', required: true, readonly: false },
+        { id: 3, name: '출장 목적', codebeamerId: 'custom_field_6', type: 'string', required: true, readonly: false },
+        { id: 4, name: '출발일', codebeamerId: 'custom_field_7', type: 'calendar', required: true, readonly: false },
+        { id: 5, name: '귀환일', codebeamerId: 'custom_field_8', type: 'calendar', required: true, readonly: false },
+        { id: 6, name: '동행자', codebeamerId: 'custom_field_9', type: 'string', required: false, readonly: false },
+        { id: 7, name: '교통비', codebeamerId: 'custom_field_10', type: 'number', required: false, readonly: false },
+        { id: 8, name: '숙박비', codebeamerId: 'custom_field_11', type: 'number', required: false, readonly: false },
+        { id: 9, name: '식비', codebeamerId: 'custom_field_12', type: 'number', required: false, readonly: false },
+        { id: 10, name: '기타 경비', codebeamerId: 'custom_field_13', type: 'number', required: false, readonly: false },
+        { id: 11, name: '출장 내용', codebeamerId: 'description', type: 'string', required: true, readonly: false }
+    ],
+    'hardware-management': [
+        { id: 1, name: '하드웨어명', codebeamerId: 'name', type: 'string', required: true, readonly: true },
+        { id: 2, name: 'HW 버전', codebeamerId: 'custom_field_3', type: 'string', required: true, readonly: true },
+        { id: 3, name: 'SW 버전', codebeamerId: 'custom_field_10002', type: 'string', required: false, readonly: true },
+        { id: 4, name: '차종', codebeamerId: 'custom_field_1000', type: 'selector', required: true, readonly: true, options: ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'] },
+        { id: 5, name: '변경사항', codebeamerId: 'custom_field_1001', type: 'selector', required: true, readonly: true, options: ['H/W', 'S/W'] },
+        { id: 6, name: '변경 사유', codebeamerId: 'custom_field_10005', type: 'string', required: true, readonly: true },
+        { id: 7, name: 'Release 일자', codebeamerId: 'custom_field_10006', type: 'calendar', required: false, readonly: true },
+        { id: 8, name: '설명', codebeamerId: 'description', type: 'string', required: false, readonly: true },
+        { id: 9, name: '상태', codebeamerId: 'status', type: 'string', required: true, readonly: true },
+        { id: 10, name: '등록자', codebeamerId: 'submittedBy', type: 'string', required: true, readonly: true }
+    ],
+    'equipment-management': [
+        { id: 1, name: '장비명', codebeamerId: 'name', type: 'string', required: true, readonly: true },
+        { id: 2, name: '카테고리', codebeamerId: 'custom_field_14', type: 'string', required: true, readonly: false },
+        { id: 3, name: '제조사', codebeamerId: 'custom_field_15', type: 'string', required: true, readonly: false },
+        { id: 4, name: '모델명', codebeamerId: 'custom_field_16', type: 'string', required: true, readonly: false },
+        { id: 5, name: '시리얼 번호', codebeamerId: 'custom_field_17', type: 'string', required: true, readonly: false },
+        { id: 6, name: '구매일', codebeamerId: 'custom_field_18', type: 'calendar', required: false, readonly: false },
+        { id: 7, name: '보증만료일', codebeamerId: 'custom_field_19', type: 'calendar', required: false, readonly: false },
+        { id: 8, name: '설치위치', codebeamerId: 'custom_field_20', type: 'string', required: false, readonly: false },
+        { id: 9, name: '담당자', codebeamerId: 'custom_field_21', type: 'string', required: false, readonly: false },
+        { id: 10, name: '사양', codebeamerId: 'description', type: 'string', required: false, readonly: false },
+        { id: 11, name: '비고', codebeamerId: 'custom_field_22', type: 'string', required: false, readonly: false }
+    ],
+    'external-training': [
+        { id: 1, name: '교육명', codebeamerId: 'name', type: 'string', required: true, readonly: true },
+        { id: 2, name: '교육기관', codebeamerId: 'custom_field_23', type: 'string', required: true, readonly: false },
+        { id: 3, name: '교육유형', codebeamerId: 'custom_field_24', type: 'string', required: true, readonly: false },
+        { id: 4, name: '교육시작일', codebeamerId: 'custom_field_25', type: 'calendar', required: true, readonly: false },
+        { id: 5, name: '교육종료일', codebeamerId: 'custom_field_26', type: 'calendar', required: true, readonly: false },
+        { id: 6, name: '교육장소', codebeamerId: 'custom_field_27', type: 'string', required: false, readonly: false },
+        { id: 7, name: '참석자', codebeamerId: 'custom_field_28', type: 'string', required: true, readonly: false },
+        { id: 8, name: '수강료', codebeamerId: 'custom_field_29', type: 'number', required: false, readonly: false },
+        { id: 9, name: '숙박비', codebeamerId: 'custom_field_30', type: 'number', required: false, readonly: false },
+        { id: 10, name: '교통비', codebeamerId: 'custom_field_31', type: 'number', required: false, readonly: false },
+        { id: 11, name: '식비', codebeamerId: 'custom_field_32', type: 'number', required: false, readonly: false },
+        { id: 12, name: '교육내용', codebeamerId: 'description', type: 'string', required: true, readonly: false },
+        { id: 13, name: '기대효과', codebeamerId: 'custom_field_33', type: 'string', required: false, readonly: false }
+    ]
+};
+
+// Load field configurations from file
+function loadFieldConfigs() {
+    try {
+        if (fs.existsSync(FIELD_CONFIGS_FILE)) {
+            const data = fs.readFileSync(FIELD_CONFIGS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading field configs:', error);
+    }
+    return { fieldConfigs: DEFAULT_FIELD_CONFIGS };
+}
+
+// Save field configurations to file
+function saveFieldConfigs(fieldConfigs) {
+    try {
+        const data = { fieldConfigs, lastUpdated: new Date().toISOString() };
+        fs.writeFileSync(FIELD_CONFIGS_FILE, JSON.stringify(data, null, 2));
+        return true;
+    } catch (error) {
+        console.error('Error saving field configs:', error);
+        return false;
+    }
+}
+
+// GET field configurations
+app.get('/api/admin/field-configs', requireAdminAuth, (req, res) => {
+    try {
+        const data = loadFieldConfigs();
+        res.json({
+            success: true,
+            fieldConfigs: data.fieldConfigs
+        });
+    } catch (error) {
+        console.error('Error getting field configs:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load field configs: ' + error.message
+        });
+    }
+});
+
+// POST field configurations
+app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
+    try {
+        const { fieldConfigs } = req.body;
+        
+        if (!fieldConfigs || typeof fieldConfigs !== 'object') {
+            return res.status(400).json({
+                success: false,
+                error: 'Field configurations object is required'
+            });
+        }
+
+        if (saveFieldConfigs(fieldConfigs)) {
+            res.json({
+                success: true,
+                message: 'Field configurations saved successfully',
+                fieldConfigs: fieldConfigs
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to save field configurations'
+            });
+        }
+    } catch (error) {
+        console.error('Error saving field configs:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save field configs: ' + error.message
+        });
+    }
+});
+
+// GET field configurations for specific section
+app.get('/api/admin/field-configs/:section', requireAdminAuth, (req, res) => {
+    try {
+        const { section } = req.params;
+        const data = loadFieldConfigs();
+        
+        if (!data.fieldConfigs[section]) {
+            return res.status(404).json({
+                success: false,
+                error: 'Section not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            fieldConfigs: data.fieldConfigs[section]
+        });
+    } catch (error) {
+        console.error('Error getting field configs for section:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load field configs for section: ' + error.message
+        });
+    }
+});
+
+// GET field configurations for management pages (public endpoint)
+app.get('/api/field-configs/:section', (req, res) => {
+    try {
+        const { section } = req.params;
+        const data = loadFieldConfigs();
+        
+        if (!data.fieldConfigs[section]) {
+            return res.status(404).json({
+                success: false,
+                error: 'Section not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            fieldConfigs: data.fieldConfigs[section]
+        });
+    } catch (error) {
+        console.error('Error getting field configs for section:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load field configs for section: ' + error.message
+        });
+    }
+});
+
+// GET Codebeamer field definitions for a tracker
+app.get('/api/codebeamer/trackers/:trackerId/fields', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { trackerId } = req.params;
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}`;
+        
+        const response = await axios.get(codebeamerUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        // Extract field definitions from tracker
+        const fields = response.data.fieldDefinitions || [];
+        const fieldDefinitions = fields.map(field => ({
+            id: field.id,
+            name: field.name,
+            referenceId: field.referenceId,
+            type: field.type,
+            mandatory: field.mandatory,
+            description: field.description
+        }));
+
+        res.json({
+            success: true,
+            fields: fieldDefinitions
+        });
+    } catch (error) {
+        console.error('Error fetching tracker fields:', error.message);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch tracker fields: ' + error.message 
+        });
+    }
+});
+
+// Test field mapping with Codebeamer
+app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => {
+    try {
+        const { section, fieldConfigs } = req.body;
+        
+        if (!section || !fieldConfigs) {
+            return res.status(400).json({
+                success: false,
+                error: 'Section and field configurations are required'
+            });
+        }
+
+        // Get tracker ID for the section
+        const trackerIds = {
+            'weekly-reports': 'tracker_weekly',
+            'travel-reports': 'tracker_travel',
+            'hardware-management': '19601',
+            'equipment-management': 'tracker_equipment',
+            'external-training': 'tracker_training'
+        };
+
+        const trackerId = trackerIds[section];
+        if (!trackerId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid section'
+            });
+        }
+
+        // Test connection to Codebeamer
+        try {
+            const testUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}`;
+            const response = await axios.get(testUrl, {
+                headers: {
+                    'Authorization': `Basic ${req.session.auth}`,
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
+                },
+                timeout: 10000
+            });
+
+            res.json({
+                success: true,
+                message: 'Field mapping test successful',
+                trackerId: trackerId,
+                fieldCount: fieldConfigs.length,
+                trackerName: response.data.name || 'Unknown'
+            });
+        } catch (error) {
+            res.json({
+                success: false,
+                error: 'Failed to connect to Codebeamer tracker: ' + error.message
+            });
+        }
+    } catch (error) {
+        console.error('Error testing field mapping:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to test field mapping: ' + error.message
         });
     }
 });

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - Dynamic Admin Settings</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
+</head>
+
+<body>
+    <div class="admin-header">
+        <h1>⚙️ Admin Settings</h1>
+        <p>Codebeamer 필드 동적 관리 및 시스템 설정</p>
+    </div>
+
+    <nav class="admin-nav">
+        <div class="admin-nav-container">
+            <div class="admin-nav-title">관리자 패널</div>
+            <div class="admin-nav-actions">
+                <span class="admin-username">관리자: <%= username %></span>
+                <a href="/admin/logout" class="btn-admin btn-secondary">로그아웃</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-section">
+        <div class="codebeamer-info">
+            <h4>🔗 Codebeamer 연결 정보</h4>
+            <div class="info-item">
+                <span class="info-label">서버 URL</span>
+                <span class="info-value"><%= serverUrl %></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">연결 상태</span>
+                <span class="info-value" id="connectionStatus">확인 중...</span>
+            </div>
+        </div>
+
+        <div class="mapping-summary">
+            <h4>📊 필드 매핑 현황</h4>
+            <div class="mapping-stats">
+                <div class="stat-item">
+                    <span class="status-indicator status-mapped"></span>
+                    <span>총 관리 섹션 : <strong id="totalSections">0</strong>개</span>
+                </div>
+                <div class="stat-item">
+                    <span class="status-indicator status-pending"></span>
+                    <span>총 필드 : <strong id="totalFields">0</strong>개</span>
+                </div>
+                <div class="stat-item">
+                    <span class="status-indicator status-unmapped"></span>
+                    <span>활성 섹션:  <strong id="activeSections">0</strong>개</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 개요 섹션 -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>📋 필드 관리 개요</h3>
+                <p>각 관리 섹션에서 개별적으로 필드를 추가, 수정, 삭제할 수 있습니다.</p>
+            </div>
+            <div class="section-content">
+                <div class="management-overview">
+                    <p>아래 각 관리 섹션에서 해당 섹션에 맞는 필드를 직접 관리하세요. 각 섹션의 "필드 추가" 버튼을 클릭하여 새 필드를 추가할 수 있습니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 관리 섹션별 필드 설정 -->
+        <div id="managementSections">
+            <!-- 동적으로 생성될 섹션들 -->
+        </div>
+
+        <!-- 시스템 설정 -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>⚙️ 시스템 설정</h3>
+                <p>전체 시스템 설정 및 Codebeamer 연동 설정을 관리합니다.</p>
+            </div>
+            <div class="section-content">
+                <div class="field-mapping">
+                    <div class="field-group">
+                        <h4>Codebeamer 설정</h4>
+                        <div class="field-item">
+                            <span class="field-label">API URL</span>
+                            <input type="text" class="field-mapping-input" value="<%= serverUrl %>" readonly>
+                        </div>
+                        <div class="field-item">
+                            <span class="field-label">프로젝트 ID</span>
+                            <input type="text" class="field-mapping-input" value="project_id">
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <h4>시스템 설정</h4>
+                        <div class="field-item">
+                            <span class="field-label">자동 동기화</span>
+                            <input type="checkbox" class="admin-checkbox-auto">
+                        </div>
+                        <div class="field-item">
+                            <span class="field-label">동기화 주기 (분)</span>
+                            <input type="number" class="field-mapping-input" value="30">
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-button-container">
+                    <button class="btn-admin btn-primary" onclick="saveSystemSettings()">설정 저장</button>
+                    <button class="btn-admin btn-success" onclick="testConnection()">연결 테스트</button>
+                    <button class="btn-admin btn-warning" onclick="syncAllData()">전체 동기화</button>
+                    <button class="btn-admin btn-danger" onclick="resetSettings()">설정 초기화</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Field configuration data
+        let fieldConfigs = {
+            'weekly-reports': [],
+            'travel-reports': [],
+            'hardware-management': [],
+            'equipment-management': [],
+            'external-training': []
+        };
+
+        // Field type configurations
+        const fieldTypes = {
+            string: {
+                name: '문자열',
+                icon: '📝',
+                inputType: 'text',
+                validation: 'text'
+            },
+            number: {
+                name: '숫자',
+                icon: '🔢',
+                inputType: 'number',
+                validation: 'number'
+            },
+            calendar: {
+                name: '날짜',
+                icon: '📅',
+                inputType: 'date',
+                validation: 'date'
+            },
+            selector: {
+                name: '선택',
+                icon: '📋',
+                inputType: 'select',
+                validation: 'select'
+            }
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            checkConnection();
+            await loadFieldConfigs();
+            renderManagementSections();
+            updateStats();
+        });
+
+        // Check Codebeamer connection status
+        async function checkConnection() {
+            try {
+                const response = await fetch('/api/debug/ping');
+                const data = await response.json();
+                const statusElement = document.getElementById('connectionStatus');
+                
+                if (data.success) {
+                    statusElement.textContent = '연결됨';
+                    statusElement.style.color = '#28a745';
+                } else {
+                    statusElement.textContent = '연결 실패';
+                    statusElement.style.color = '#dc3545';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').textContent = '연결 실패';
+                document.getElementById('connectionStatus').style.color = '#dc3545';
+            }
+        }
+
+
+        // Remove field
+        async function removeField(section, fieldId) {
+            if (confirm('이 필드를 삭제하시겠습니까?')) {
+                fieldConfigs[section] = fieldConfigs[section].filter(field => field.id !== fieldId);
+                const saved = await saveFieldConfigs();
+                
+                if (saved) {
+                    renderManagementSections();
+                    updateStats();
+                } else {
+                    alert('필드 삭제에 실패했습니다.');
+                }
+            }
+        }
+
+        // Toggle section
+        function toggleSection(section) {
+            const sectionElement = document.getElementById(`section-${section}`);
+            const toggleIcon = sectionElement.querySelector('.toggle-icon');
+            
+            sectionElement.classList.toggle('collapsed');
+            
+            if (sectionElement.classList.contains('collapsed')) {
+                toggleIcon.textContent = '▶';
+            } else {
+                toggleIcon.textContent = '▼';
+            }
+        }
+
+        // Render management sections
+        function renderManagementSections() {
+            const container = document.getElementById('managementSections');
+            container.innerHTML = '';
+            
+            const sections = [
+                { key: 'weekly-reports', name: '주간보고관리', icon: '📊' },
+                { key: 'travel-reports', name: '출장보고관리', icon: '✈️' },
+                { key: 'hardware-management', name: '하드웨어관리', icon: '💻' },
+                { key: 'equipment-management', name: '장비관리', icon: '🔧' },
+                { key: 'external-training', name: '외부교육관리', icon: '🎓' }
+            ];
+            
+            sections.forEach(section => {
+                const allFields = fieldConfigs[section.key];
+                const fields = allFields.filter(field => !field.readonly);
+                const sectionHtml = `
+                    <div class="management-section" id="section-${section.key}">
+                        <div class="management-section-header">
+                        <div class="section-toggle">
+                            <button class="toggle-btn" onclick="toggleSection('${section.key}')">
+                                <span class="toggle-icon">▼</span>
+                            </button>
+                            <h3>${section.icon} ${section.name}</h3>
+                            <span class="field-count">(${fields.length}개 필드)</span>
+                        </div>
+                            <div class="admin-button-container">
+                                <button class="btn-admin btn-success" onclick="showAddFieldForm('${section.key}')">필드 추가</button>
+                                <button class="btn-admin btn-primary" onclick="saveSectionMapping('${section.key}')">매핑 저장</button>
+                                <button class="btn-admin btn-warning" onclick="testSectionMapping('${section.key}')">매핑 테스트</button>
+                            </div>
+                        </div>
+                        <div class="management-section-content">
+                            <div class="field-list">
+                                ${fields.length === 0 ? 
+                                    '<div class="empty-state"><i>📝</i><p>등록된 필드가 없습니다.<br>상단의 "필드 추가" 버튼을 클릭하여 새 필드를 추가하세요.</p></div>' :
+                                    fields.map(field => `
+                                        <div class="field-config-row" id="field-${field.id}">
+                                            <div class="field-properties">
+                                                <div class="field-prop">
+                                                    <label>필드명</label>
+                                                    <input type="text" value="${field.name}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'name', this.value)">
+                                                </div>
+                                                <div class="field-prop">
+                                                    <label>타입</label>
+                                                    <select onchange="updateFieldProperty('${section.key}', ${field.id}, 'type', this.value)">
+                                                        <option value="string" ${field.type === 'string' ? 'selected' : ''}>📝 문자열</option>
+                                                        <option value="number" ${field.type === 'number' ? 'selected' : ''}>🔢 숫자</option>
+                                                        <option value="calendar" ${field.type === 'calendar' ? 'selected' : ''}>📅 날짜</option>
+                                                        <option value="selector" ${field.type === 'selector' ? 'selected' : ''}>📋 선택</option>
+                                                    </select>
+                                                </div>
+                                                <div class="field-prop">
+                                                    <label>Codebeamer ID</label>
+                                                    <input type="text" value="${field.codebeamerId}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'codebeamerId', this.value)">
+                                                </div>
+                                                <div class="field-prop" style="display: ${field.type === 'selector' ? 'flex' : 'none'};" id="options-${field.id}">
+                                                    <label>선택 옵션</label>
+                                                    <input type="text" value="${field.options ? field.options.join(', ') : ''}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'options', this.value)" placeholder="옵션1,옵션2,옵션3">
+                                                </div>
+                                                <div class="field-prop">
+                                                    <label>
+                                                        <input type="checkbox" ${field.required ? 'checked' : ''} onchange="updateFieldProperty('${section.key}', ${field.id}, 'required', this.checked)"> 필수
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="field-actions">
+                                                <button class="btn-small btn-danger" onclick="removeField('${section.key}', ${field.id})">삭제</button>
+                                            </div>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += sectionHtml;
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            const totalSections = Object.keys(fieldConfigs).length;
+            const totalFields = Object.values(fieldConfigs).reduce((sum, fields) => {
+                const editableFields = fields.filter(field => !field.readonly);
+                return sum + editableFields.length;
+            }, 0);
+            const activeSections = Object.values(fieldConfigs).filter(fields => {
+                const editableFields = fields.filter(field => !field.readonly);
+                return editableFields.length > 0;
+            }).length;
+            
+            document.getElementById('totalSections').textContent = totalSections;
+            document.getElementById('totalFields').textContent = totalFields;
+            document.getElementById('activeSections').textContent = activeSections;
+        }
+
+        // Load field configurations
+        async function loadFieldConfigs() {
+            try {
+                const response = await fetch('/api/admin/field-configs');
+                const data = await response.json();
+                
+                if (data.success) {
+                    fieldConfigs = data.fieldConfigs;
+                    return true;
+                } else {
+                    console.error('Failed to load field configs:', data.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error loading field configs:', error);
+                return false;
+            }
+        }
+
+        // Save field configurations
+        async function saveFieldConfigs() {
+            try {
+                const response = await fetch('/api/admin/field-configs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fieldConfigs })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('Field configs saved successfully');
+                    return true;
+                } else {
+                    console.error('Failed to save field configs:', data.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error saving field configs:', error);
+                return false;
+            }
+        }
+
+        // Save section mapping
+        async function saveSectionMapping(section) {
+            console.log(`Saving mapping for ${section}:`, fieldConfigs[section]);
+            const saved = await saveFieldConfigs();
+            
+            if (saved) {
+                alert(`${section} 필드 매핑이 저장되었습니다.`);
+            } else {
+                alert('필드 매핑 저장에 실패했습니다.');
+            }
+        }
+
+        // Test section mapping
+        async function testSectionMapping(section) {
+            console.log(`Testing mapping for ${section}:`, fieldConfigs[section]);
+            
+            try {
+                const response = await fetch('/api/admin/test-field-mapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        section: section,
+                        fieldConfigs: fieldConfigs[section]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`${section} 필드 매핑 테스트가 성공했습니다.\n트래커: ${data.trackerName}\n필드 수: ${data.fieldCount}`);
+                } else {
+                    alert(`필드 매핑 테스트 실패: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error testing field mapping:', error);
+                alert('필드 매핑 테스트 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Show add field form for specific section
+        function showAddFieldForm(section) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>새 필드 추가 - ${getSectionName(section)}</h3>
+                        <button class="modal-close" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field-type-selector">
+                            <button class="field-type-btn active" data-type="string">📝 문자열</button>
+                            <button class="field-type-btn" data-type="number">🔢 숫자</button>
+                            <button class="field-type-btn" data-type="calendar">📅 날짜</button>
+                            <button class="field-type-btn" data-type="selector">📋 선택</button>
+                        </div>
+                        
+                        <div class="field-config-form">
+                            <div class="field-config-row">
+                                <span class="field-label">필드명</span>
+                                <input type="text" id="newFieldName" placeholder="필드명을 입력하세요">
+                            </div>
+                            
+                            <div class="field-config-row">
+                                <span class="field-label">Codebeamer 필드 ID</span>
+                                <input type="text" id="newFieldCodebeamerId" placeholder="custom_field_xxx 또는 name, description 등">
+                            </div>
+                            
+                            <div class="field-config-row" id="newSelectorOptionsRow" style="display: none;">
+                                <span class="field-label">선택 옵션</span>
+                                <input type="text" id="newFieldOptions" placeholder="옵션1,옵션2,옵션3 (쉼표로 구분)">
+                            </div>
+                            
+                            <div class="field-config-row">
+                                <span class="field-label">필수 여부</span>
+                                <input type="checkbox" id="newFieldRequired">
+                            </div>
+                            
+                            
+                            <div class="field-preview">
+                                <h5>미리보기</h5>
+                                <div id="newFieldPreview"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-admin btn-success" onclick="addFieldToSection('${section}')">필드 추가</button>
+                        <button class="btn-admin btn-warning" onclick="previewNewField()">미리보기</button>
+                        <button class="btn-admin btn-secondary" onclick="closeModal()">취소</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            initializeModalFieldTypeSelector();
+            previewNewField();
+        }
+
+        // Get section name by key
+        function getSectionName(sectionKey) {
+            const names = {
+                'weekly-reports': '주간보고관리',
+                'travel-reports': '출장보고관리',
+                'hardware-management': '하드웨어관리',
+                'equipment-management': '장비관리',
+                'external-training': '외부교육관리'
+            };
+            return names[sectionKey] || sectionKey;
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Initialize modal field type selector
+        function initializeModalFieldTypeSelector() {
+            const typeButtons = document.querySelectorAll('.modal-overlay .field-type-btn');
+            typeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    typeButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateModalFieldConfigForm(this.dataset.type);
+                });
+            });
+        }
+
+        // Update modal field configuration form
+        function updateModalFieldConfigForm(type) {
+            const selectorOptionsRow = document.getElementById('newSelectorOptionsRow');
+            if (type === 'selector') {
+                selectorOptionsRow.style.display = 'flex';
+            } else {
+                selectorOptionsRow.style.display = 'none';
+            }
+            previewNewField();
+        }
+
+        // Preview new field
+        function previewNewField() {
+            const type = document.querySelector('.modal-overlay .field-type-btn.active').dataset.type;
+            const name = document.getElementById('newFieldName').value || '샘플 필드';
+            const required = document.getElementById('newFieldRequired').checked;
+            const options = document.getElementById('newFieldOptions').value;
+            
+            const preview = document.getElementById('newFieldPreview');
+            let html = `<label>${name}${required ? ' *' : ''}</label>`;
+            
+            if (type === 'selector' && options) {
+                const optionList = options.split(',').map(opt => opt.trim());
+                html += `<select>`;
+                html += '<option value="">선택하세요</option>';
+                optionList.forEach(option => {
+                    html += `<option value="${option}">${option}</option>`;
+                });
+                html += '</select>';
+            } else {
+                const inputType = fieldTypes[type].inputType;
+                html += `<input type="${inputType}" placeholder="${fieldTypes[type].name} 입력">`;
+            }
+            
+            preview.innerHTML = html;
+        }
+
+        // Add field to specific section
+        async function addFieldToSection(section) {
+            const name = document.getElementById('newFieldName').value;
+            const codebeamerId = document.getElementById('newFieldCodebeamerId').value;
+            const type = document.querySelector('.modal-overlay .field-type-btn.active').dataset.type;
+            const required = document.getElementById('newFieldRequired').checked;
+            const options = document.getElementById('newFieldOptions').value;
+            
+            if (!name || !codebeamerId) {
+                alert('필드명과 Codebeamer 필드 ID는 필수입니다.');
+                return;
+            }
+            
+            if (type === 'selector' && !options) {
+                alert('선택 필드의 경우 옵션을 입력해주세요.');
+                return;
+            }
+            
+            const fieldConfig = {
+                id: Date.now(),
+                name: name,
+                codebeamerId: codebeamerId,
+                type: type,
+                required: required,
+                readonly: false,
+                options: type === 'selector' ? options.split(',').map(opt => opt.trim()) : []
+            };
+            
+            fieldConfigs[section].push(fieldConfig);
+            const saved = await saveFieldConfigs();
+            
+            if (saved) {
+                renderManagementSections();
+                updateStats();
+                closeModal();
+                alert('필드가 추가되었습니다.');
+            } else {
+                alert('필드 저장에 실패했습니다.');
+            }
+        }
+
+        // Update field property
+        async function updateFieldProperty(section, fieldId, property, value) {
+            const field = fieldConfigs[section].find(f => f.id === fieldId);
+            if (field) {
+                if (property === 'options') {
+                    field[property] = value ? value.split(',').map(opt => opt.trim()) : [];
+                } else {
+                    field[property] = value;
+                }
+                
+                // Show/hide options field based on type
+                if (property === 'type') {
+                    const optionsField = document.getElementById(`options-${fieldId}`);
+                    if (optionsField) {
+                        optionsField.style.display = value === 'selector' ? 'flex' : 'none';
+                    }
+                }
+                
+                const saved = await saveFieldConfigs();
+                if (!saved) {
+                    alert('필드 업데이트에 실패했습니다.');
+                }
+            }
+        }
+
+        // System settings functions
+        function saveSystemSettings() {
+            console.log('Saving system settings...');
+            alert('시스템 설정이 저장되었습니다.');
+        }
+
+        function testConnection() {
+            checkConnection();
+        }
+
+        function syncAllData() {
+            console.log('Syncing all data...');
+            alert('전체 데이터 동기화를 시작합니다.');
+        }
+
+        async function resetSettings() {
+            if (confirm('정말로 모든 설정을 초기화하시겠습니까?')) {
+                fieldConfigs = {
+                    'weekly-reports': [],
+                    'travel-reports': [],
+                    'hardware-management': [],
+                    'equipment-management': [],
+                    'external-training': []
+                };
+                const saved = await saveFieldConfigs();
+                
+                if (saved) {
+                    renderManagementSections();
+                    updateStats();
+                    alert('설정이 초기화되었습니다.');
+                } else {
+                    alert('설정 초기화에 실패했습니다.');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

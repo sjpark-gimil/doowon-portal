@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - 주간보고관리 (Dynamic)</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
+</head>
+
+<body>
+    <div class="portal-header">
+        <h1>📊 주간보고관리 (Dynamic)</h1>
+        <p>동적 필드 시스템을 사용한 주간보고서 관리</p>
+    </div>
+
+    <nav class="portal-nav">
+        <div class="portal-nav-container">
+            <div class="portal-nav-title">두원공조 포탈</div>
+            <div class="portal-nav-actions">
+                <span class="portal-username">사용자: <%= username %></span>
+                <a href="/logout" class="btn-portal btn-secondary">로그아웃</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="portal-section">
+        <!-- 새 보고서 작성 -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>📝 새 주간보고서 작성</h3>
+                <p>동적으로 구성된 필드를 사용하여 주간보고서를 작성합니다.</p>
+            </div>
+            <div class="section-content">
+                <div class="dynamic-form-container">
+                    <div id="dynamicForm" class="loading">
+                        <i>⏳</i>
+                        <p>필드 구성을 불러오는 중...</p>
+                    </div>
+                    
+                    <div id="validationErrors" class="validation-errors">
+                        <h5>입력 오류:</h5>
+                        <ul id="errorList"></ul>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn-portal btn-primary" onclick="submitForm()">보고서 제출</button>
+                        <button class="btn-portal btn-secondary" onclick="clearForm()">초기화</button>
+                        <button class="btn-portal btn-info" onclick="previewForm()">미리보기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 보고서 목록 -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>📋 주간보고서 목록</h3>
+                <p>제출된 주간보고서를 확인하고 관리합니다.</p>
+            </div>
+            <div class="section-content">
+                <div id="dynamicTable" class="loading">
+                    <i>⏳</i>
+                    <p>데이터를 불러오는 중...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Forms Script -->
+    <script src="/js/dynamic-forms.js"></script>
+    
+    <script>
+        let currentFormData = {};
+        let mockReports = [
+            {
+                id: 1,
+                name: "2024년 1월 1주차 주간보고",
+                custom_field_1: "1주차",
+                submittedAt: "2024-01-08",
+                custom_field_2: "개발팀",
+                custom_field_3: "주간 업무 진행 상황 보고",
+                custom_field_4: "다음 주 계획 수립",
+                attachments: "report_20240108.pdf",
+                status: "완료"
+            },
+            {
+                id: 2,
+                name: "2024년 1월 2주차 주간보고",
+                custom_field_1: "2주차",
+                submittedAt: "2024-01-15",
+                custom_field_2: "개발팀",
+                custom_field_3: "프로젝트 진행 상황 및 이슈 보고",
+                custom_field_4: "이슈 해결 및 다음 단계 진행",
+                attachments: "report_20240115.pdf",
+                status: "검토중"
+            }
+        ];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDynamicForm();
+            loadDynamicTable();
+        });
+
+        // Load dynamic form
+        async function loadDynamicForm() {
+            try {
+                await loadDynamicForm('dynamicForm', 'weekly-reports');
+                console.log('Dynamic form loaded successfully');
+            } catch (error) {
+                console.error('Error loading dynamic form:', error);
+                document.getElementById('dynamicForm').innerHTML = 
+                    '<div class="empty-state"><i>❌</i><p>필드 구성을 불러올 수 없습니다.</p></div>';
+            }
+        }
+
+        // Load dynamic table
+        async function loadDynamicTable() {
+            try {
+                await loadDynamicTable('dynamicTable', mockReports, 'weekly-reports');
+                console.log('Dynamic table loaded successfully');
+            } catch (error) {
+                console.error('Error loading dynamic table:', error);
+                document.getElementById('dynamicTable').innerHTML = 
+                    '<div class="empty-state"><i>❌</i><p>데이터를 불러올 수 없습니다.</p></div>';
+            }
+        }
+
+        // Submit form
+        function submitForm() {
+            const validation = validateForm();
+            
+            if (!validation.isValid) {
+                showValidationErrors(validation.errors);
+                return;
+            }
+
+            const formData = getFormData();
+            console.log('Submitting form data:', formData);
+            
+            // Here you would typically send the data to the server
+            alert('보고서가 제출되었습니다!');
+            
+            // Add to mock data
+            const newReport = {
+                id: mockReports.length + 1,
+                ...formData,
+                submittedAt: new Date().toISOString().split('T')[0],
+                status: '대기중'
+            };
+            mockReports.unshift(newReport);
+            
+            // Reload table
+            loadDynamicTable();
+            
+            // Clear form
+            clearForm();
+            hideValidationErrors();
+        }
+
+        // Clear form
+        function clearForm() {
+            clearForm();
+            hideValidationErrors();
+        }
+
+        // Preview form
+        function previewForm() {
+            const formData = getFormData();
+            console.log('Form preview data:', formData);
+            alert('미리보기 기능은 개발 중입니다.');
+        }
+
+        // Show validation errors
+        function showValidationErrors(errors) {
+            const errorContainer = document.getElementById('validationErrors');
+            const errorList = document.getElementById('errorList');
+            
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+            
+            errorContainer.classList.add('show');
+        }
+
+        // Hide validation errors
+        function hideValidationErrors() {
+            document.getElementById('validationErrors').classList.remove('show');
+        }
+
+        // Edit item
+        function editItem(itemId) {
+            const item = mockReports.find(report => report.id === itemId);
+            if (item) {
+                setFormData(item);
+                document.getElementById('dynamicForm').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Delete item
+        function deleteItem(itemId) {
+            if (confirm('이 보고서를 삭제하시겠습니까?')) {
+                mockReports = mockReports.filter(report => report.id !== itemId);
+                loadDynamicTable();
+            }
+        }
+    </script>
+</body>
+</html>
