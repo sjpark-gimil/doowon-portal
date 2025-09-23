@@ -4230,6 +4230,7 @@ body.admin-login-body .admin-login-container {
     margin-right: 8px;
 }
 
+
 .modal-body .field-preview {
     background: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -4288,6 +4289,8 @@ body.admin-login-body .admin-login-container {
     font-size: 12px;
     color: #666;
     font-weight: 500;
+    padding-left: 5px;
+
 }
 
 .field-prop input,
@@ -4302,13 +4305,14 @@ body.admin-login-body .admin-login-container {
 .field-prop select:focus {
     outline: none;
     border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 .field-prop label input[type="checkbox"] {
     margin-right: 8px;
     width: auto;
 }
+
+
 
 /* Field Config Row Updates */
 .field-config-row {
@@ -4333,7 +4337,7 @@ body.admin-login-body .admin-login-container {
     background: #e3f2fd;
     padding: 20px;
     border-radius: 8px;
-    border-left: 4px solid #2196f3;
+    border-left: 4px solid #667eea;
 }
 
 .management-overview p {

@@ -264,18 +264,16 @@
                                                         <option value="selector" ${field.type === 'selector' ? 'selected' : ''}>📋 선택</option>
                                                     </select>
                                                 </div>
-                                                <div class="field-prop">
-                                                    <label>Codebeamer ID</label>
-                                                    <input type="text" value="${field.codebeamerId}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'codebeamerId', this.value)">
-                                                </div>
                                                 <div class="field-prop" style="display: ${field.type === 'selector' ? 'flex' : 'none'};" id="options-${field.id}">
                                                     <label>선택 옵션</label>
                                                     <input type="text" value="${field.options ? field.options.join(', ') : ''}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'options', this.value)" placeholder="옵션1,옵션2,옵션3">
                                                 </div>
-                                                <div class="field-prop">
-                                                    <label>
-                                                        <input type="checkbox" ${field.required ? 'checked' : ''} onchange="updateFieldProperty('${section.key}', ${field.id}, 'required', this.checked)"> 필수
-                                                    </label>
+                                                <div class="field-prop required-field-prop">
+                                                    <label>필수 여부</label>
+                                                    <select onchange="updateFieldProperty('${section.key}', ${field.id}, 'required', this.value === 'required')">
+                                                        <option value="optional" ${!field.required ? 'selected' : ''}>선택</option>
+                                                        <option value="required" ${field.required ? 'selected' : ''}>필수</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                             <div class="field-actions">
@@ -419,11 +417,6 @@
                                 <input type="text" id="newFieldName" placeholder="필드명을 입력하세요">
                             </div>
                             
-                            <div class="field-config-row">
-                                <span class="field-label">Codebeamer 필드 ID</span>
-                                <input type="text" id="newFieldCodebeamerId" placeholder="custom_field_xxx 또는 name, description 등">
-                            </div>
-                            
                             <div class="field-config-row" id="newSelectorOptionsRow" style="display: none;">
                                 <span class="field-label">선택 옵션</span>
                                 <input type="text" id="newFieldOptions" placeholder="옵션1,옵션2,옵션3 (쉼표로 구분)">
@@ -431,8 +424,12 @@
                             
                             <div class="field-config-row">
                                 <span class="field-label">필수 여부</span>
-                                <input type="checkbox" id="newFieldRequired">
+                                <select id="newFieldRequired">
+                                    <option value="optional">선택</option>
+                                    <option value="required">필수</option>
+                                </select>
                             </div>
+                            
                             
                             
                             <div class="field-preview">
@@ -501,7 +498,7 @@
         function previewNewField() {
             const type = document.querySelector('.modal-overlay .field-type-btn.active').dataset.type;
             const name = document.getElementById('newFieldName').value || '샘플 필드';
-            const required = document.getElementById('newFieldRequired').checked;
+            const required = document.getElementById('newFieldRequired').value === 'required';
             const options = document.getElementById('newFieldOptions').value;
             
             const preview = document.getElementById('newFieldPreview');
@@ -526,13 +523,12 @@
         // Add field to specific section
         async function addFieldToSection(section) {
             const name = document.getElementById('newFieldName').value;
-            const codebeamerId = document.getElementById('newFieldCodebeamerId').value;
             const type = document.querySelector('.modal-overlay .field-type-btn.active').dataset.type;
-            const required = document.getElementById('newFieldRequired').checked;
+            const required = document.getElementById('newFieldRequired').value === 'required';
             const options = document.getElementById('newFieldOptions').value;
             
-            if (!name || !codebeamerId) {
-                alert('필드명과 Codebeamer 필드 ID는 필수입니다.');
+            if (!name) {
+                alert('필드명은 필수입니다.');
                 return;
             }
             
@@ -544,7 +540,7 @@
             const fieldConfig = {
                 id: Date.now(),
                 name: name,
-                codebeamerId: codebeamerId,
+                codebeamerId: `field_${Date.now()}`, // Auto-generated ID
                 type: type,
                 required: required,
                 readonly: false,
