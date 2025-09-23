@@ -53,6 +53,24 @@
         "type": "number",
         "required": false,
         "readonly": false
+      },
+      {
+        "id": 1758606908010,
+        "name": "문자열 테스트",
+        "codebeamerId": "field_1758606908010",
+        "type": "string",
+        "required": false,
+        "readonly": false,
+        "options": []
+      },
+      {
+        "id": 1758606963391,
+        "name": "숫자 테스트",
+        "codebeamerId": "field_1758606963391",
+        "type": "number",
+        "required": false,
+        "readonly": false,
+        "options": []
       }
     ],
     "travel-reports": [
@@ -189,6 +207,19 @@
         "type": "string",
         "required": false,
         "readonly": false
+      },
+      {
+        "id": 1758607132373,
+        "name": "선택테스트",
+        "codebeamerId": "field_1758607132373",
+        "type": "selector",
+        "required": false,
+        "readonly": false,
+        "options": [
+          "선택1",
+          "선택2",
+          "선택3"
+        ]
       }
     ],
     "equipment-management": [
@@ -205,7 +236,7 @@
         "name": "제조사",
         "codebeamerId": "custom_field_15",
         "type": "string",
-        "required": true,
+        "required": false,
         "readonly": false
       },
       {
@@ -228,8 +259,8 @@
         "id": 6,
         "name": "구매일",
         "codebeamerId": "custom_field_18",
-        "type": "calendar",
-        "required": false,
+        "type": "selector",
+        "required": true,
         "readonly": false
       },
       {
@@ -372,5 +403,5 @@
       }
     ]
   },
-  "lastUpdated": "2025-09-23T03:03:59.552Z"
+  "lastUpdated": "2025-09-23T05:59:12.415Z"
 }

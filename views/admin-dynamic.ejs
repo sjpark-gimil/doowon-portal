@@ -30,16 +30,14 @@
         <div class="codebeamer-info">
             <h4>🔗 Codebeamer 연결 정보</h4>
             <div class="info-item">
-                <span class="info-label">서버 URL</span>
-                <span class="info-value"><%= serverUrl %></span>
+                <span class="info-label">서버 URL : <%= serverUrl %></span>
             </div>
             <div class="info-item">
-                <span class="info-label">연결 상태</span>
-                <span class="info-value" id="connectionStatus">확인 중...</span>
-            </div>
-        </div>
+                <span class="info-label">연결 상태 : <span class="info-value" id="connectionStatus">확인 중...</span></span>
+            </div>    
+            <br>
+        
 
-        <div class="mapping-summary">
             <h4>📊 필드 매핑 현황</h4>
             <div class="mapping-stats">
                 <div class="stat-item">
@@ -55,19 +53,7 @@
                     <span>활성 섹션:  <strong id="activeSections">0</strong>개</span>
                 </div>
             </div>
-        </div>
-
-        <!-- 개요 섹션 -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3>📋 필드 관리 개요</h3>
-                <p>각 관리 섹션에서 개별적으로 필드를 추가, 수정, 삭제할 수 있습니다.</p>
-            </div>
-            <div class="section-content">
-                <div class="management-overview">
-                    <p>아래 각 관리 섹션에서 해당 섹션에 맞는 필드를 직접 관리하세요. 각 섹션의 "필드 추가" 버튼을 클릭하여 새 필드를 추가할 수 있습니다.</p>
-                </div>
-            </div>
+       
         </div>
 
         <!-- 관리 섹션별 필드 설정 -->
@@ -170,10 +156,10 @@
                 const statusElement = document.getElementById('connectionStatus');
                 
                 if (data.success) {
-                    statusElement.textContent = '연결됨';
+                    statusElement.textContent = '양호';
                     statusElement.style.color = '#28a745';
                 } else {
-                    statusElement.textContent = '연결 실패';
+                    statusElement.textContent = '실패';
                     statusElement.style.color = '#dc3545';
                 }
             } catch (error) {
@@ -239,7 +225,9 @@
                             <span class="field-count">(${fields.length}개 필드)</span>
                         </div>
                             <div class="admin-button-container">
-                                <button class="btn-admin btn-success" onclick="showAddFieldForm('${section.key}')">필드 추가</button>
+                                <button class="btn-add-field" onclick="showAddFieldForm('${section.key}')" title="필드 추가">
+                                    ✚
+                                </button>
                                 <button class="btn-admin btn-primary" onclick="saveSectionMapping('${section.key}')">매핑 저장</button>
                                 <button class="btn-admin btn-warning" onclick="testSectionMapping('${section.key}')">매핑 테스트</button>
                             </div>
@@ -271,13 +259,15 @@
                                                 <div class="field-prop required-field-prop">
                                                     <label>필수 여부</label>
                                                     <select onchange="updateFieldProperty('${section.key}', ${field.id}, 'required', this.value === 'required')">
-                                                        <option value="optional" ${!field.required ? 'selected' : ''}>선택</option>
+                                                        <option value="optional" ${!field.required ? 'selected' : ''}>필수 아님</option>
                                                         <option value="required" ${field.required ? 'selected' : ''}>필수</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="field-actions">
-                                                <button class="btn-small btn-danger" onclick="removeField('${section.key}', ${field.id})">삭제</button>
+                                                <button class="btn-delete-icon" onclick="removeField('${section.key}', ${field.id})" title="삭제">
+                                                    <img src="/images/trash.png" alt="삭제" style="width: 20px; height: 20px;">
+                                                </button>
                                             </div>
                                         </div>
                                     `).join('')
@@ -439,8 +429,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-admin btn-success" onclick="addFieldToSection('${section}')">필드 추가</button>
-                        <button class="btn-admin btn-warning" onclick="previewNewField()">미리보기</button>
+                        <button class="btn-admin btn-primary" onclick="addFieldToSection('${section}')">추가</button>
                         <button class="btn-admin btn-secondary" onclick="closeModal()">취소</button>
                     </div>
                 </div>
