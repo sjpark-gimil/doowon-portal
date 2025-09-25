@@ -1212,3 +1212,223 @@ app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => 
     }
 });
 
+// Equipment Management API endpoints
+app.get('/api/equipment', requireAuth, async (req, res) => {
+    try {
+        // Mock data for now - in real implementation, this would fetch from database
+        const mockEquipment = [
+            {
+                id: 1,
+                name: "생산라인 장비 A",
+                category: "생산장비",
+                manufacturer: "삼성전자",
+                model: "SM-2000",
+                serialNumber: "SN123456",
+                purchaseDate: "2023-01-15",
+                warrantyExpiry: "2025-01-15",
+                location: "1층 생산라인",
+                responsible: "김철수",
+                specifications: "고성능 생산 장비",
+                notes: "정기 점검 필요"
+            }
+        ];
+        
+        res.json({
+            success: true,
+            items: mockEquipment
+        });
+    } catch (error) {
+        console.error('Error fetching equipment:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch equipment data'
+        });
+    }
+});
+
+app.post('/api/equipment', requireAuth, async (req, res) => {
+    try {
+        const equipmentData = req.body;
+        
+        // Mock save - in real implementation, this would save to database
+        console.log('Saving equipment:', equipmentData);
+        
+        res.json({
+            success: true,
+            message: 'Equipment saved successfully',
+            id: Date.now() // Mock ID
+        });
+    } catch (error) {
+        console.error('Error saving equipment:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save equipment'
+        });
+    }
+});
+
+// Travel Reports API endpoints
+app.get('/api/travel-reports', requireAuth, async (req, res) => {
+    try {
+        // Mock data for now
+        const mockReports = [
+            {
+                id: 1,
+                title: "서울 출장 보고서",
+                destination: "서울",
+                purpose: "회의",
+                startDate: "2024-01-15",
+                endDate: "2024-01-17",
+                participants: "김영희, 박민수",
+                transportation: 50000,
+                accommodation: 200000,
+                meals: 100000,
+                other: 30000,
+                content: "고객사와의 중요한 회의 진행",
+                status: "submitted"
+            }
+        ];
+        
+        res.json({
+            success: true,
+            items: mockReports
+        });
+    } catch (error) {
+        console.error('Error fetching travel reports:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch travel reports'
+        });
+    }
+});
+
+app.post('/api/travel-reports', requireAuth, async (req, res) => {
+    try {
+        const reportData = req.body;
+        
+        // Mock save
+        console.log('Saving travel report:', reportData);
+        
+        res.json({
+            success: true,
+            message: 'Travel report saved successfully',
+            id: Date.now()
+        });
+    } catch (error) {
+        console.error('Error saving travel report:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save travel report'
+        });
+    }
+});
+
+// External Training API endpoints
+app.get('/api/external-training', requireAuth, async (req, res) => {
+    try {
+        // Mock data for now
+        const mockTrainings = [
+            {
+                id: 1,
+                title: "AI 기술 교육",
+                provider: "한국AI연구원",
+                type: "기술교육",
+                startDate: "2024-02-01",
+                endDate: "2024-02-03",
+                location: "서울 강남구",
+                participants: "김개발, 이연구",
+                tuition: 500000,
+                accommodation: 200000,
+                transportation: 100000,
+                meals: 150000,
+                content: "머신러닝 기초 및 실무 적용",
+                outcome: "AI 기술 역량 향상",
+                status: "approved"
+            }
+        ];
+        
+        res.json({
+            success: true,
+            items: mockTrainings
+        });
+    } catch (error) {
+        console.error('Error fetching external training:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch external training data'
+        });
+    }
+});
+
+app.post('/api/external-training', requireAuth, async (req, res) => {
+    try {
+        const trainingData = req.body;
+        
+        // Mock save
+        console.log('Saving external training:', trainingData);
+        
+        res.json({
+            success: true,
+            message: 'External training saved successfully',
+            id: Date.now()
+        });
+    } catch (error) {
+        console.error('Error saving external training:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save external training'
+        });
+    }
+});
+
+// Weekly Reports API endpoints
+app.get('/api/weekly-reports', requireAuth, async (req, res) => {
+    try {
+        // Mock data for now
+        const mockReports = [
+            {
+                id: 1,
+                title: "2024년 1월 1주차 주간보고",
+                week: "2024-W01",
+                date: "2024-01-05",
+                businessDivision: "기술개발부",
+                thisWeekContent: "프로젝트 A 개발 진행",
+                nextWeekContent: "프로젝트 A 테스트 및 배포",
+                status: "submitted"
+            }
+        ];
+        
+        res.json({
+            success: true,
+            items: mockReports
+        });
+    } catch (error) {
+        console.error('Error fetching weekly reports:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch weekly reports'
+        });
+    }
+});
+
+app.post('/api/weekly-reports', requireAuth, async (req, res) => {
+    try {
+        const reportData = req.body;
+        
+        // Mock save
+        console.log('Saving weekly report:', reportData);
+        
+        res.json({
+            success: true,
+            message: 'Weekly report saved successfully',
+            id: Date.now()
+        });
+    } catch (error) {
+        console.error('Error saving weekly report:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save weekly report'
+        });
+    }
+});
+

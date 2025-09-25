@@ -53,24 +53,6 @@
         "type": "number",
         "required": false,
         "readonly": false
-      },
-      {
-        "id": 1758606908010,
-        "name": "문자열 테스트",
-        "codebeamerId": "field_1758606908010",
-        "type": "string",
-        "required": false,
-        "readonly": false,
-        "options": []
-      },
-      {
-        "id": 1758606963391,
-        "name": "숫자 테스트",
-        "codebeamerId": "field_1758606963391",
-        "type": "number",
-        "required": false,
-        "readonly": false,
-        "options": []
       }
     ],
     "travel-reports": [
@@ -400,8 +382,17 @@
         "type": "string",
         "required": false,
         "readonly": false
+      },
+      {
+        "id": 1758609673498,
+        "name": "tttt",
+        "codebeamerId": "field_1758609673498",
+        "type": "string",
+        "required": false,
+        "readonly": false,
+        "options": []
       }
     ]
   },
-  "lastUpdated": "2025-09-23T05:59:12.415Z"
+  "lastUpdated": "2025-09-23T07:25:15.260Z"
 }

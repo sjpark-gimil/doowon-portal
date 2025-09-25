@@ -164,63 +164,34 @@
             </div>
 
             <div class="create-form" id="createForm" style="display: none;">
-                <form id="hardwareForm">
-                    <input type="hidden" id="hardwareId" name="id">
+                <div class="dynamic-form-container">
+                    <div id="dynamicForm" class="loading">
+                        <i>⏳</i>
+                        <p>필드 구성을 불러오는 중...</p>
+                    </div>
                     
-                    <div class="form-group">
-                        <label for="hardwareName">하드웨어명 (HW 버전과 동일)</label>
-                        <input type="text" id="hardwareName" name="name" readonly placeholder="HW 버전을 입력하면 자동으로 설정됩니다">
+                    <div id="validationErrors" class="validation-errors">
+                        <h5>입력 오류:</h5>
+                        <ul id="errorList"></ul>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="hwVersion">HW 버전 *</label>
-                            <input type="text" id="hwVersion" name="hwVersion" required placeholder="하드웨어 버전을 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="swVersion">SW 버전</label>
-                            <input type="text" id="swVersion" name="swVersion" placeholder="소프트웨어 버전을 입력하세요">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="vehicleType">차종</label>
-                            <select id="vehicleType" name="vehicleType">
-                                <option value="">선택하세요</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="changeType">변경사항</label>
-                            <select id="changeType" name="changeType">
-                                <option value="">선택하세요</option>
-                                <option value="H/W">HW</option>
-                                <option value="S/W">SW</option>
-                            </select>
+                    
+                    <!-- Attachment Field -->
+                    <div class="field-group">
+                        <h4>첨부파일</h4>
+                        <div class="field-item">
+                            <span class="field-label">첨부파일</span>
+                            <div class="field-input-container">
+                                <input type="file" id="hardwareAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="changeReason">변경 사유 *</label>
-                            <input type="text" id="changeReason" name="changeReason" required placeholder="변경 사유를 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="releaseDate">Release 일자</label>
-                            <input type="date" id="releaseDate" name="releaseDate">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description">설명 *</label>
-                        <textarea id="description" name="description" rows="4" required placeholder="하드웨어에 대한 설명을 입력하세요..."></textarea>
-                    </div>
-
+                    
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="submit" class="btn-primary" id="submitButton">하드웨어 등록</button>
+                        <button type="button" class="btn-primary" onclick="submitHardwareForm()">하드웨어 등록</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -258,9 +229,13 @@
         </div>
     </div>
 
+    <!-- Dynamic Forms Script -->
+    <script src="/js/dynamic-forms.js"></script>
+    
     <script>
         let hardwareItems = [];
         let vehicleTypes = [];
+        let formHandler = new DynamicFormHandler();
 
         // Load vehicle types from API
         async function loadVehicleTypes() {
@@ -349,7 +324,7 @@
                 
                 if (data.success) {
                     hardwareItems = data.items;
-                    renderHardwareList();
+                    await renderHardwareList();
                 } else {
                     console.error('Failed to load hardware items:', data.error);
                     showError('하드웨어 목록을 불러오는데 실패했습니다.');
@@ -362,7 +337,7 @@
             }
         }
 
-        function renderHardwareList() {
+        async function renderHardwareList() {
             const hardwareList = document.getElementById('hardwareList');
             const emptyState = document.getElementById('emptyState');
             
@@ -377,93 +352,12 @@
             
             const filteredItems = filterHardwareItems();
             
-            hardwareList.innerHTML = `
-                <table class="hardware-table">
-                    <thead>
-                        <tr>
-                            <th>하드웨어명</th>
-                            <th>상태</th>
-                            <th>HW 버전</th>
-                            <th>SW 버전</th>
-                            <th>차종</th>
-                            <th>변경사항</th>
-                            <th>변경 사유</th>
-                            <th>Release 일자</th>
-                            <th>등록자</th>
-                            <th>수정일</th>
-                            <th>작업</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filteredItems.map(item => `
-                            <tr>
-                                <td><strong>${item.name}</strong></td>
-                                <td><span class="status-badge status-${getStatusClass(item.status)}">${item.status}</span></td>
-                                <td>${item.hwVersion || 'N/A'}</td>
-                                <td>${item.swVersion || 'N/A'}</td>
-                                <td>${item.vehicleType || 'N/A'}</td>
-                                <td>${item.changeType || 'N/A'}</td>
-                                <td>${item.changeReason || 'N/A'}</td>
-                                <td>${item.releaseDate || 'N/A'}</td>
-                                <td>${item.submittedBy || 'N/A'}</td>
-                                <td>${item.modifiedAt ? new Date(item.modifiedAt).toLocaleDateString() : 'N/A'}</td>
-                                <td>
-                                    <button class="btn-small btn-info" onclick="viewHardware(${item.id})">상세보기</button>
-                                    <button class="btn-small btn-danger" onclick="deleteHardware(${item.id})">삭제</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                
-                <!-- Mobile Cards -->
-                ${filteredItems.map(item => `
-                    <div class="mobile-card">
-                        <div class="mobile-card-header">
-                            <div class="mobile-card-title">${item.name}</div>
-                            <span class="mobile-card-status status-${getStatusClass(item.status)}">${item.status}</span>
-                        </div>
-                        <div class="mobile-card-details">
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">HW 버전</div>
-                                <div class="mobile-card-detail-value">${item.hwVersion || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">SW 버전</div>
-                                <div class="mobile-card-detail-value">${item.swVersion || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">차종</div>
-                                <div class="mobile-card-detail-value">${item.vehicleType || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">변경사항</div>
-                                <div class="mobile-card-detail-value">${item.changeType || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">변경 사유</div>
-                                <div class="mobile-card-detail-value">${item.changeReason || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">Release 일자</div>
-                                <div class="mobile-card-detail-value">${item.releaseDate || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">등록자</div>
-                                <div class="mobile-card-detail-value">${item.submittedBy || 'N/A'}</div>
-                            </div>
-                            <div class="mobile-card-detail">
-                                <div class="mobile-card-detail-label">수정일</div>
-                                <div class="mobile-card-detail-value">${item.modifiedAt ? new Date(item.modifiedAt).toLocaleDateString() : 'N/A'}</div>
-                            </div>
-                        </div>
-                        <div class="mobile-card-actions">
-                            <button class="btn-small btn-info" onclick="viewHardware(${item.id})">상세보기</button>
-                            <button class="btn-small btn-danger" onclick="deleteHardware(${item.id})">삭제</button>
-                        </div>
-                    </div>
-                `).join('')}
-            `;
+            try {
+                await formHandler.renderTable('hardwareList', filteredItems, 'hardware-management');
+            } catch (error) {
+                console.error('Error rendering dynamic table:', error);
+                hardwareList.innerHTML = '<div class="empty-state"><i>❌</i><p>테이블을 불러올 수 없습니다.</p></div>';
+            }
         }
 
         function getStatusClass(status) {
@@ -498,15 +392,97 @@
             });
         }
 
-        function showCreateForm() {
+        async function showCreateForm() {
             document.getElementById('createForm').style.display = 'block';
-            document.getElementById('hardwareForm').reset();
-            document.getElementById('submitButton').textContent = '하드웨어 등록';
+            await loadDynamicForm();
         }
 
         function hideCreateForm() {
             document.getElementById('createForm').style.display = 'none';
-            document.getElementById('hardwareForm').reset();
+            formHandler.clearForm();
+            hideValidationErrors();
+        }
+
+        // Load dynamic form
+        async function loadDynamicForm() {
+            try {
+                await formHandler.renderForm('dynamicForm', 'hardware-management');
+                console.log('Dynamic form loaded successfully');
+            } catch (error) {
+                console.error('Error loading dynamic form:', error);
+                document.getElementById('dynamicForm').innerHTML = 
+                    '<div class="empty-state"><i>❌</i><p>필드 구성을 불러올 수 없습니다.</p></div>';
+            }
+        }
+
+        // Submit hardware form
+        async function submitHardwareForm() {
+            const validation = formHandler.validateForm();
+            
+            if (!validation.isValid) {
+                showValidationErrors(validation.errors);
+                return;
+            }
+
+            const formData = formHandler.getFormData();
+            console.log('Submitting hardware form data:', formData);
+            
+            try {
+                const response = await fetch('/api/hardware', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('하드웨어가 등록되었습니다!');
+                    hideCreateForm();
+                    loadHardwareItems();
+                } else {
+                    alert('하드웨어 등록에 실패했습니다: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error submitting hardware form:', error);
+                alert('하드웨어 등록 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Show validation errors
+        function showValidationErrors(errors) {
+            const errorContainer = document.getElementById('validationErrors');
+            const errorList = document.getElementById('errorList');
+            
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+            
+            errorContainer.classList.add('show');
+        }
+
+        // Hide validation errors
+        function hideValidationErrors() {
+            document.getElementById('validationErrors').classList.remove('show');
+        }
+
+        // Edit item function for dynamic table
+        function editItem(itemId) {
+            const item = hardwareItems.find(h => h.id === itemId);
+            if (item) {
+                showCreateForm();
+                formHandler.setFormData(item);
+            }
+        }
+
+        // Delete item function for dynamic table
+        function deleteItem(itemId) {
+            deleteHardware(itemId);
         }
 
         function filterHardware() {
@@ -578,35 +554,7 @@
             alert('오류: ' + message);
         }
 
-        document.getElementById('hardwareForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = {
-                name: document.getElementById('hardwareName').value,
-                description: document.getElementById('description').value,
-                hwVersion: document.getElementById('hwVersion').value,
-                swVersion: document.getElementById('swVersion').value,
-                vehicleType: document.getElementById('vehicleType').value,
-                changeType: document.getElementById('changeType').value,
-                changeReason: document.getElementById('changeReason').value,
-                releaseDate: document.getElementById('releaseDate').value
-            };
-            
-            if (!formData.hwVersion || !formData.description || !formData.changeReason) {
-                showError('H/W 버전, 설명, 변경 사유는 필수 입력 항목입니다.');
-                return;
-            }
-            
-            // Set hardware name to H/W version
-            formData.name = formData.hwVersion;
-            
-            saveHardware(formData);
-        });
 
-        // Auto-update hardware name when H/W version changes
-        document.getElementById('hwVersion').addEventListener('input', function() {
-            document.getElementById('hardwareName').value = this.value;
-        });
 
         document.addEventListener('DOMContentLoaded', function() {
             loadVehicleTypes();

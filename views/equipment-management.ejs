@@ -89,79 +89,34 @@
             </div>
 
             <div class="create-form" id="createForm" style="display: none;">
-                <form id="equipmentForm">
-                    <div class="form-group">
-                        <label for="equipmentName">장비명</label>
-                        <input type="text" id="equipmentName" name="name" required placeholder="장비명을 입력하세요">
+                <div class="dynamic-form-container">
+                    <div id="dynamicForm" class="loading">
+                        <i>⏳</i>
+                        <p>필드 구성을 불러오는 중...</p>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="category">카테고리</label>
-                            <select id="category" name="category" required>
-                                <option value="">선택하세요</option>
-                                <option value="production">생산장비</option>
-                                <option value="testing">측정장비</option>
-                                <option value="safety">안전장비</option>
-                                <option value="maintenance">정비장비</option>
-                                <option value="utility">유틸리티</option>
-                                <option value="other">기타</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="manufacturer">제조사</label>
-                            <input type="text" id="manufacturer" name="manufacturer" required placeholder="제조사명을 입력하세요">
+                    
+                    <div id="validationErrors" class="validation-errors">
+                        <h5>입력 오류:</h5>
+                        <ul id="errorList"></ul>
+                    </div>
+                    
+                    <!-- Attachment Field -->
+                    <div class="field-group">
+                        <h4>첨부파일</h4>
+                        <div class="field-item">
+                            <span class="field-label">첨부파일</span>
+                            <div class="field-input-container">
+                                <input type="file" id="equipmentAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="model">모델명</label>
-                            <input type="text" id="model" name="model" required placeholder="모델명을 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="serialNumber">시리얼 번호</label>
-                            <input type="text" id="serialNumber" name="serialNumber" required placeholder="시리얼 번호를 입력하세요">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="purchaseDate">구매일</label>
-                            <input type="date" id="purchaseDate" name="purchaseDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="warrantyExpiry">보증만료일</label>
-                            <input type="date" id="warrantyExpiry" name="warrantyExpiry">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="location">설치위치</label>
-                            <input type="text" id="location" name="location" placeholder="설치위치를 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="responsible">담당자</label>
-                            <input type="text" id="responsible" name="responsible" placeholder="담당자명을 입력하세요">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="specifications">사양</label>
-                        <textarea id="specifications" name="specifications" rows="4" placeholder="장비 사양을 입력하세요..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="notes">비고</label>
-                        <textarea id="notes" name="notes" rows="3" placeholder="추가 메모를 입력하세요..."></textarea>
-                    </div>
-
+                    
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="submit" class="btn-primary">장비 등록</button>
+                        <button type="button" class="btn-primary" onclick="submitEquipmentForm()">장비 등록</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -191,76 +146,22 @@
             </div>
 
             <div class="hardware-list" id="equipmentList">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>장비명</th>
-                            <th>상태</th>
-                            <th>카테고리</th>
-                            <th>시리얼번호</th>
-                            <th>담당자</th>
-                            <th>구매일</th>
-                            <th>위치</th>
-                            <th>보증만료</th>
-                            <th>작업</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>CNC 밀링 머신</strong></td>
-                            <td><span class="status-badge status-active">가동중</span></td>
-                            <td>생산장비</td>
-                            <td>CNC123456789</td>
-                            <td>김기술</td>
-                            <td>2023-03-15</td>
-                            <td>1공장 A라인</td>
-                            <td>2026-03-15</td>
-                            <td>
-                                <button class="btn-small btn-primary" onclick="editEquipment(1)">수정</button>
-                                <button class="btn-small btn-info" onclick="viewEquipment(1)">상세보기</button>
-                                <button class="btn-small btn-warning" onclick="maintenanceEquipment(1)">정비</button>
-                                <button class="btn-small btn-danger" onclick="deleteEquipment(1)">삭제</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>온도 측정기</strong></td>
-                            <td><span class="status-badge status-warning">정비중</span></td>
-                            <td>측정장비</td>
-                            <td>TEMP987654321</td>
-                            <td>이품질</td>
-                            <td>2022-08-20</td>
-                            <td>품질관리실</td>
-                            <td>2025-08-20</td>
-                            <td>
-                                <button class="btn-small btn-primary" onclick="editEquipment(2)">수정</button>
-                                <button class="btn-small btn-info" onclick="viewEquipment(2)">상세보기</button>
-                                <button class="btn-small btn-success" onclick="completeMaintenance(2)">정비완료</button>
-                                <button class="btn-small btn-danger" onclick="deleteEquipment(2)">삭제</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>안전벨트</strong></td>
-                            <td><span class="status-badge status-inactive">대기중</span></td>
-                            <td>안전장비</td>
-                            <td>SAFE123456789</td>
-                            <td>박안전</td>
-                            <td>2023-11-10</td>
-                            <td>안전장비실</td>
-                            <td>2026-11-10</td>
-                            <td>
-                                <button class="btn-small btn-primary" onclick="editEquipment(3)">수정</button>
-                                <button class="btn-small btn-info" onclick="viewEquipment(3)">상세보기</button>
-                                <button class="btn-small btn-success" onclick="assignEquipment(3)">배정</button>
-                                <button class="btn-small btn-danger" onclick="deleteEquipment(3)">삭제</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="loading" id="loadingIndicator" style="display: none;">
+                    <p>장비 목록을 불러오는 중...</p>
+                </div>
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <p>등록된 장비가 없습니다.</p>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Dynamic Forms Script -->
+    <script src="/js/dynamic-forms.js"></script>
+    
     <script>
+        let formHandler = new DynamicFormHandler();
+
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
                 .then(() => window.location.href = '/login')
@@ -284,14 +185,114 @@
             }
         });
 
-        function showCreateForm() {
+        async function showCreateForm() {
             document.getElementById('createForm').style.display = 'block';
-            document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+            await loadDynamicForm();
         }
 
         function hideCreateForm() {
             document.getElementById('createForm').style.display = 'none';
-            document.getElementById('equipmentForm').reset();
+            formHandler.clearForm();
+            hideValidationErrors();
+        }
+
+        // Load dynamic form
+        async function loadDynamicForm() {
+            try {
+                await formHandler.renderForm('dynamicForm', 'equipment-management');
+                console.log('Dynamic form loaded successfully');
+            } catch (error) {
+                console.error('Error loading dynamic form:', error);
+                document.getElementById('dynamicForm').innerHTML = 
+                    '<div class="empty-state"><i>❌</i><p>필드 구성을 불러올 수 없습니다.</p></div>';
+            }
+        }
+
+        // Submit equipment form
+        async function submitEquipmentForm() {
+            const validation = formHandler.validateForm();
+            
+            if (!validation.isValid) {
+                showValidationErrors(validation.errors);
+                return;
+            }
+
+            const formData = formHandler.getFormData();
+            console.log('Submitting equipment form data:', formData);
+            
+            try {
+                const response = await fetch('/api/equipment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('장비가 등록되었습니다!');
+                    hideCreateForm();
+                    // Reload equipment list if exists
+                } else {
+                    alert('장비 등록에 실패했습니다: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error submitting equipment form:', error);
+                alert('장비 등록 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Show validation errors
+        function showValidationErrors(errors) {
+            const errorContainer = document.getElementById('validationErrors');
+            const errorList = document.getElementById('errorList');
+            
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+            
+            errorContainer.classList.add('show');
+        }
+
+        // Hide validation errors
+        function hideValidationErrors() {
+            document.getElementById('validationErrors').classList.remove('show');
+        }
+
+        // Load equipment items
+        async function loadEquipmentItems() {
+            try {
+                const response = await fetch('/api/equipment');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const equipmentList = document.getElementById('equipmentList');
+                    if (equipmentList) {
+                        await formHandler.renderTable('equipmentList', data.items, 'equipment-management');
+                    }
+                } else {
+                    console.error('Failed to load equipment items:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading equipment items:', error);
+            }
+        }
+
+        // Edit item function for dynamic table
+        function editItem(itemId) {
+            // Implementation for editing equipment
+            console.log('Editing equipment:', itemId);
+        }
+
+        // Delete item function for dynamic table
+        function deleteItem(itemId) {
+            // Implementation for deleting equipment
+            console.log('Deleting equipment:', itemId);
         }
 
         function filterEquipment() {
@@ -329,14 +330,11 @@
             }
         }
 
-        document.getElementById('equipmentForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Saving equipment...');
-            hideCreateForm();
-        });
 
         // Check if we should show create form on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadEquipmentItems();
+            
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'create') {
                 showCreateForm();

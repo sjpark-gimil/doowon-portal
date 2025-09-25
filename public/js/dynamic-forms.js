@@ -70,23 +70,16 @@ class DynamicFormHandler {
      */
     groupFieldsByCategory(fieldConfigs) {
         const groups = {
-            '기본 정보': [],
-            '상세 정보': [],
-            '추가 정보': []
+            '필수 항목': [],
+            '선택 항목': []
         };
 
-        fieldConfigs.forEach((field, index) => {
-            let groupName = '기본 정보';
-            
-            // Categorize fields based on their position and type
-            if (index > 3) {
-                groupName = '상세 정보';
+        fieldConfigs.forEach((field) => {
+            if (field.required) {
+                groups['필수 항목'].push(field);
+            } else {
+                groups['선택 항목'].push(field);
             }
-            if (index > 6) {
-                groupName = '추가 정보';
-            }
-
-            groups[groupName].push(field);
         });
 
         // Remove empty groups
@@ -181,6 +174,13 @@ class DynamicFormHandler {
                         inputElement.appendChild(optionElement);
                     });
                 }
+                break;
+
+            case 'attachment':
+                inputElement = document.createElement('input');
+                inputElement.type = 'file';
+                inputElement.multiple = true;
+                inputElement.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif';
                 break;
 
             default:

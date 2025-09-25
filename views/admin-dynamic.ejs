@@ -13,12 +13,12 @@
 <body>
     <div class="admin-header">
         <h1>⚙️ Admin Settings</h1>
-        <p>Codebeamer 필드 동적 관리 및 시스템 설정</p>
+        <p>Codebeamer 필드 매핑 관리 및 시스템 설정</p>
     </div>
 
     <nav class="admin-nav">
         <div class="admin-nav-container">
-            <div class="admin-nav-title">관리자 패널</div>
+            <div class="admin-nav-title">Codebeamer 연동 설정</div>
             <div class="admin-nav-actions">
                 <span class="admin-username">관리자: <%= username %></span>
                 <a href="/admin/logout" class="btn-admin btn-secondary">로그아웃</a>
@@ -94,7 +94,8 @@
                 </div>
                 <div class="admin-button-container">
                     <button class="btn-admin btn-primary" onclick="saveSystemSettings()">설정 저장</button>
-                    <button class="btn-admin btn-success" onclick="testConnection()">연결 테스트</button>
+                    <button class="btn-admin btn-success" onclick="saveAllMappings()">전체 매핑 저장</button>
+                    <button class="btn-admin btn-info" onclick="testConnection()">연결 테스트</button>
                     <button class="btn-admin btn-warning" onclick="syncAllData()">전체 동기화</button>
                     <button class="btn-admin btn-danger" onclick="resetSettings()">설정 초기화</button>
                 </div>
@@ -226,7 +227,7 @@
                         </div>
                             <div class="admin-button-container">
                                 <button class="btn-add-field" onclick="showAddFieldForm('${section.key}')" title="필드 추가">
-                                    ✚
+                                    <img src="/images/plus-sign.png" alt="필드 추가" style="width: 40px; height: 40px;">
                                 </button>
                                 <button class="btn-admin btn-primary" onclick="saveSectionMapping('${section.key}')">매핑 저장</button>
                                 <button class="btn-admin btn-warning" onclick="testSectionMapping('${section.key}')">매핑 테스트</button>
@@ -571,6 +572,23 @@
                 if (!saved) {
                     alert('필드 업데이트에 실패했습니다.');
                 }
+            }
+        }
+
+        // Save all mappings at once
+        async function saveAllMappings() {
+            try {
+                const saved = await saveFieldConfigs();
+                
+                if (saved) {
+                    alert('모든 필드 매핑이 저장되었습니다!');
+                    console.log('All field configs saved:', fieldConfigs);
+                } else {
+                    alert('필드 매핑 저장에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('Error saving all mappings:', error);
+                alert('저장 중 오류가 발생했습니다.');
             }
         }
 

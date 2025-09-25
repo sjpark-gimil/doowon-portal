@@ -2,7 +2,6 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
     background: white;
     border-radius: 8px;
     overflow: hidden;
@@ -19,7 +18,7 @@
 }
 
 .data-table td {
-    padding: 12px 8px;
+    padding: 12px;
     border-bottom: 1px solid #dee2e6;
     vertical-align: middle;
 }

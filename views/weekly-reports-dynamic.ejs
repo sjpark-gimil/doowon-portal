@@ -105,10 +105,13 @@
             loadDynamicTable();
         });
 
+        // Initialize dynamic form handler
+        const formHandler = new DynamicFormHandler();
+
         // Load dynamic form
         async function loadDynamicForm() {
             try {
-                await loadDynamicForm('dynamicForm', 'weekly-reports');
+                await formHandler.renderForm('dynamicForm', 'weekly-reports');
                 console.log('Dynamic form loaded successfully');
             } catch (error) {
                 console.error('Error loading dynamic form:', error);
@@ -120,7 +123,7 @@
         // Load dynamic table
         async function loadDynamicTable() {
             try {
-                await loadDynamicTable('dynamicTable', mockReports, 'weekly-reports');
+                await formHandler.renderTable('dynamicTable', mockReports, 'weekly-reports');
                 console.log('Dynamic table loaded successfully');
             } catch (error) {
                 console.error('Error loading dynamic table:', error);

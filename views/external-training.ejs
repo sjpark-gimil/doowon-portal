@@ -89,96 +89,34 @@
             </div>
 
             <div class="create-form" id="createForm" style="display: none;">
-                <form id="trainingForm">
-                    <div class="form-group">
-                        <label for="trainingTitle">교육명</label>
-                        <input type="text" id="trainingTitle" name="title" required placeholder="교육명을 입력하세요">
+                <div class="dynamic-form-container">
+                    <div id="dynamicForm" class="loading">
+                        <i>⏳</i>
+                        <p>필드 구성을 불러오는 중...</p>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="trainingProvider">교육기관</label>
-                            <input type="text" id="trainingProvider" name="provider" required placeholder="교육기관명을 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="trainingType">교육유형</label>
-                            <select id="trainingType" name="type" required>
-                                <option value="">선택하세요</option>
-                                <option value="technical">기술교육</option>
-                                <option value="safety">안전교육</option>
-                                <option value="management">관리교육</option>
-                                <option value="certification">자격증교육</option>
-                                <option value="language">어학교육</option>
-                                <option value="other">기타</option>
-                            </select>
-                        </div>
+                    
+                    <div id="validationErrors" class="validation-errors">
+                        <h5>입력 오류:</h5>
+                        <ul id="errorList"></ul>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="startDate">교육시작일</label>
-                            <input type="date" id="startDate" name="startDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="endDate">교육종료일</label>
-                            <input type="date" id="endDate" name="endDate" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="location">교육장소</label>
-                            <input type="text" id="location" name="location" required placeholder="교육장소를 입력하세요">
-                        </div>
-                        <div class="form-group">
-                            <label for="participants">참석자</label>
-                            <input type="text" id="participants" name="participants" placeholder="참석자명을 입력하세요 (쉼표로 구분)">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="trainingCost">교육비</label>
-                        <div class="cost-grid">
-                            <div class="cost-item">
-                                <label for="tuition">수강료</label>
-                                <input type="number" id="tuition" name="tuition" placeholder="0" min="0">
-                            </div>
-                            <div class="cost-item">
-                                <label for="accommodation">숙박비</label>
-                                <input type="number" id="accommodation" name="accommodation" placeholder="0" min="0">
-                            </div>
-                            <div class="cost-item">
-                                <label for="transportation">교통비</label>
-                                <input type="number" id="transportation" name="transportation" placeholder="0" min="0">
-                            </div>
-                            <div class="cost-item">
-                                <label for="meals">식비</label>
-                                <input type="number" id="meals" name="meals" placeholder="0" min="0">
+                    
+                    <!-- Attachment Field -->
+                    <div class="field-group">
+                        <h4>첨부파일</h4>
+                        <div class="field-item">
+                            <span class="field-label">첨부파일</span>
+                            <div class="field-input-container">
+                                <input type="file" id="trainingAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
                             </div>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="trainingContent">교육내용</label>
-                        <textarea id="trainingContent" name="content" rows="6" required placeholder="교육 내용을 작성하세요..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="expectedOutcome">기대효과</label>
-                        <textarea id="expectedOutcome" name="outcome" rows="4" placeholder="교육을 통해 얻고자 하는 효과를 작성하세요..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="trainingAttachments">첨부파일</label>
-                        <input type="file" id="trainingAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
-                        <small>지원 형식: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</small>
-                    </div>
-
+                    
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="submit" class="btn-primary">교육신청 저장</button>
+                        <button type="button" class="btn-primary" onclick="submitTrainingForm()">교육신청 저장</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -208,71 +146,22 @@
             </div>
 
             <div class="reports-list" id="trainingsList">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>교육명</th>
-                            <th>상태</th>
-                            <th>교육기관</th>
-                            <th>기간</th>
-                            <th>유형</th>
-                            <th>총 비용</th>
-                            <th>참석자</th>
-                            <th>신청자</th>
-                            <th>작업</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>CNC 프로그래밍 고급과정</strong></td>
-                            <td><span class="status-badge status-submitted">신청됨</span></td>
-                            <td>한국기술교육원</td>
-                            <td>2024-02-15 ~ 2024-02-20</td>
-                            <td>기술교육</td>
-                            <td>500,000원</td>
-                            <td>김기술, 이공정</td>
-                            <td>김기술</td>
-                            <td>
-                                <button class="btn-small btn-info" onclick="viewTraining(1)">보기</button>
-                                <button class="btn-small btn-warning" onclick="downloadTraining(1)">다운로드</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>안전보건교육</strong></td>
-                            <td><span class="status-badge status-draft">임시저장</span></td>
-                            <td>산업안전보건공단</td>
-                            <td>2024-03-01 ~ 2024-03-03</td>
-                            <td>안전교육</td>
-                            <td>200,000원</td>
-                            <td>박안전, 최품질</td>
-                            <td>박안전</td>
-                            <td>
-                                <button class="btn-small btn-primary" onclick="editTraining(2)">수정</button>
-                                <button class="btn-small btn-success" onclick="submitTraining(2)">신청</button>
-                                <button class="btn-small btn-danger" onclick="deleteTraining(2)">삭제</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>ISO 9001 품질경영시스템</strong></td>
-                            <td><span class="status-badge status-success">수료</span></td>
-                            <td>한국품질재단</td>
-                            <td>2024-01-10 ~ 2024-01-12</td>
-                            <td>자격증교육</td>
-                            <td>300,000원</td>
-                            <td>정품질, 한관리</td>
-                            <td>정품질</td>
-                            <td>
-                                <button class="btn-small btn-info" onclick="viewTraining(3)">보기</button>
-                                <button class="btn-small btn-success" onclick="downloadCertificate(3)">수료증</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="loading" id="loadingIndicator" style="display: none;">
+                    <p>교육 신청 목록을 불러오는 중...</p>
+                </div>
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <p>등록된 교육 신청이 없습니다.</p>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Dynamic Forms Script -->
+    <script src="/js/dynamic-forms.js"></script>
+    
     <script>
+        let formHandler = new DynamicFormHandler();
+
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
                 .then(() => window.location.href = '/login')
@@ -296,16 +185,114 @@
             }
         });
 
-        function showCreateForm() {
+        async function showCreateForm() {
             document.getElementById('createForm').style.display = 'block';
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('startDate').value = today;
-            document.getElementById('endDate').value = today;
+            await loadDynamicForm();
         }
 
         function hideCreateForm() {
             document.getElementById('createForm').style.display = 'none';
-            document.getElementById('trainingForm').reset();
+            formHandler.clearForm();
+            hideValidationErrors();
+        }
+
+        // Load dynamic form
+        async function loadDynamicForm() {
+            try {
+                await formHandler.renderForm('dynamicForm', 'external-training');
+                console.log('Dynamic form loaded successfully');
+            } catch (error) {
+                console.error('Error loading dynamic form:', error);
+                document.getElementById('dynamicForm').innerHTML = 
+                    '<div class="empty-state"><i>❌</i><p>필드 구성을 불러올 수 없습니다.</p></div>';
+            }
+        }
+
+        // Submit training form
+        async function submitTrainingForm() {
+            const validation = formHandler.validateForm();
+            
+            if (!validation.isValid) {
+                showValidationErrors(validation.errors);
+                return;
+            }
+
+            const formData = formHandler.getFormData();
+            console.log('Submitting training form data:', formData);
+            
+            try {
+                const response = await fetch('/api/external-training', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('교육신청이 저장되었습니다!');
+                    hideCreateForm();
+                    // Reload training list if exists
+                } else {
+                    alert('교육신청 저장에 실패했습니다: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error submitting training form:', error);
+                alert('교육신청 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Show validation errors
+        function showValidationErrors(errors) {
+            const errorContainer = document.getElementById('validationErrors');
+            const errorList = document.getElementById('errorList');
+            
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+            
+            errorContainer.classList.add('show');
+        }
+
+        // Hide validation errors
+        function hideValidationErrors() {
+            document.getElementById('validationErrors').classList.remove('show');
+        }
+
+        // Edit item function for dynamic table
+        function editItem(itemId) {
+            // Implementation for editing training
+            console.log('Editing training:', itemId);
+        }
+
+        // Delete item function for dynamic table
+        function deleteItem(itemId) {
+            // Implementation for deleting training
+            console.log('Deleting training:', itemId);
+        }
+
+        // Load external training items
+        async function loadExternalTrainingItems() {
+            try {
+                const response = await fetch('/api/external-training');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const trainingsList = document.getElementById('trainingsList');
+                    if (trainingsList) {
+                        await formHandler.renderTable('trainingsList', data.items, 'external-training');
+                    }
+                } else {
+                    console.error('Failed to load external training items:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading external training items:', error);
+            }
         }
 
         function filterTrainings() {
@@ -343,14 +330,11 @@
             console.log('Downloading certificate for training:', id);
         }
 
-        document.getElementById('trainingForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Saving training...');
-            hideCreateForm();
-        });
 
         // Check if we should show create form on page load
         document.addEventListener('DOMContentLoaded', function() {
+            loadExternalTrainingItems();
+            
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'create') {
                 showCreateForm();
