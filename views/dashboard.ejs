@@ -167,7 +167,7 @@
                     <a href="/external-training" class="card-button">바로가기</a>
                 </div>
 
-                <div class="dashboard-card">
+                <div class="dashboard-card mobile-hide">
                     <div class="card-icon">🔗</div>
                     <h3>외부시스템 바로가기</h3>
                     <p>외부 시스템 및 도구 접근</p>
@@ -195,7 +195,7 @@
             mobileNav.classList.toggle('active');
         }
 
-        // Close mobile menu when clicking outside
+
         document.addEventListener('click', function(event) {
             const mobileNav = document.getElementById('mobileNav');
             const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
@@ -207,7 +207,6 @@
             }
         });
 
-        // Quick action functions that navigate to pages and show create forms
         function createWeeklyReport() {
             window.location.href = '/weekly-reports?action=create';
         }
@@ -229,25 +228,20 @@
         }
 
         function openFileUploader() {
-            // External redirection to file uploader (different port)
-            // You can update the port number as needed
             const fileUploaderUrl = 'http://' + window.location.hostname + ':3001';
             window.open(fileUploaderUrl, '_blank');
         }
 
         function openGanttChart() {
-            // External redirection to Gantt chart system
-            // You can update the URL as needed
+
             const ganttUrl = 'http://' + window.location.hostname + ':3002';
             window.open(ganttUrl, '_blank');
         }
 
-        // Global variables for pagination
         let currentPage = 1;
         let totalPages = 1;
         let totalItems = 0;
 
-        // Load assigned items when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadAssignedItems(1);
         });
@@ -273,8 +267,7 @@
                     displayAssignedItems(data.items);
                     updatePaginationControls();
                     document.getElementById('assignedCount').textContent = `${data.total}건`;
-                    
-                    // Show "View All" button if there are more items
+         
                     if (data.hasMore) {
                         document.getElementById('viewAllBtn').style.display = 'inline-block';
                     }

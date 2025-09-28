@@ -2256,8 +2256,7 @@ select.report-select option {
 .card-buttons .card-button {
     flex: 1;
     text-align: center;
-    padding: 10px 15px;
-    font-size: 0.9em;
+    padding: 12px 6px;
 }
 
 .quick-actions {
@@ -3297,6 +3296,85 @@ select.report-select option {
         padding: 12px 15px;
     }
     
+    /* Mobile-specific date input improvements */
+    .form-group input[type="date"],
+    .dynamic-form-container .field-input[type="date"] {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        padding: 12px 15px !important;
+        min-height: 44px !important; /* Better touch target */
+        border-radius: 8px !important;
+        background-color: white;
+        color: #495057;
+        border: 2px solid #e9ecef !important;
+        box-sizing: border-box !important;
+        width: 140% !important; /* Take full width like other inputs */
+
+    }
+    
+    .form-group input[type="date"]:focus,
+    .dynamic-form-container .field-input[type="date"]:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+    
+    /* Ensure date input text is readable and calendar is functional */
+    .form-group input[type="date"]::-webkit-datetime-edit,
+    .dynamic-form-container .field-input[type="date"]::-webkit-datetime-edit {
+        color: #495057;
+        font-size: 16px;
+        padding: 0;
+    }
+    
+    .form-group input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+    .dynamic-form-container .field-input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+        padding: 0;
+    }
+    
+    /* Keep calendar picker functional but improve appearance */
+    .form-group input[type="date"]::-webkit-calendar-picker-indicator,
+    .dynamic-form-container .field-input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.7;
+        padding: 4px;
+        margin-right: 4px;
+    }
+    
+    .form-group input[type="date"]::-webkit-calendar-picker-indicator:hover,
+    .dynamic-form-container .field-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+    }
+    
+    /* Mobile improvements for dynamic form inputs - override base styles */
+    .dynamic-form-container .field-input {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        padding: 12px 15px !important;
+        min-height: 44px !important; /* Better touch target */
+        border-radius: 8px !important;
+        border: 2px solid #e9ecef !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+    
+    .dynamic-form-container .field-input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Fix select dropdowns - remove duplicate arrows */
+    .dynamic-form-container select.field-input {
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        background-size: 16px 12px !important;
+        padding-right: 40px !important;
+        width: 170% !important;
+    }
+    
     .filter-controls {
         flex-direction: column;
         align-items: stretch;
@@ -3317,6 +3395,27 @@ select.report-select option {
     
     .mobile-card {
         display: block;
+    }
+    
+    /* Hide management list sections on mobile - only show "Assigned to me" on dashboard */
+    .hardware-list,
+    .equipment-list,
+    .reports-list,
+    #hardwareList,
+    #equipmentList,
+    #reportsList,
+    #trainingsList {
+        display: none !important;
+    }
+    
+    /* Hide entire content sections that contain management lists on mobile */
+    .mobile-hide {
+        display: none !important;
+    }
+    
+    /* Hide external system quick access card on mobile dashboard */
+    .dashboard-card.mobile-hide {
+        display: none !important;
     }
     
     .report-actions,
@@ -3485,6 +3584,43 @@ select.report-select option {
     
     .mobile-card-actions .btn-small {
         min-width: auto;
+    }
+    
+    /* Enhanced styling for smaller mobile devices */
+    .dynamic-form-container .field-input {
+        font-size: 16px !important;
+        padding: 14px 12px !important;
+        min-height: 48px !important; /* Larger touch target for smaller screens */
+        border-radius: 6px !important;
+        border: 2px solid #e9ecef !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .form-group input[type="date"],
+    .dynamic-form-container .field-input[type="date"] {
+        font-size: 16px !important;
+        padding: 14px 12px !important;
+        min-height: 48px !important;
+        border-radius: 6px !important;
+        border: 2px solid #e9ecef !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .form-group input[type="date"]::-webkit-calendar-picker-indicator,
+    .dynamic-form-container .field-input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.7;
+        padding: 4px;
+        margin-right: 4px;
+    }
+    
+    .form-group input[type="date"]::-webkit-datetime-edit,
+    .dynamic-form-container .field-input[type="date"]::-webkit-datetime-edit {
+        font-size: 16px;
+        color: #495057;
     }
 }
 
@@ -3724,17 +3860,11 @@ body.admin-login-body .admin-login-container {
     border: 1px solid #e9ecef;
 }
 
-.field-group h4 {
-    margin: 0 0 1rem 0;
-    color: #495057;
-    font-size: 1rem;
-}
-
 .field-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 1rem 0;
+    padding: 1rem;
     border-bottom: 1px solid #e9ecef;
 }
 
@@ -3955,6 +4085,7 @@ body.admin-login-body .admin-login-container {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
+        padding: 0.5rem;
     }
     
     .field-mapping-input {
@@ -3964,6 +4095,52 @@ body.admin-login-body .admin-login-container {
     .mapping-stats {
         flex-direction: column;
         gap: 1rem;
+    }
+    .field-group {
+        padding: 0.5rem;
+    }
+    .field-group h4 {
+        margin: 0.5rem;
+    }
+    .field-item.mapping {       
+        padding: 0.5rem;
+    }
+    .field-item.dynamic {
+        padding: 0.5rem;
+    }
+    .field-label {
+        padding-left: 0.5rem;
+    }
+    .field-mapping-input {
+        width: 100%;
+    }
+    .mapping-summary {
+        padding: 0.5rem;
+    }
+    .mapping-summary h4 {
+        margin: 0.5rem;
+    }
+    .mapping-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .stat-item {
+        gap: 0.5rem;
+    }
+    .codebeamer-info {
+        padding: 0.5rem;
+    }
+    .codebeamer-info h4 {
+        margin: 0.5rem;
+    }
+    .info-item {
+        gap: 0.5rem;
+    }
+    .info-label {
+        padding-left: 0.5rem;
+    }
+    .info-value {
+        padding-right: 0.5rem;
     }
 }
 
@@ -4197,17 +4374,6 @@ body.admin-login-body .admin-login-container {
     box-sizing: border-box;
 }
 
-/* Ensure consistent width for all input types */
-.dynamic-form-container .field-input[type="text"],
-.dynamic-form-container .field-input[type="number"],
-.dynamic-form-container .field-input[type="date"],
-.dynamic-form-container .field-input[type="file"],
-.dynamic-form-container .field-input[type="email"],
-.dynamic-form-container .field-input[type="url"],
-.dynamic-form-container select.field-input {
-    width: 97.5%;
-    box-sizing: border-box;
-}
 
 .dynamic-form-container .field-input:focus {
     border-color: #ced4da;

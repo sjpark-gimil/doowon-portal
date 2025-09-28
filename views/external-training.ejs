@@ -120,7 +120,7 @@
             </div>
         </div>
 
-        <div class="content-section">
+        <div class="content-section mobile-hide">
             <div class="section-header">
                 <h3>교육 신청 목록</h3>
                 <div class="filter-controls">
@@ -173,7 +173,6 @@
             mobileNav.classList.toggle('active');
         }
 
-        // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const mobileNav = document.getElementById('mobileNav');
             const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
@@ -196,7 +195,6 @@
             hideValidationErrors();
         }
 
-        // Load dynamic form
         async function loadDynamicForm() {
             try {
                 await formHandler.renderForm('dynamicForm', 'external-training');
@@ -208,7 +206,6 @@
             }
         }
 
-        // Submit training form
         async function submitTrainingForm() {
             const validation = formHandler.validateForm();
             
@@ -234,7 +231,7 @@
                 if (data.success) {
                     alert('교육신청이 저장되었습니다!');
                     hideCreateForm();
-                    // Reload training list if exists
+    
                 } else {
                     alert('교육신청 저장에 실패했습니다: ' + data.error);
                 }
@@ -244,7 +241,7 @@
             }
         }
 
-        // Show validation errors
+
         function showValidationErrors(errors) {
             const errorContainer = document.getElementById('validationErrors');
             const errorList = document.getElementById('errorList');
@@ -259,24 +256,18 @@
             errorContainer.classList.add('show');
         }
 
-        // Hide validation errors
         function hideValidationErrors() {
             document.getElementById('validationErrors').classList.remove('show');
         }
 
-        // Edit item function for dynamic table
         function editItem(itemId) {
-            // Implementation for editing training
             console.log('Editing training:', itemId);
         }
 
-        // Delete item function for dynamic table
         function deleteItem(itemId) {
-            // Implementation for deleting training
             console.log('Deleting training:', itemId);
         }
 
-        // Load external training items
         async function loadExternalTrainingItems() {
             try {
                 const response = await fetch('/api/external-training');
@@ -330,8 +321,6 @@
             console.log('Downloading certificate for training:', id);
         }
 
-
-        // Check if we should show create form on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadExternalTrainingItems();
             

@@ -179,7 +179,6 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
         });
 
         if (response.data && response.data.items) {
-            // Process the assigned items according to the required format
             const assignedItems = response.data.items.map(item => ({
                 id: item.id,
                 name: item.name || 'Untitled',
@@ -202,7 +201,6 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
                 source: 'codebeamer'
             });
         } else {
-            // Fallback to mock data if no items found
             console.log('No assigned items found, returning mock data');
             const mockAssignedItems = [
                 {
@@ -273,7 +271,6 @@ app.get('/', requireAuth, (req, res) => {
     });
 });
 
-// Portal Routes
 app.get('/weekly-reports', requireAuth, (req, res) => {
     res.render('weekly-reports', {
         currentPath: '/weekly-reports',
@@ -328,7 +325,6 @@ app.get('/external-training', requireAuth, (req, res) => {
     });
 });
 
-// Admin Routes
 app.get('/admin/login', (req, res) => {
     res.render('admin-login', { error: null });
 });
@@ -521,10 +517,8 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
     }
 });
 
-// Hardware Management API Routes
-const HARDWARE_TRACKER_ID = 19601; // Version tracker for hardware/software version management
+const HARDWARE_TRACKER_ID = 19601;
 
-// Helper functions to map choice values to IDs
 function getVehicleTypeId(vehicleType) {
     const vehicleTypeMap = {
         'SW': 1,
@@ -539,8 +533,8 @@ function getVehicleTypeId(vehicleType) {
 
 function getChangeTypeId(changeType) {
     const changeTypeMap = {
-        'H/W': 1,  // Maps to "HW" in the tracker
-        'S/W': 2,  // Maps to "SW" in the tracker
+        'HW': 1,  
+        'SW': 2,  
         'HW': 1,
         'SW': 2
     };
@@ -565,8 +559,6 @@ app.get('/api/hardware', requireAuth, async (req, res) => {
         });
 
         const items = Array.isArray(response.data) ? response.data : response.data.itemRefs || [];
-        
-        // Fetch detailed information for each item
         const hardwareItems = [];
         for (const item of items) {
             try {
@@ -581,11 +573,8 @@ app.get('/api/hardware', requireAuth, async (req, res) => {
                 
                 const itemDetail = itemResponse.data;
                 console.log('Item detail structure:', JSON.stringify(itemDetail, null, 2));
-                
-                // Debug: Log the custom fields structure
                 console.log('Custom fields:', itemDetail.customFields);
                 
-                // Debug: Log each field individually
                 if (itemDetail.customFields) {
                     itemDetail.customFields.forEach((field, index) => {
                         console.log(`Field ${index}:`, {
@@ -599,12 +588,10 @@ app.get('/api/hardware', requireAuth, async (req, res) => {
                     });
                 }
                 
-                // Helper function to extract field value
                 const getFieldValue = (referenceId, fieldName = null) => {
                     const field = itemDetail.customFields?.find(f => f.field?.referenceId === referenceId);
                     if (!field) return '';
                     
-                    // Try different value access patterns
                     if (field.value) return field.value;
                     if (field.values && field.values.length > 0) {
                         if (field.values[0].name) return field.values[0].name;
@@ -632,7 +619,6 @@ app.get('/api/hardware', requireAuth, async (req, res) => {
                 });
             } catch (error) {
                 console.error(`Error fetching details for item ${item.id}:`, error.message);
-                // Add item with basic info if detail fetch fails
                 hardwareItems.push({
                     id: item.id,
                     name: item.name,
@@ -684,29 +670,29 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
         console.log('Creating hardware item at:', codebeamerUrl);
         
         const itemData = {
-            name: hwVersion, // HW 버전 becomes the item name
+            name: hwVersion, 
             description: description || '',
             customFields: [
                 {
-                    fieldId: 3, // HW 버전 (typeId: 0 = text, mandatory)
+                    fieldId: 3, 
                     name: "HW 버전",
                     value: hwVersion,
                     type: 'TextFieldValue'
                 },
                 {
-                    fieldId: 10002, // SW 버전 (typeId: 0 = text)
+                    fieldId: 10002, 
                     name: "SW 버전",
                     value: swVersion || '',
                     type: 'TextFieldValue'
                 },
                 {
-                    fieldId: 1000, // 차종 (typeId: 6 = choice)
+                    fieldId: 1000, 
                     name: "차종",
                     values: vehicleType ? [{ id: getVehicleTypeId(vehicleType), name: vehicleType, type: 'ChoiceOptionReference' }] : [],
                     type: 'ChoiceFieldValue'
                 },
                 {
-                    fieldId: 1001, // 변경사항 (typeId: 6 = choice)
+                    fieldId: 1001, 
                     name: "변경사항",
                     values: changeType ? [{ 
                         id: getChangeTypeId(changeType), 
@@ -716,13 +702,13 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
                     type: 'ChoiceFieldValue'
                 },
                 {
-                    fieldId: 10005, // 변경 사유 (typeId: 10 = text, mandatory)
+                    fieldId: 10005, 
                     name: "변경 사유",
                     value: changeReason || '',
                     type: 'TextFieldValue'
                 },
                 {
-                    fieldId: 10006, // Release 일자 (typeId: 3 = date)
+                    fieldId: 10006, 
                     name: "Release 일자",
                     value: releaseDate ? new Date(releaseDate).toISOString() : '',
                     type: 'DateFieldValue'
@@ -755,8 +741,6 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
     }
 });
 
-// Note: CodeBeamer does not support PUT API for updating items
-// Items can only be created (POST) or deleted (DELETE)
 
 app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
@@ -792,19 +776,15 @@ app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
     }
 });
 
-// Vehicle Type Configuration API Routes
 const VEHICLE_TYPES_FILE = path.join(__dirname, 'data', 'vehicle-types.json');
 
-// Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Default vehicle types
 const DEFAULT_VEHICLE_TYPES = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
 
-// Load vehicle types from file
 function loadVehicleTypes() {
     try {
         if (fs.existsSync(VEHICLE_TYPES_FILE)) {
@@ -817,7 +797,6 @@ function loadVehicleTypes() {
     return { vehicleTypes: DEFAULT_VEHICLE_TYPES };
 }
 
-// Save vehicle types to file
 function saveVehicleTypes(vehicleTypes) {
     try {
         const data = { vehicleTypes, lastUpdated: new Date().toISOString() };
@@ -829,7 +808,6 @@ function saveVehicleTypes(vehicleTypes) {
     }
 }
 
-// GET vehicle types
 app.get('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
     try {
         const data = loadVehicleTypes();
@@ -846,7 +824,6 @@ app.get('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
     }
 });
 
-// POST vehicle types
 app.post('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
     try {
         const { vehicleTypes } = req.body;
@@ -858,7 +835,7 @@ app.post('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
             });
         }
 
-        // Validate vehicle types
+    
         const validVehicleTypes = vehicleTypes.filter(type => 
             typeof type === 'string' && type.trim().length > 0
         );
@@ -891,7 +868,7 @@ app.post('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
     }
 });
 
-// GET vehicle types for hardware management (public endpoint)
+
 app.get('/api/vehicle-types', (req, res) => {
     try {
         const data = loadVehicleTypes();
@@ -908,10 +885,10 @@ app.get('/api/vehicle-types', (req, res) => {
     }
 });
 
-// Dynamic Field Configuration API Routes
+
 const FIELD_CONFIGS_FILE = path.join(__dirname, 'data', 'field-configs.json');
 
-// Default field configurations
+
 const DEFAULT_FIELD_CONFIGS = {
     'weekly-reports': [
         { id: 1, name: '보고서 제목', codebeamerId: 'name', type: 'string', required: true, readonly: true },
@@ -980,7 +957,7 @@ const DEFAULT_FIELD_CONFIGS = {
     ]
 };
 
-// Load field configurations from file
+
 function loadFieldConfigs() {
     try {
         if (fs.existsSync(FIELD_CONFIGS_FILE)) {
@@ -993,7 +970,7 @@ function loadFieldConfigs() {
     return { fieldConfigs: DEFAULT_FIELD_CONFIGS };
 }
 
-// Save field configurations to file
+
 function saveFieldConfigs(fieldConfigs) {
     try {
         const data = { fieldConfigs, lastUpdated: new Date().toISOString() };
@@ -1005,7 +982,6 @@ function saveFieldConfigs(fieldConfigs) {
     }
 }
 
-// GET field configurations
 app.get('/api/admin/field-configs', requireAdminAuth, (req, res) => {
     try {
         const data = loadFieldConfigs();
@@ -1022,7 +998,6 @@ app.get('/api/admin/field-configs', requireAdminAuth, (req, res) => {
     }
 });
 
-// POST field configurations
 app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
     try {
         const { fieldConfigs } = req.body;
@@ -1055,7 +1030,6 @@ app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
     }
 });
 
-// GET field configurations for specific section
 app.get('/api/admin/field-configs/:section', requireAdminAuth, (req, res) => {
     try {
         const { section } = req.params;
@@ -1081,7 +1055,6 @@ app.get('/api/admin/field-configs/:section', requireAdminAuth, (req, res) => {
     }
 });
 
-// GET field configurations for management pages (public endpoint)
 app.get('/api/field-configs/:section', (req, res) => {
     try {
         const { section } = req.params;
@@ -1107,7 +1080,6 @@ app.get('/api/field-configs/:section', (req, res) => {
     }
 });
 
-// GET Codebeamer field definitions for a tracker
 app.get('/api/codebeamer/trackers/:trackerId/fields', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
         return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
@@ -1125,7 +1097,6 @@ app.get('/api/codebeamer/trackers/:trackerId/fields', requireAuth, async (req, r
             }
         });
 
-        // Extract field definitions from tracker
         const fields = response.data.fieldDefinitions || [];
         const fieldDefinitions = fields.map(field => ({
             id: field.id,
@@ -1149,7 +1120,6 @@ app.get('/api/codebeamer/trackers/:trackerId/fields', requireAuth, async (req, r
     }
 });
 
-// Test field mapping with Codebeamer
 app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => {
     try {
         const { section, fieldConfigs } = req.body;
@@ -1161,7 +1131,6 @@ app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => 
             });
         }
 
-        // Get tracker ID for the section
         const trackerIds = {
             'weekly-reports': 'tracker_weekly',
             'travel-reports': 'tracker_travel',
@@ -1178,7 +1147,6 @@ app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => 
             });
         }
 
-        // Test connection to Codebeamer
         try {
             const testUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}`;
             const response = await axios.get(testUrl, {
@@ -1212,10 +1180,9 @@ app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => 
     }
 });
 
-// Equipment Management API endpoints
+
 app.get('/api/equipment', requireAuth, async (req, res) => {
     try {
-        // Mock data for now - in real implementation, this would fetch from database
         const mockEquipment = [
             {
                 id: 1,
@@ -1249,8 +1216,6 @@ app.get('/api/equipment', requireAuth, async (req, res) => {
 app.post('/api/equipment', requireAuth, async (req, res) => {
     try {
         const equipmentData = req.body;
-        
-        // Mock save - in real implementation, this would save to database
         console.log('Saving equipment:', equipmentData);
         
         res.json({
@@ -1267,10 +1232,8 @@ app.post('/api/equipment', requireAuth, async (req, res) => {
     }
 });
 
-// Travel Reports API endpoints
 app.get('/api/travel-reports', requireAuth, async (req, res) => {
     try {
-        // Mock data for now
         const mockReports = [
             {
                 id: 1,
@@ -1305,8 +1268,6 @@ app.get('/api/travel-reports', requireAuth, async (req, res) => {
 app.post('/api/travel-reports', requireAuth, async (req, res) => {
     try {
         const reportData = req.body;
-        
-        // Mock save
         console.log('Saving travel report:', reportData);
         
         res.json({
@@ -1323,10 +1284,8 @@ app.post('/api/travel-reports', requireAuth, async (req, res) => {
     }
 });
 
-// External Training API endpoints
 app.get('/api/external-training', requireAuth, async (req, res) => {
     try {
-        // Mock data for now
         const mockTrainings = [
             {
                 id: 1,
@@ -1364,7 +1323,6 @@ app.post('/api/external-training', requireAuth, async (req, res) => {
     try {
         const trainingData = req.body;
         
-        // Mock save
         console.log('Saving external training:', trainingData);
         
         res.json({
@@ -1381,10 +1339,8 @@ app.post('/api/external-training', requireAuth, async (req, res) => {
     }
 });
 
-// Weekly Reports API endpoints
 app.get('/api/weekly-reports', requireAuth, async (req, res) => {
     try {
-        // Mock data for now
         const mockReports = [
             {
                 id: 1,
@@ -1414,8 +1370,6 @@ app.get('/api/weekly-reports', requireAuth, async (req, res) => {
 app.post('/api/weekly-reports', requireAuth, async (req, res) => {
     try {
         const reportData = req.body;
-        
-        // Mock save
         console.log('Saving weekly report:', reportData);
         
         res.json({

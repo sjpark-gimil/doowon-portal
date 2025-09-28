@@ -120,7 +120,7 @@
             </div>
         </div>
 
-        <div class="content-section">
+        <div class="content-section mobile-hide">
             <div class="section-header">
                 <h3>장비 목록</h3>
                 <div class="filter-controls">
@@ -173,7 +173,6 @@
             mobileNav.classList.toggle('active');
         }
 
-        // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const mobileNav = document.getElementById('mobileNav');
             const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
@@ -196,7 +195,6 @@
             hideValidationErrors();
         }
 
-        // Load dynamic form
         async function loadDynamicForm() {
             try {
                 await formHandler.renderForm('dynamicForm', 'equipment-management');
@@ -208,7 +206,6 @@
             }
         }
 
-        // Submit equipment form
         async function submitEquipmentForm() {
             const validation = formHandler.validateForm();
             
@@ -234,7 +231,6 @@
                 if (data.success) {
                     alert('장비가 등록되었습니다!');
                     hideCreateForm();
-                    // Reload equipment list if exists
                 } else {
                     alert('장비 등록에 실패했습니다: ' + data.error);
                 }
@@ -244,7 +240,6 @@
             }
         }
 
-        // Show validation errors
         function showValidationErrors(errors) {
             const errorContainer = document.getElementById('validationErrors');
             const errorList = document.getElementById('errorList');
@@ -259,12 +254,10 @@
             errorContainer.classList.add('show');
         }
 
-        // Hide validation errors
         function hideValidationErrors() {
             document.getElementById('validationErrors').classList.remove('show');
         }
 
-        // Load equipment items
         async function loadEquipmentItems() {
             try {
                 const response = await fetch('/api/equipment');
@@ -283,15 +276,11 @@
             }
         }
 
-        // Edit item function for dynamic table
         function editItem(itemId) {
-            // Implementation for editing equipment
             console.log('Editing equipment:', itemId);
         }
 
-        // Delete item function for dynamic table
         function deleteItem(itemId) {
-            // Implementation for deleting equipment
             console.log('Deleting equipment:', itemId);
         }
 
@@ -331,7 +320,6 @@
         }
 
 
-        // Check if we should show create form on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadEquipmentItems();
             

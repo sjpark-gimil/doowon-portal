@@ -77,7 +77,7 @@
                     </div>
                 </div>
                 <div class="items-list" id="itemsList">
-                    <!-- Items will be populated here -->
+                
                 </div>
                 <div class="pagination" id="pagination" style="display: none;">
                     <button id="prevPage" onclick="changePage(-1)" disabled>이전</button>
@@ -133,7 +133,7 @@
         });
 
         browseBtn.addEventListener('click', (event) => {
-            event.stopPropagation(); // Prevent triggering upload area click
+            event.stopPropagation(); 
                 fileInput.click();
         });
 

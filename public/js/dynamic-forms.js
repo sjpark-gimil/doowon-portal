@@ -1,8 +1,3 @@
-/**
- * Dynamic Forms Handler for Doowon Portal
- * Handles dynamic field rendering and validation based on field configurations
- */
-
 class DynamicFormHandler {
     constructor() {
         this.fieldConfigs = {};
@@ -203,12 +198,10 @@ class DynamicFormHandler {
             inputElement.classList.add('readonly');
         }
 
-        // Set initial value if available
         if (this.formData[field.codebeamerId]) {
             inputElement.value = this.formData[field.codebeamerId];
         }
 
-        // Add event listener for data collection
         inputElement.addEventListener('input', (e) => {
             this.updateFormData(field.codebeamerId, e.target.value);
         });
@@ -226,16 +219,9 @@ class DynamicFormHandler {
         this.formData[fieldName] = value;
     }
 
-    /**
-     * Get current form data
-     */
     getFormData() {
         return { ...this.formData };
     }
-
-    /**
-     * Validate form data
-     */
     validateForm() {
         const errors = [];
         const fieldConfigs = this.fieldConfigs[this.currentSection] || [];
@@ -265,9 +251,6 @@ class DynamicFormHandler {
         };
     }
 
-    /**
-     * Clear form data
-     */
     clearForm() {
         this.formData = {};
         const inputs = document.querySelectorAll('.field-input');
@@ -317,31 +300,23 @@ class DynamicFormHandler {
             return;
         }
 
-        // Create table
         const table = document.createElement('table');
         table.className = 'dynamic-table';
 
-        // Create header
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
-        
-        // Add ID column
         const idHeader = document.createElement('th');
         idHeader.textContent = 'ID';
         headerRow.appendChild(idHeader);
-
-        // Add field columns
         fieldConfigs.forEach(field => {
             const th = document.createElement('th');
             th.textContent = field.name;
             headerRow.appendChild(th);
         });
 
-        // Add actions column
         const actionsHeader = document.createElement('th');
         actionsHeader.textContent = '작업';
         headerRow.appendChild(actionsHeader);
-
         thead.appendChild(headerRow);
         table.appendChild(thead);
 
@@ -361,12 +336,10 @@ class DynamicFormHandler {
                 const row = document.createElement('tr');
                 row.dataset.itemId = item.id;
 
-                // Add ID cell
                 const idCell = document.createElement('td');
                 idCell.textContent = item.id;
                 row.appendChild(idCell);
 
-                // Add field cells
                 fieldConfigs.forEach(field => {
                     const cell = document.createElement('td');
                     const value = item[field.codebeamerId] || '';
@@ -374,7 +347,6 @@ class DynamicFormHandler {
                     row.appendChild(cell);
                 });
 
-                // Add actions cell
                 const actionsCell = document.createElement('td');
                 actionsCell.innerHTML = `
                     <button class="btn-small btn-info" onclick="editItem(${item.id})">수정</button>
@@ -392,10 +364,7 @@ class DynamicFormHandler {
     }
 }
 
-// Global instance
 window.dynamicFormHandler = new DynamicFormHandler();
-
-// Utility functions for global access
 window.loadDynamicForm = async function(containerId, section, initialData = {}) {
     return await window.dynamicFormHandler.renderForm(containerId, section, initialData);
 };

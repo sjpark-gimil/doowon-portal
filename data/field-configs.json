@@ -3,11 +3,16 @@
     "weekly-reports": [
       {
         "id": 2,
-        "name": "보고 주차",
+        "name": "테스트",
         "codebeamerId": "custom_field_1",
-        "type": "string",
+        "type": "selector",
         "required": false,
-        "readonly": false
+        "readonly": false,
+        "options": [
+          "A",
+          "B",
+          "C"
+        ]
       },
       {
         "id": 4,
@@ -19,11 +24,16 @@
       },
       {
         "id": 5,
-        "name": "금주 주간보고",
+        "name": "ASIL",
         "codebeamerId": "custom_field_3",
-        "type": "string",
+        "type": "selector",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "options": [
+          "A",
+          "B",
+          "D"
+        ]
       },
       {
         "id": 6,
@@ -394,5 +404,5 @@
       }
     ]
   },
-  "lastUpdated": "2025-09-23T07:25:15.260Z"
+  "lastUpdated": "2025-09-26T01:08:25.380Z"
 }

@@ -120,7 +120,7 @@
             </div>
         </div>
 
-        <div class="content-section">
+        <div class="content-section mobile-hide">
             <div class="section-header">
                 <h3>출장보고 목록</h3>
                 <div class="filter-controls">
@@ -163,7 +163,6 @@
             mobileNav.classList.toggle('active');
         }
 
-        // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const mobileNav = document.getElementById('mobileNav');
             const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
@@ -186,7 +185,6 @@
             hideValidationErrors();
         }
 
-        // Load dynamic form
         async function loadDynamicForm() {
             try {
                 await formHandler.renderForm('dynamicForm', 'travel-reports');
@@ -198,7 +196,6 @@
             }
         }
 
-        // Submit travel report form
         async function submitTravelReportForm() {
             const validation = formHandler.validateForm();
             
@@ -224,7 +221,7 @@
                 if (data.success) {
                     alert('출장보고가 저장되었습니다!');
                     hideCreateForm();
-                    // Reload reports list if exists
+        
                 } else {
                     alert('출장보고 저장에 실패했습니다: ' + data.error);
                 }
@@ -234,7 +231,6 @@
             }
         }
 
-        // Show validation errors
         function showValidationErrors(errors) {
             const errorContainer = document.getElementById('validationErrors');
             const errorList = document.getElementById('errorList');
@@ -249,24 +245,18 @@
             errorContainer.classList.add('show');
         }
 
-        // Hide validation errors
         function hideValidationErrors() {
             document.getElementById('validationErrors').classList.remove('show');
         }
 
-        // Edit item function for dynamic table
         function editItem(itemId) {
-            // Implementation for editing travel report
             console.log('Editing travel report:', itemId);
         }
 
-        // Delete item function for dynamic table
         function deleteItem(itemId) {
-            // Implementation for deleting travel report
             console.log('Deleting travel report:', itemId);
         }
 
-        // Load travel reports
         async function loadTravelReports() {
             try {
                 const response = await fetch('/api/travel-reports');
@@ -316,7 +306,6 @@
         }
 
 
-        // Check if we should show create form on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadTravelReports();
             
