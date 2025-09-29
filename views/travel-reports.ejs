@@ -124,14 +124,7 @@
             <div class="section-header">
                 <h3>출장보고 목록</h3>
                 <div class="filter-controls">
-                    <select id="statusFilter" onchange="filterReports()">
-                        <option value="">전체 상태</option>
-                        <option value="draft">임시저장</option>
-                        <option value="submitted">제출됨</option>
-                        <option value="approved">승인됨</option>
-                        <option value="rejected">반려됨</option>
-                    </select>
-                    <input type="month" id="monthFilter" onchange="filterReports()" placeholder="월별 필터">
+                    <input type="text" id="searchFilter" onkeyup="filterReports()" placeholder="검색...">
                 </div>
             </div>
 
@@ -151,6 +144,34 @@
     
     <script>
         let formHandler = new DynamicFormHandler();
+        
+        // Override the getTableContainerId method for travel reports
+        formHandler.getTableContainerId = function() {
+            return 'reportsList';
+        };
+
+        // Override pagination methods to use client-side pagination
+        formHandler.changePage = function(direction) {
+            const newPage = this.pagination.currentPage + direction;
+            if (newPage >= 1 && newPage <= this.pagination.totalPages) {
+                this.pagination.currentPage = newPage;
+                this.refreshTable();
+            }
+        };
+
+        formHandler.goToPage = function(page) {
+            if (page >= 1 && page <= this.pagination.totalPages) {
+                this.pagination.currentPage = page;
+                this.refreshTable();
+            }
+        };
+
+        formHandler.changeItemsPerPage = function(newItemsPerPage) {
+            this.pagination.itemsPerPage = parseInt(newItemsPerPage);
+            this.pagination.currentPage = 1;
+            this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
+            this.refreshTable();
+        };
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
@@ -276,10 +297,10 @@
         }
 
         function filterReports() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const monthFilter = document.getElementById('monthFilter').value;
-            
-            console.log('Filtering travel reports by status:', statusFilter, 'month:', monthFilter);
+            const searchFilter = document.getElementById('searchFilter');
+            if (searchFilter) {
+                window.filterTable(searchFilter.value);
+            }
         }
 
         function editReport(id) {

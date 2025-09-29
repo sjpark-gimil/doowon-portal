@@ -520,49 +520,94 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
     try {
-        const mockHardware = [
-            {
-                id: 1,
-                name: "ECU 하드웨어 v2.1",
-                description: "차량 제어용 ECU 하드웨어",
-                custom_field_1000: "SW",
-                custom_field_1001: "H/W",
-                custom_field_10005: "성능 개선",
-                custom_field_10006: "2024-02-15",
-                custom_field_3: "v2.1",
-                custom_field_10002: "v1.5",
-                status: "Done"
-            },
-            {
-                id: 2,
-                name: "센서 모듈 업데이트",
-                description: "온도 센서 모듈 업데이트",
-                custom_field_1000: "OV1",
-                custom_field_1001: "S/W",
-                custom_field_10005: "버그 수정",
-                custom_field_10006: "2024-01-20",
-                custom_field_3: "v1.8",
-                custom_field_10002: "v2.0",
-                status: "In progress"
-            },
-            {
-                id: 3,
-                name: "디스플레이 컨트롤러",
-                description: "대시보드 디스플레이 컨트롤러",
-                custom_field_1000: "HE1i",
-                custom_field_1001: "H/W",
-                custom_field_10005: "신규 기능 추가",
-                custom_field_10006: "2024-03-10",
-                custom_field_3: "v3.0",
-                custom_field_10002: "v2.2",
-                status: "ToDo"
-            }
-        ];
+        // Generate more mock data for testing pagination
+        const mockHardware = [];
+        const vehicleTypes = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
+        const changeTypes = ['H/W', 'S/W'];
+        const statuses = ['Done', 'In progress', 'ToDo', 'To verify'];
+        const changeReasons = ['성능 개선', '버그 수정', '신규 기능 추가', '보안 업데이트', '호환성 개선'];
 
-        res.json({
-            success: true,
-            items: mockHardware
+        for (let i = 1; i <= 150; i++) {
+            mockHardware.push({
+                id: i,
+                name: `하드웨어 컴포넌트 v${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}`,
+                description: `하드웨어 컴포넌트 ${i}번 설명`,
+                custom_field_1000: vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)],
+                custom_field_1001: changeTypes[Math.floor(Math.random() * changeTypes.length)],
+                custom_field_10005: changeReasons[Math.floor(Math.random() * changeReasons.length)],
+                custom_field_10006: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
+                custom_field_3: `v${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}`,
+                custom_field_10002: `v${Math.floor(Math.random() * 3) + 1}.${Math.floor(Math.random() * 10)}`,
+                status: statuses[Math.floor(Math.random() * statuses.length)]
+            });
+        }
+
+        // Handle pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const search = req.query.search || '';
+        const sortBy = req.query.sortBy || 'id';
+        const sortOrder = req.query.sortOrder || 'asc';
+        
+        console.log('Hardware API called with params:', { page, limit, search, sortBy, sortOrder });
+
+        // Filter items based on search
+        let filteredItems = mockHardware;
+        if (search) {
+            const searchLower = search.toLowerCase();
+            filteredItems = mockHardware.filter(item => 
+                item.name.toLowerCase().includes(searchLower) ||
+                item.description.toLowerCase().includes(searchLower) ||
+                item.custom_field_1000.toLowerCase().includes(searchLower) ||
+                item.custom_field_1001.toLowerCase().includes(searchLower) ||
+                item.custom_field_10005.toLowerCase().includes(searchLower) ||
+                item.id.toString().includes(search)
+            );
+        }
+
+        // Sort items
+        filteredItems.sort((a, b) => {
+            let aVal = a[sortBy];
+            let bVal = b[sortBy];
+            
+            if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+            
+            if (sortOrder === 'desc') {
+                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+            } else {
+                return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+            }
         });
+
+        // Calculate pagination
+        const totalItems = filteredItems.length;
+        const totalPages = Math.ceil(totalItems / limit);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+        const response = {
+            success: true,
+            items: paginatedItems,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalItems: totalItems,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        };
+        
+        console.log('Hardware API response:', {
+            itemsCount: paginatedItems.length,
+            pagination: response.pagination
+        });
+        
+        res.json(response);
     } catch (error) {
         console.error('Error fetching hardware items:', error);
         res.status(500).json({

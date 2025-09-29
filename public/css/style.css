@@ -2894,6 +2894,97 @@ select.report-select option {
     transform: none;
 }
 
+/* Table wrapper styles */
+.table-wrapper {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table-wrapper .dynamic-table {
+    margin: 0;
+    border: none;
+}
+
+.table-wrapper .dynamic-table th,
+.table-wrapper .dynamic-table td {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-wrapper .dynamic-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Pagination styles */
+.pagination-top {
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+}
+
+.pagination-bottom {
+    border-top: 1px solid #e9ecef;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.pagination-controls label {
+    font-size: 0.9em;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.pagination-controls select {
+    padding: 6px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 0.9em;
+}
+
+.pagination-controls select:focus {
+    outline: none;
+    border-color: #201B87;
+    box-shadow: 0 0 0 2px rgba(32, 27, 135, 0.25);
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+    .pagination-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .pagination-nav {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .page-numbers {
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+}
+
 .item-header {
     display: flex;
     justify-content: space-between;

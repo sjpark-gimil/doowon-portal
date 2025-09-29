@@ -3,6 +3,14 @@ class DynamicFormHandler {
         this.fieldConfigs = {};
         this.currentSection = null;
         this.formData = {};
+        this.pagination = {
+            currentPage: 1,
+            itemsPerPage: 25,
+            totalItems: 0,
+            totalPages: 0
+        };
+        this.allItems = [];
+        this.filteredItems = [];
     }
 
     /**
@@ -282,12 +290,13 @@ class DynamicFormHandler {
     }
 
     /**
-     * Create a dynamic table for listing items
+     * Create a dynamic table for listing items with pagination
      * @param {string} containerId - Container element ID
      * @param {Array} items - Array of items to display
      * @param {string} section - Section name for field configuration
+     * @param {Object} options - Options for table rendering (pagination, search, etc.)
      */
-    async renderTable(containerId, items, section) {
+    async renderTable(containerId, items, section, options = {}) {
         const container = document.getElementById(containerId);
         if (!container) {
             console.error(`Container with ID '${containerId}' not found`);
@@ -300,14 +309,50 @@ class DynamicFormHandler {
             return;
         }
 
+        // Store items for pagination
+        this.allItems = items;
+        this.filteredItems = [...items];
+        this.currentSection = section;
+
+        // Update pagination info
+        this.pagination.totalItems = this.filteredItems.length;
+        this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
+        this.pagination.currentPage = Math.min(this.pagination.currentPage, this.pagination.totalPages || 1);
+
+        // Clear container
+        container.innerHTML = '';
+
+        // Create table wrapper
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'table-wrapper';
+
+        // Create table
+        const table = this.createTable(fieldConfigs, options);
+        tableWrapper.appendChild(table);
+
+        // Create pagination controls (bottom only)
+        if (options.pagination !== false && this.filteredItems.length > 0) {
+            const bottomPagination = this.createPaginationControls('bottom', fieldConfigs);
+            tableWrapper.appendChild(bottomPagination);
+        }
+
+        container.appendChild(tableWrapper);
+    }
+
+    /**
+     * Create the actual table element
+     */
+    createTable(fieldConfigs, options) {
         const table = document.createElement('table');
         table.className = 'dynamic-table';
 
+        // Create header
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
         const idHeader = document.createElement('th');
         idHeader.textContent = 'ID';
         headerRow.appendChild(idHeader);
+        
         fieldConfigs.forEach(field => {
             const th = document.createElement('th');
             th.textContent = field.name;
@@ -320,10 +365,10 @@ class DynamicFormHandler {
         thead.appendChild(headerRow);
         table.appendChild(thead);
 
-        // Create body
+        // Create body with pagination
         const tbody = document.createElement('tbody');
         
-        if (items.length === 0) {
+        if (this.filteredItems.length === 0) {
             const emptyRow = document.createElement('tr');
             const emptyCell = document.createElement('td');
             emptyCell.colSpan = fieldConfigs.length + 2;
@@ -332,7 +377,11 @@ class DynamicFormHandler {
             emptyRow.appendChild(emptyCell);
             tbody.appendChild(emptyRow);
         } else {
-            items.forEach(item => {
+            const startIndex = (this.pagination.currentPage - 1) * this.pagination.itemsPerPage;
+            const endIndex = startIndex + this.pagination.itemsPerPage;
+            const pageItems = this.filteredItems.slice(startIndex, endIndex);
+
+            pageItems.forEach(item => {
                 const row = document.createElement('tr');
                 row.dataset.itemId = item.id;
 
@@ -359,8 +408,163 @@ class DynamicFormHandler {
         }
 
         table.appendChild(tbody);
-        container.innerHTML = '';
-        container.appendChild(table);
+        return table;
+    }
+
+    /**
+     * Create pagination controls
+     */
+    createPaginationControls(position, fieldConfigs) {
+        const paginationDiv = document.createElement('div');
+        paginationDiv.className = `pagination pagination-${position}`;
+        paginationDiv.id = `pagination-${position}`;
+
+        // Items per page selector
+        const itemsPerPageDiv = document.createElement('div');
+        itemsPerPageDiv.className = 'pagination-controls';
+        itemsPerPageDiv.innerHTML = `
+            <label for="itemsPerPage-${position}">페이지 당 아이템:</label>
+            <select id="itemsPerPage-${position}">
+                <option value="10" ${this.pagination.itemsPerPage === 10 ? 'selected' : ''}>10</option>
+                <option value="25" ${this.pagination.itemsPerPage === 25 ? 'selected' : ''}>25</option>
+                <option value="50" ${this.pagination.itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                <option value="100" ${this.pagination.itemsPerPage === 100 ? 'selected' : ''}>100</option>
+            </select>
+        `;
+        
+        // Add event listener after creating the element
+        const selectElement = itemsPerPageDiv.querySelector(`#itemsPerPage-${position}`);
+        selectElement.addEventListener('change', (e) => {
+            console.log('Items per page changed to:', e.target.value);
+            this.changeItemsPerPage(e.target.value);
+        });
+
+        // Navigation buttons
+        const navDiv = document.createElement('div');
+        navDiv.className = 'pagination-nav';
+        
+        const prevButton = document.createElement('button');
+        prevButton.textContent = '이전';
+        prevButton.disabled = this.pagination.currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            console.log('Previous page clicked');
+            this.changePage(-1);
+        });
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = '다음';
+        nextButton.disabled = this.pagination.currentPage === this.pagination.totalPages;
+        nextButton.addEventListener('click', () => {
+            console.log('Next page clicked');
+            this.changePage(1);
+        });
+
+        // Page numbers
+        const pageNumbersDiv = document.createElement('div');
+        pageNumbersDiv.className = 'page-numbers';
+        
+        const startPage = Math.max(1, this.pagination.currentPage - 2);
+        const endPage = Math.min(this.pagination.totalPages, this.pagination.currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.textContent = i;
+            pageButton.className = i === this.pagination.currentPage ? 'page-btn active' : 'page-btn';
+            pageButton.addEventListener('click', () => {
+                console.log('Page clicked:', i);
+                this.goToPage(i);
+            });
+            pageNumbersDiv.appendChild(pageButton);
+        }
+
+        // Page info
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'pagination-info';
+        const startItem = (this.pagination.currentPage - 1) * this.pagination.itemsPerPage + 1;
+        const endItem = Math.min(this.pagination.currentPage * this.pagination.itemsPerPage, this.pagination.totalItems);
+        pageInfo.textContent = `${startItem}-${endItem} / 총 ${this.pagination.totalItems}개`;
+
+        navDiv.appendChild(prevButton);
+        navDiv.appendChild(pageNumbersDiv);
+        navDiv.appendChild(nextButton);
+
+        paginationDiv.appendChild(itemsPerPageDiv);
+        paginationDiv.appendChild(navDiv);
+        paginationDiv.appendChild(pageInfo);
+
+        return paginationDiv;
+    }
+
+    /**
+     * Change page
+     */
+    changePage(direction) {
+        const newPage = this.pagination.currentPage + direction;
+        if (newPage >= 1 && newPage <= this.pagination.totalPages) {
+            this.pagination.currentPage = newPage;
+            this.refreshTable();
+        }
+    }
+
+    /**
+     * Go to specific page
+     */
+    goToPage(page) {
+        if (page >= 1 && page <= this.pagination.totalPages) {
+            this.pagination.currentPage = page;
+            this.refreshTable();
+        }
+    }
+
+    /**
+     * Change items per page
+     */
+    changeItemsPerPage(newItemsPerPage) {
+        this.pagination.itemsPerPage = parseInt(newItemsPerPage);
+        this.pagination.currentPage = 1;
+        this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
+        this.refreshTable();
+    }
+
+    /**
+     * Refresh table display
+     */
+    async refreshTable() {
+        if (this.currentSection) {
+            const containerId = this.getTableContainerId();
+            if (containerId) {
+                await this.renderTable(containerId, this.allItems, this.currentSection);
+            }
+        }
+    }
+
+    /**
+     * Get table container ID (this is a placeholder - should be overridden by the calling page)
+     */
+    getTableContainerId() {
+        // This should be overridden by the calling page
+        return null;
+    }
+
+    /**
+     * Filter items based on search criteria
+     */
+    filterItems(searchTerm, fieldConfigs) {
+        if (!searchTerm || searchTerm.trim() === '') {
+            this.filteredItems = [...this.allItems];
+        } else {
+            const term = searchTerm.toLowerCase();
+            this.filteredItems = this.allItems.filter(item => {
+                return fieldConfigs.some(field => {
+                    const value = item[field.codebeamerId] || '';
+                    return value.toString().toLowerCase().includes(term);
+                }) || item.id.toString().includes(term);
+            });
+        }
+        this.pagination.currentPage = 1;
+        this.pagination.totalItems = this.filteredItems.length;
+        this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
+        this.refreshTable();
     }
 }
 
@@ -387,4 +591,26 @@ window.clearForm = function() {
 
 window.setFormData = function(data) {
     window.dynamicFormHandler.setFormData(data);
+};
+
+// Global pagination functions
+window.changeItemsPerPage = function(newItemsPerPage, section) {
+    window.dynamicFormHandler.changeItemsPerPage(newItemsPerPage);
+};
+
+window.changePage = function(direction) {
+    window.dynamicFormHandler.changePage(direction);
+};
+
+window.goToPage = function(page) {
+    window.dynamicFormHandler.goToPage(page);
+};
+
+window.filterTable = function(searchTerm) {
+    if (window.dynamicFormHandler.currentSection) {
+        window.dynamicFormHandler.loadFieldConfigs(window.dynamicFormHandler.currentSection)
+            .then(fieldConfigs => {
+                window.dynamicFormHandler.filterItems(searchTerm, fieldConfigs);
+            });
+    }
 };

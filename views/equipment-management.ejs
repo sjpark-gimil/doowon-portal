@@ -124,23 +124,6 @@
             <div class="section-header">
                 <h3>장비 목록</h3>
                 <div class="filter-controls">
-                    <select id="categoryFilter" onchange="filterEquipment()">
-                        <option value="">전체 카테고리</option>
-                        <option value="production">생산장비</option>
-                        <option value="testing">측정장비</option>
-                        <option value="safety">안전장비</option>
-                        <option value="maintenance">정비장비</option>
-                        <option value="utility">유틸리티</option>
-                        <option value="other">기타</option>
-                    </select>
-                    <select id="statusFilter" onchange="filterEquipment()">
-                        <option value="">전체 상태</option>
-                        <option value="operational">가동중</option>
-                        <option value="maintenance">정비중</option>
-                        <option value="idle">대기중</option>
-                        <option value="broken">고장</option>
-                        <option value="retired">폐기</option>
-                    </select>
                     <input type="text" id="searchFilter" onkeyup="filterEquipment()" placeholder="검색...">
                 </div>
             </div>
@@ -161,6 +144,34 @@
     
     <script>
         let formHandler = new DynamicFormHandler();
+        
+        // Override the getTableContainerId method for equipment management
+        formHandler.getTableContainerId = function() {
+            return 'equipmentList';
+        };
+
+        // Override pagination methods to use client-side pagination
+        formHandler.changePage = function(direction) {
+            const newPage = this.pagination.currentPage + direction;
+            if (newPage >= 1 && newPage <= this.pagination.totalPages) {
+                this.pagination.currentPage = newPage;
+                this.refreshTable();
+            }
+        };
+
+        formHandler.goToPage = function(page) {
+            if (page >= 1 && page <= this.pagination.totalPages) {
+                this.pagination.currentPage = page;
+                this.refreshTable();
+            }
+        };
+
+        formHandler.changeItemsPerPage = function(newItemsPerPage) {
+            this.pagination.itemsPerPage = parseInt(newItemsPerPage);
+            this.pagination.currentPage = 1;
+            this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
+            this.refreshTable();
+        };
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
@@ -285,11 +296,10 @@
         }
 
         function filterEquipment() {
-            const categoryFilter = document.getElementById('categoryFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
-            
-            console.log('Filtering equipment by category:', categoryFilter, 'status:', statusFilter, 'search:', searchFilter);
+            const searchFilter = document.getElementById('searchFilter');
+            if (searchFilter) {
+                window.filterTable(searchFilter.value);
+            }
         }
 
         function editEquipment(id) {
