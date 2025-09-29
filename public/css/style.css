@@ -3954,13 +3954,12 @@ body.admin-login-body .admin-login-container {
 .field-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 1rem;
-    border-bottom: 1px solid #e9ecef;
+    gap: 20px;
+    padding: 0;
 }
 
 .field-item:last-child {
-    border-bottom: none;
+    padding: 1rem 2rem 0 2rem;
 }
 
 .field-item.mapping {
@@ -3978,7 +3977,6 @@ body.admin-login-body .admin-login-container {
 .field-label {
     font-weight: 500;
     color: #495057;
-    padding-left: 10px;
 }
 
 .field-mapping-input {

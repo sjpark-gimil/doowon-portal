@@ -36,7 +36,14 @@
                 <span class="info-label">연결 상태 : <span class="info-value" id="connectionStatus">확인 중...</span></span>
             </div>    
             <br>
-        
+
+            <h4>📋 프로젝트 설정</h4>
+            <div class="field-item">
+                <span class="field-label">프로젝트 ID</span>
+                <input type="text" id="projectId" class="field-mapping-input" value="397" placeholder="프로젝트 ID 입력">
+                <button class="btn-admin btn-info" onclick="loadTrackers()">트래커 목록 불러오기</button>
+            </div>
+            <br>
 
             <h4>📊 필드 매핑 현황</h4>
             <div class="mapping-stats">
@@ -97,6 +104,7 @@
                     <button class="btn-admin btn-success" onclick="saveAllMappings()">전체 매핑 저장</button>
                     <button class="btn-admin btn-info" onclick="testConnection()">연결 테스트</button>
                     <button class="btn-admin btn-warning" onclick="syncAllData()">전체 동기화</button>
+                    <button class="btn-admin btn-secondary" onclick="syncToCodebeamer()">Codebeamer 동기화</button>
                     <button class="btn-admin btn-danger" onclick="resetSettings()">설정 초기화</button>
                 </div>
             </div>
@@ -111,6 +119,16 @@
             'hardware-management': [],
             'equipment-management': [],
             'external-training': []
+        };
+
+        // Tracker selection data
+        let availableTrackers = [];
+        let selectedTrackers = {
+            'weekly-reports': '',
+            'travel-reports': '',
+            'hardware-management': '',
+            'equipment-management': '',
+            'external-training': ''
         };
 
         // Field type configurations
@@ -149,7 +167,172 @@
             updateStats();
         });
 
-        // Check Codebeamer connection status
+        // Load available trackers from Codebeamer
+        async function loadTrackers() {
+            const projectId = document.getElementById('projectId').value;
+            if (!projectId) {
+                alert('프로젝트 ID를 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/available-trackers?projectId=${projectId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    availableTrackers = data.trackers;
+                    populateTrackerSelectors();
+                    alert(`트래커 ${data.trackers.length}개를 불러왔습니다.`);
+                } else {
+                    alert(`트래커 불러오기 실패: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error loading trackers:', error);
+                alert('트래커 불러오기 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Populate tracker selectors for all sections
+        function populateTrackerSelectors() {
+            const sections = ['weekly-reports', 'travel-reports', 'hardware-management', 'equipment-management', 'external-training'];
+            
+            sections.forEach(section => {
+                const selector = document.getElementById(`tracker-${section}`);
+                if (selector) {
+                    selector.innerHTML = '<option value="">트래커를 선택하세요</option>';
+                    
+                    availableTrackers.forEach(tracker => {
+                        const option = document.createElement('option');
+                        option.value = tracker.id;
+                        option.textContent = `${tracker.name} (${tracker.id})`;
+                        if (tracker.description) {
+                            option.textContent += ` - ${tracker.description}`;
+                        }
+                        selector.appendChild(option);
+                    });
+
+                    // Restore previously selected tracker
+                    if (selectedTrackers[section]) {
+                        selector.value = selectedTrackers[section];
+                    }
+                }
+            });
+        }
+
+        function updateTrackerSelection(section, trackerId) {
+            selectedTrackers[section] = trackerId;
+            console.log(`Updated tracker for ${section}: ${trackerId}`);
+        }
+
+        async function refreshTrackers(section) {
+            await loadTrackers();
+        }
+
+        // Create tracker for a specific section
+        async function createTrackerForSection(section) {
+            const projectId = document.getElementById('projectId').value;
+            if (!projectId) {
+                alert('프로젝트 ID를 입력해주세요.');
+                return;
+            }
+
+            const trackerId = await createNewTracker(section, projectId);
+            if (trackerId) {
+                console.log(`Tracker created for ${section}: ${trackerId}`);
+            }
+        }
+
+        // Create new tracker for a section
+        async function createNewTracker(section, projectId) {
+            const sectionNames = {
+                'weekly-reports': '주간보고관리',
+                'travel-reports': '출장보고관리',
+                'hardware-management': '하드웨어관리',
+                'equipment-management': '장비관리',
+                'external-training': '외부교육관리'
+            };
+
+            const sectionName = sectionNames[section] || section;
+            const trackerName = `${sectionName} 트래커`;
+            const trackerKey = section.toUpperCase().replace('-', '_');
+
+            try {
+                const response = await fetch('/api/admin/create-tracker', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        projectId: projectId,
+                        trackerName: trackerName,
+                        trackerKey: trackerKey,
+                        description: `${sectionName}를 위한 트래커입니다.`,
+                        section: section
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update the selected tracker
+                    selectedTrackers[section] = data.tracker.id;
+                    
+                    // Update the UI
+                    const selector = document.getElementById(`tracker-${section}`);
+                    if (selector) {
+                        selector.value = data.tracker.id;
+                    }
+
+                    // Refresh trackers list to include the new one
+                    await loadTrackers();
+
+                    alert(`새 트래커가 생성되었습니다!\n트래커명: ${data.tracker.name}\n트래커 ID: ${data.tracker.id}`);
+                    return data.tracker.id;
+                } else {
+                    alert(`트래커 생성 실패: ${data.error}`);
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error creating tracker:', error);
+                alert('트래커 생성 중 오류가 발생했습니다.');
+                return null;
+            }
+        }
+
+        // View current tracker configuration
+        async function viewTrackerConfig(section) {
+            const trackerId = selectedTrackers[section];
+            if (!trackerId) {
+                alert('해당 섹션의 트래커를 선택해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/tracker-configuration/${trackerId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const config = data.configuration;
+                    const configInfo = `
+현재 트래커 설정:
+- 트래커 ID: ${trackerId}
+- 트래커명: ${config.basicInformation?.name || 'N/A'}
+- 프로젝트 ID: ${config.basicInformation?.projectId || 'N/A'}
+- 필드 수: ${config.fields?.length || 0}개
+- 활성 워크플로우: ${config.basicInformation?.workflowIsActive ? 'Yes' : 'No'}
+- 잠금 상태: ${config.basicInformation?.locked ? 'Yes' : 'No'}
+- 숨김 상태: ${config.basicInformation?.hidden ? 'Yes' : 'No'}
+                    `;
+                    alert(configInfo);
+                } else {
+                    alert(`트래커 설정 불러오기 실패: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error viewing tracker config:', error);
+                alert('트래커 설정 보기 중 오류가 발생했습니다.');
+            }
+        }
+
         async function checkConnection() {
             try {
                 const response = await fetch('/api/debug/ping');
@@ -169,8 +352,6 @@
             }
         }
 
-
-        // Remove field
         async function removeField(section, fieldId) {
             if (confirm('이 필드를 삭제하시겠습니까?')) {
                 fieldConfigs[section] = fieldConfigs[section].filter(field => field.id !== fieldId);
@@ -185,7 +366,6 @@
             }
         }
 
-        // Toggle section
         function toggleSection(section) {
             const sectionElement = document.getElementById(`section-${section}`);
             const toggleIcon = sectionElement.querySelector('.toggle-icon');
@@ -199,7 +379,6 @@
             }
         }
 
-        // Render management sections
         function renderManagementSections() {
             const container = document.getElementById('managementSections');
             container.innerHTML = '';
@@ -231,7 +410,19 @@
                                 </button>
                                 <button class="btn-admin btn-primary" onclick="saveSectionMapping('${section.key}')">매핑 저장</button>
                                 <button class="btn-admin btn-warning" onclick="testSectionMapping('${section.key}')">매핑 테스트</button>
+                                <button class="btn-admin btn-info" onclick="viewTrackerConfig('${section.key}')">현재 설정 보기</button>
+                                <button class="btn-admin btn-success" onclick="createTrackerForSection('${section.key}')">트래커 생성</button>
                             </div>
+                        </div>
+                        <div class="tracker-selection">
+                            <div class="field-item">
+                                <span class="field-label">연결된 트래커</span>
+                                <select id="tracker-${section.key}" class="field-mapping-input" onchange="updateTrackerSelection('${section.key}', this.value)">
+                                    <option value="">트래커를 선택하세요</option>
+                                </select>
+                                <button class="btn-admin btn-info" onclick="refreshTrackers('${section.key}')">새로고침</button>
+                            </div>
+                        
                         </div>
                         <div class="management-section-content">
                             <div class="field-list">
@@ -273,6 +464,7 @@
                                         </div>
                                     `).join('')
                                 }
+                            </div>        
                             </div>
                         </div>
                     </div>
@@ -349,15 +541,92 @@
             const saved = await saveFieldConfigs();
             
             if (saved) {
-                alert(`${section} 필드 매핑이 저장되었습니다.`);
+                const updateCodebeamer = confirm('Codebeamer에 설정을 동기화하시겠습니까?');
+                if (updateCodebeamer) {
+                    await updateCodebeamerConfiguration(section);
+                } else {
+                    alert(`${section} 필드 매핑이 저장되었습니다.`);
+                }
             } else {
                 alert('필드 매핑 저장에 실패했습니다.');
+            }
+        }
+
+        // Update Codebeamer configuration
+        async function updateCodebeamerConfiguration(section) {
+            try {
+                let trackerId = selectedTrackers[section];
+                const projectId = document.getElementById('projectId').value;
+
+                if (!projectId) {
+                    alert('프로젝트 ID를 입력해주세요.');
+                    return;
+                }
+
+                // If no tracker is selected, offer to create one
+                if (!trackerId) {
+                    const createTracker = confirm(`'${getSectionName(section)}' 섹션에 연결된 트래커가 없습니다.\n새 트래커를 생성하시겠습니까?`);
+                    if (createTracker) {
+                        trackerId = await createNewTracker(section, projectId);
+                        if (!trackerId) {
+                            return; // User cancelled or creation failed
+                        }
+                    } else {
+                        alert('트래커를 선택하거나 생성해주세요.');
+                        return;
+                    }
+                }
+
+                const response = await fetch('/api/admin/update-codebeamer-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        section: section,
+                        fieldConfigs: fieldConfigs[section],
+                        trackerId: trackerId,
+                        projectId: projectId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`${section} Codebeamer 설정이 성공적으로 업데이트되었습니다!\n트래커: ${data.trackerId}\n필드 수: ${data.fieldCount}`);
+                } else {
+                    alert(`Codebeamer 설정 업데이트 실패: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error updating Codebeamer configuration:', error);
+                alert('Codebeamer 설정 업데이트 중 오류가 발생했습니다.');
             }
         }
 
         // Test section mapping
         async function testSectionMapping(section) {
             console.log(`Testing mapping for ${section}:`, fieldConfigs[section]);
+            
+            let trackerId = selectedTrackers[section];
+            const projectId = document.getElementById('projectId').value;
+            
+            if (!projectId) {
+                alert('프로젝트 ID를 입력해주세요.');
+                return;
+            }
+
+            if (!trackerId) {
+                const createTracker = confirm(`'${getSectionName(section)}' 섹션에 연결된 트래커가 없습니다.\n새 트래커를 생성하시겠습니까?`);
+                if (createTracker) {
+                    trackerId = await createNewTracker(section, projectId);
+                    if (!trackerId) {
+                        return;
+                    }
+                } else {
+                    alert('트래커를 선택하거나 생성해주세요.');
+                    return;
+                }
+            }
             
             try {
                 const response = await fetch('/api/admin/test-field-mapping', {
@@ -367,7 +636,8 @@
                     },
                     body: JSON.stringify({
                         section: section,
-                        fieldConfigs: fieldConfigs[section]
+                        fieldConfigs: fieldConfigs[section],
+                        trackerId: trackerId
                     })
                 });
                 
@@ -581,7 +851,12 @@
                 const saved = await saveFieldConfigs();
                 
                 if (saved) {
-                    alert('모든 필드 매핑이 저장되었습니다!');
+                    const updateCodebeamer = confirm('모든 설정을 Codebeamer에 동기화하시겠습니까?');
+                    if (updateCodebeamer) {
+                        await updateAllCodebeamerConfigurations();
+                    } else {
+                        alert('모든 필드 매핑이 저장되었습니다!');
+                    }
                     console.log('All field configs saved:', fieldConfigs);
                 } else {
                     alert('필드 매핑 저장에 실패했습니다.');
@@ -589,6 +864,32 @@
             } catch (error) {
                 console.error('Error saving all mappings:', error);
                 alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Update all Codebeamer configurations
+        async function updateAllCodebeamerConfigurations() {
+            const sections = Object.keys(fieldConfigs);
+            let successCount = 0;
+            let errorCount = 0;
+            const errors = [];
+
+            for (const section of sections) {
+                if (fieldConfigs[section].length > 0) {
+                    try {
+                        await updateCodebeamerConfiguration(section);
+                        successCount++;
+                    } catch (error) {
+                        errorCount++;
+                        errors.push(`${section}: ${error.message}`);
+                    }
+                }
+            }
+
+            if (errorCount === 0) {
+                alert(`모든 Codebeamer 설정이 성공적으로 업데이트되었습니다!\n성공: ${successCount}개 섹션`);
+            } else {
+                alert(`Codebeamer 설정 업데이트 완료\n성공: ${successCount}개, 실패: ${errorCount}개\n\n실패한 섹션:\n${errors.join('\n')}`);
             }
         }
 
@@ -605,6 +906,17 @@
         function syncAllData() {
             console.log('Syncing all data...');
             alert('전체 데이터 동기화를 시작합니다.');
+        }
+
+        async function syncToCodebeamer() {
+            if (confirm('모든 필드 설정을 Codebeamer에 동기화하시겠습니까?\n이 작업은 시간이 걸릴 수 있습니다.')) {
+                try {
+                    await updateAllCodebeamerConfigurations();
+                } catch (error) {
+                    console.error('Error syncing to Codebeamer:', error);
+                    alert('Codebeamer 동기화 중 오류가 발생했습니다.');
+                }
+            }
         }
 
         async function resetSettings() {

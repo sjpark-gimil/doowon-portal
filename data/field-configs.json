@@ -2,29 +2,16 @@
   "fieldConfigs": {
     "weekly-reports": [
       {
-        "id": 2,
-        "name": "테스트",
-        "codebeamerId": "custom_field_1",
-        "type": "selector",
-        "required": false,
-        "readonly": false,
-        "options": [
-          "A",
-          "B",
-          "C"
-        ]
-      },
-      {
         "id": 4,
         "name": "사업부",
         "codebeamerId": "custom_field_2",
         "type": "string",
-        "required": false,
+        "required": true,
         "readonly": false
       },
       {
         "id": 5,
-        "name": "ASIL",
+        "name": "차종",
         "codebeamerId": "custom_field_3",
         "type": "selector",
         "required": true,
@@ -37,32 +24,24 @@
       },
       {
         "id": 6,
-        "name": "차주 주간보고",
+        "name": "금주 주간보고",
         "codebeamerId": "custom_field_4",
         "type": "string",
-        "required": false,
+        "required": true,
         "readonly": false
       },
       {
         "id": 9,
-        "name": "우선순위",
+        "name": "차주 주간보고",
         "codebeamerId": "custom_field_50",
-        "type": "selector",
-        "required": false,
+        "type": "string",
+        "required": true,
         "readonly": false,
         "options": [
           "높음",
           "보통",
           "낮음"
         ]
-      },
-      {
-        "id": 10,
-        "name": "진행률",
-        "codebeamerId": "custom_field_51",
-        "type": "number",
-        "required": false,
-        "readonly": false
       }
     ],
     "travel-reports": [
@@ -404,5 +383,5 @@
       }
     ]
   },
-  "lastUpdated": "2025-09-26T01:08:25.380Z"
+  "lastUpdated": "2025-09-29T02:07:11.118Z"
 }

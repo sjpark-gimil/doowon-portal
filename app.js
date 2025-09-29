@@ -331,7 +331,7 @@ app.get('/admin/login', (req, res) => {
 
 app.post('/admin/login', (req, res) => {
     const { username, password } = req.body;
-    if (username === 'admin' && password === '1234') {
+    if (username === 'sejin.park' && password === '1234') {
         req.session.adminAuth = true;
         req.session.adminUsername = username;
         req.session.save((err) => {
@@ -435,6 +435,161 @@ app.get('/api/codebeamer/projects/:projectId/trackers', requireAuth, async (req,
     } catch (error) {
         console.error('Error fetching trackers:', error.message);
         res.status(500).json({ error: 'Failed to fetch trackers' });
+    }
+});
+
+app.get('/api/admin/available-trackers', requireAdminAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { projectId } = req.query;
+        if (!projectId) {
+            return res.status(400).json({ error: 'Project ID is required' });
+        }
+
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/projects/${projectId}/trackers`;
+        console.log('Fetching trackers from:', codebeamerUrl);
+        
+        const response = await axios.get(codebeamerUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 10000
+        });
+
+        const trackers = response.data.map(tracker => ({
+            id: tracker.id,
+            name: tracker.name,
+            description: tracker.description || '',
+            key: tracker.key || '',
+            projectId: tracker.projectId
+        }));
+
+        res.json({
+            success: true,
+            trackers: trackers
+        });
+    } catch (error) {
+        console.error('Error fetching available trackers:', error.message);
+        if (error.response) {
+            console.error('Error response status:', error.response.status);
+            console.error('Error response data:', error.response.data);
+        }
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch trackers: ' + error.message 
+        });
+    }
+});
+
+app.get('/api/admin/tracker-configuration/:trackerId', requireAdminAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { trackerId } = req.params;
+        const configUrl = `${defaults.cbApiUrl}/api/v3/tracker/${trackerId}/configuration`;
+        console.log('Fetching tracker configuration from:', configUrl);
+        
+        const response = await axios.get(configUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 10000
+        });
+
+        res.json({
+            success: true,
+            configuration: response.data
+        });
+    } catch (error) {
+        console.error('Error fetching tracker configuration:', error.message);
+        if (error.response) {
+            console.error('Error response status:', error.response.status);
+            console.error('Error response data:', error.response.data);
+        }
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch tracker configuration: ' + error.message 
+        });
+    }
+});
+
+app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { projectId, trackerName, trackerKey, description, section } = req.body;
+        
+        if (!projectId || !trackerName || !trackerKey) {
+            return res.status(400).json({
+                success: false,
+                error: 'Project ID, tracker name, and tracker key are required'
+            });
+        }
+
+        const trackerData = {
+            projectId: parseInt(projectId),
+            name: trackerName,
+            key: trackerKey,
+            description: description || `Tracker for ${section} management`,
+            color: "#007bff",
+            defaultLayout: "TABLE",
+            workflowIsActive: true,
+            onlyWorkflowActionsCanCreateNewReferringItems: false,
+            alwaysUseQuickTransitions: false,
+            locked: false,
+            hidden: false,
+            showAncestorItems: false,
+            showDescendantItems: false,
+            sharedInWorkingSets: true,
+            itemCountVisibility: true,
+            referenceVisibility: true,
+            recentReferringTrackersMenu: false
+        };
+
+        console.log('Creating new tracker:', trackerData);
+        
+        const createUrl = `${defaults.cbApiUrl}/api/v3/trackers`;
+        const response = await axios.post(createUrl, trackerData, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 30000
+        });
+
+        res.json({
+            success: true,
+            message: 'Tracker created successfully',
+            tracker: {
+                id: response.data.id,
+                name: response.data.name,
+                key: response.data.key,
+                projectId: response.data.projectId
+            }
+        });
+    } catch (error) {
+        console.error('Error creating tracker:', error.message);
+        if (error.response) {
+            console.error('Error response status:', error.response.status);
+            console.error('Error response data:', error.response.data);
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create tracker: ' + error.message,
+            details: error.response?.data || null
+        });
     }
 });
 
@@ -899,7 +1054,7 @@ app.get('/api/codebeamer/trackers/:trackerId/fields', requireAuth, async (req, r
 
 app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => {
     try {
-        const { section, fieldConfigs } = req.body;
+        const { section, fieldConfigs, trackerId } = req.body;
         
         if (!section || !fieldConfigs) {
             return res.status(400).json({
@@ -908,19 +1063,10 @@ app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => 
             });
         }
 
-        const trackerIds = {
-            'weekly-reports': 'tracker_weekly',
-            'travel-reports': 'tracker_travel',
-            'hardware-management': '19601',
-            'equipment-management': 'tracker_equipment',
-            'external-training': 'tracker_training'
-        };
-
-        const trackerId = trackerIds[section];
         if (!trackerId) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid section'
+                error: 'Tracker ID is required'
             });
         }
 
@@ -956,6 +1102,202 @@ app.post('/api/admin/test-field-mapping', requireAdminAuth, async (req, res) => 
         });
     }
 });
+
+app.post('/api/admin/update-codebeamer-config', requireAdminAuth, async (req, res) => {
+    try {
+        const { section, fieldConfigs, trackerId, projectId } = req.body;
+        
+        if (!section || !fieldConfigs || !trackerId || !projectId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Section, field configurations, trackerId, and projectId are required'
+            });
+        }
+
+        if (!req.session || !req.session.auth) {
+            return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+        }
+
+        const codebeamerConfig = await buildCodebeamerConfig(fieldConfigs, trackerId, projectId, req.session.auth);
+        
+        try {
+            const configUrl = `${defaults.cbApiUrl}/api/v3/tracker/configuration`;
+            console.log('Updating Codebeamer configuration:', configUrl);
+            console.log('Configuration payload:', JSON.stringify(codebeamerConfig, null, 2));
+            
+            const response = await axios.post(configUrl, codebeamerConfig, {
+                headers: {
+                    'Authorization': `Basic ${req.session.auth}`,
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
+                },
+                timeout: 30000
+            });
+
+            res.json({
+                success: true,
+                message: 'Codebeamer configuration updated successfully',
+                trackerId: trackerId,
+                fieldCount: fieldConfigs.length,
+                response: response.data
+            });
+        } catch (error) {
+            console.error('Error updating Codebeamer configuration:', error);
+            if (error.response) {
+                console.error('Error response status:', error.response.status);
+                console.error('Error response data:', error.response.data);
+            }
+            res.status(500).json({
+                success: false,
+                error: 'Failed to update Codebeamer configuration: ' + error.message,
+                details: error.response?.data || null
+            });
+        }
+    } catch (error) {
+        console.error('Error in update-codebeamer-config:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update Codebeamer configuration: ' + error.message
+        });
+    }
+});
+
+async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
+    const issueTypeId = 1;
+    const position = 100;
+    
+    // First, try to get existing tracker configuration to preserve existing fields
+    let existingConfig = null;
+    try {
+        const configUrl = `${defaults.cbApiUrl}/api/v3/tracker/${trackerId}/configuration`;
+        const response = await axios.get(configUrl, {
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 10000
+        });
+        existingConfig = response.data;
+        console.log('Retrieved existing configuration with', existingConfig.fields?.length || 0, 'fields');
+    } catch (error) {
+        console.log('Could not retrieve existing configuration, creating new one');
+    }
+
+    // Start with existing fields or empty array
+    const existingFields = existingConfig?.fields || [];
+    const newFields = [];
+    
+    // Process new field configurations
+    fieldConfigs.forEach((field, index) => {
+        const referenceId = field.codebeamerId ? parseInt(field.codebeamerId.replace('custom_field_', '')) : (position + index + 1000);
+        
+        // Check if field already exists
+        const existingField = existingFields.find(f => f.referenceId === referenceId);
+        
+        if (existingField) {
+            // Update existing field without changing type
+            const updatedField = {
+                ...existingField,
+                label: field.name,
+                mandatory: field.required || false,
+                hidden: false,
+                listable: true
+            };
+            
+            // Only update choice options if it's a selector field and type matches
+            if (field.type === 'selector' && field.options && field.options.length > 0 && existingField.typeId === 6) {
+                updatedField.choiceOptionSetting = {
+                    type: "CHOICE_OPTIONS",
+                    choiceOptions: field.options.map((option, optIndex) => ({
+                        id: optIndex + 1,
+                        name: option
+                    }))
+                };
+            }
+            
+            newFields.push(updatedField);
+        } else {
+            // Create new field
+            const fieldConfig = {
+                referenceId: referenceId,
+                typeId: getCodebeamerTypeId(field.type),
+                position: position + index,
+                label: field.name,
+                hidden: false,
+                listable: true,
+                mandatory: field.required || false,
+                mandatoryExceptInStatus: [],
+                multipleSelection: false,
+                propagateSuspect: false,
+                reversedSuspect: false,
+                bidirectionalSuspect: false,
+                propagateDependencies: false,
+                omitSuspectedWhenChange: false,
+                omitMerge: false,
+                newLine: false,
+                permission: {
+                    type: "UNRESTRICTED"
+                },
+                computedFieldReferences: []
+            };
+
+            if (field.type === 'selector' && field.options && field.options.length > 0) {
+                fieldConfig.choiceOptionSetting = {
+                    type: "CHOICE_OPTIONS",
+                    choiceOptions: field.options.map((option, optIndex) => ({
+                        id: optIndex + 1,
+                        name: option
+                    }))
+                };
+            }
+
+            newFields.push(fieldConfig);
+        }
+    });
+
+    // Preserve other existing fields that aren't being updated
+    const updatedReferenceIds = newFields.map(f => f.referenceId);
+    const preservedFields = existingFields.filter(f => !updatedReferenceIds.includes(f.referenceId));
+    
+    const allFields = [...preservedFields, ...newFields];
+
+    return {
+        basicInformation: {
+            trackerId: parseInt(trackerId),
+            projectId: parseInt(projectId),
+            issueTypeId: issueTypeId,
+            template: false,
+            name: existingConfig?.basicInformation?.name || "Dynamic Tracker",
+            key: existingConfig?.basicInformation?.key || "DYNAMIC",
+            color: existingConfig?.basicInformation?.color || "",
+            defaultLayout: existingConfig?.basicInformation?.defaultLayout || "TABLE",
+            description: existingConfig?.basicInformation?.description || "Dynamic tracker created from admin configuration",
+            workflowIsActive: existingConfig?.basicInformation?.workflowIsActive !== false,
+            onlyWorkflowActionsCanCreateNewReferringItems: existingConfig?.basicInformation?.onlyWorkflowActionsCanCreateNewReferringItems || false,
+            alwaysUseQuickTransitions: existingConfig?.basicInformation?.alwaysUseQuickTransitions || false,
+            locked: existingConfig?.basicInformation?.locked || false,
+            hidden: existingConfig?.basicInformation?.hidden || false,
+            showAncestorItems: existingConfig?.basicInformation?.showAncestorItems || false,
+            showDescendantItems: existingConfig?.basicInformation?.showDescendantItems || false,
+            sharedInWorkingSets: existingConfig?.basicInformation?.sharedInWorkingSets !== false,
+            itemCountVisibility: existingConfig?.basicInformation?.itemCountVisibility !== false,
+            referenceVisibility: existingConfig?.basicInformation?.referenceVisibility !== false,
+            recentReferringTrackersMenu: existingConfig?.basicInformation?.recentReferringTrackersMenu || false
+        },
+        fields: allFields
+    };
+}
+
+function getCodebeamerTypeId(fieldType) {
+    const typeMapping = {
+        'string': 0,
+        'number': 1,
+        'calendar': 3,
+        'selector': 6
+    };
+    return typeMapping[fieldType] || 0;
+}
 
 
 app.get('/api/equipment', requireAuth, async (req, res) => {
