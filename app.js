@@ -517,373 +517,105 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
     }
 });
 
-const HARDWARE_TRACKER_ID = 19601;
-
-function getVehicleTypeId(vehicleType) {
-    const vehicleTypeMap = {
-        'SW': 1,
-        'OV1': 2,
-        'HE1i': 3,
-        'SX3': 4,
-        'NQ6': 5,
-        'LT2': 6
-    };
-    return vehicleTypeMap[vehicleType] || null;
-}
-
-function getChangeTypeId(changeType) {
-    const changeTypeMap = {
-        'HW': 1,  
-        'SW': 2,  
-        'HW': 1,
-        'SW': 2
-    };
-    return changeTypeMap[changeType] || null;
-}
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
-    if (!req.session || !req.session.auth) {
-        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
-    }
-
     try {
-        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${HARDWARE_TRACKER_ID}/items`;
-        console.log('Fetching hardware items from:', codebeamerUrl);
-        
-        const response = await axios.get(codebeamerUrl, {
-            headers: {
-                'Authorization': `Basic ${req.session.auth}`,
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
+        const mockHardware = [
+            {
+                id: 1,
+                name: "ECU 하드웨어 v2.1",
+                description: "차량 제어용 ECU 하드웨어",
+                custom_field_1000: "SW",
+                custom_field_1001: "H/W",
+                custom_field_10005: "성능 개선",
+                custom_field_10006: "2024-02-15",
+                custom_field_3: "v2.1",
+                custom_field_10002: "v1.5",
+                status: "Done"
+            },
+            {
+                id: 2,
+                name: "센서 모듈 업데이트",
+                description: "온도 센서 모듈 업데이트",
+                custom_field_1000: "OV1",
+                custom_field_1001: "S/W",
+                custom_field_10005: "버그 수정",
+                custom_field_10006: "2024-01-20",
+                custom_field_3: "v1.8",
+                custom_field_10002: "v2.0",
+                status: "In progress"
+            },
+            {
+                id: 3,
+                name: "디스플레이 컨트롤러",
+                description: "대시보드 디스플레이 컨트롤러",
+                custom_field_1000: "HE1i",
+                custom_field_1001: "H/W",
+                custom_field_10005: "신규 기능 추가",
+                custom_field_10006: "2024-03-10",
+                custom_field_3: "v3.0",
+                custom_field_10002: "v2.2",
+                status: "ToDo"
             }
-        });
-
-        const items = Array.isArray(response.data) ? response.data : response.data.itemRefs || [];
-        const hardwareItems = [];
-        for (const item of items) {
-            try {
-                const itemDetailUrl = `${defaults.cbApiUrl}/api/v3/items/${item.id}`;
-                const itemResponse = await axios.get(itemDetailUrl, {
-                    headers: {
-                        'Authorization': `Basic ${req.session.auth}`,
-                        'Content-Type': 'application/json',
-                        'accept': 'application/json'
-                    }
-                });
-                
-                const itemDetail = itemResponse.data;
-                console.log('Item detail structure:', JSON.stringify(itemDetail, null, 2));
-                console.log('Custom fields:', itemDetail.customFields);
-                
-                if (itemDetail.customFields) {
-                    itemDetail.customFields.forEach((field, index) => {
-                        console.log(`Field ${index}:`, {
-                            fieldId: field.field?.id,
-                            referenceId: field.field?.referenceId,
-                            name: field.field?.name,
-                            value: field.value,
-                            values: field.values,
-                            type: field.type
-                        });
-                    });
-                }
-                
-                const getFieldValue = (referenceId, fieldName = null) => {
-                    const field = itemDetail.customFields?.find(f => f.field?.referenceId === referenceId);
-                    if (!field) return '';
-                    
-                    if (field.value) return field.value;
-                    if (field.values && field.values.length > 0) {
-                        if (field.values[0].name) return field.values[0].name;
-                        if (field.values[0].value) return field.values[0].value;
-                        return field.values[0];
-                    }
-                    return '';
-                };
-                
-                hardwareItems.push({
-                    id: itemDetail.id,
-                    name: itemDetail.name,
-                    description: itemDetail.description,
-                    status: itemDetail.status?.name || 'Unknown',
-                    hwVersion: getFieldValue(3),
-                    swVersion: getFieldValue(10002),
-                    vehicleType: getFieldValue(1000),
-                    changeType: getFieldValue(1001),
-                    changeReason: getFieldValue(10005),
-                    releaseDate: getFieldValue(10006),
-                    submittedAt: itemDetail.submittedAt,
-                    submittedBy: itemDetail.submittedBy?.name || '',
-                    modifiedAt: itemDetail.modifiedAt,
-                    modifiedBy: itemDetail.modifiedBy?.name || ''
-                });
-            } catch (error) {
-                console.error(`Error fetching details for item ${item.id}:`, error.message);
-                hardwareItems.push({
-                    id: item.id,
-                    name: item.name,
-                    description: item.description || '',
-                    status: item.status?.name || 'Unknown',
-                    hwVersion: 'Error',
-                    swVersion: 'Error',
-                    vehicleType: 'Error',
-                    changeType: 'Error',
-                    changeReason: 'Error',
-                    releaseDate: 'Error',
-                    submittedAt: item.submittedAt,
-                    submittedBy: item.submittedBy?.name || '',
-                    modifiedAt: item.modifiedAt,
-                    modifiedBy: item.modifiedBy?.name || ''
-                });
-            }
-        }
+        ];
 
         res.json({
             success: true,
-            items: hardwareItems
+            items: mockHardware
         });
     } catch (error) {
-        console.error('Error fetching hardware items:', error.message);
-        res.status(500).json({ 
+        console.error('Error fetching hardware items:', error);
+        res.status(500).json({
             success: false,
-            error: 'Failed to fetch hardware items: ' + error.message 
+            error: 'Failed to fetch hardware items'
         });
     }
 });
 
 app.post('/api/hardware', requireAuth, async (req, res) => {
-    if (!req.session || !req.session.auth) {
-        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
-    }
-
     try {
-        const { name, description, hwVersion, swVersion, vehicleType, changeType, changeReason, releaseDate } = req.body;
+        const hardwareData = req.body;
+        console.log('Saving hardware:', hardwareData);
         
-        if (!name || !hwVersion) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Name and H/W Version are required' 
-            });
-        }
-
-        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${HARDWARE_TRACKER_ID}/items`;
-        console.log('Creating hardware item at:', codebeamerUrl);
-        
-        const itemData = {
-            name: hwVersion, 
-            description: description || '',
-            customFields: [
-                {
-                    fieldId: 3, 
-                    name: "HW 버전",
-                    value: hwVersion,
-                    type: 'TextFieldValue'
-                },
-                {
-                    fieldId: 10002, 
-                    name: "SW 버전",
-                    value: swVersion || '',
-                    type: 'TextFieldValue'
-                },
-                {
-                    fieldId: 1000, 
-                    name: "차종",
-                    values: vehicleType ? [{ id: getVehicleTypeId(vehicleType), name: vehicleType, type: 'ChoiceOptionReference' }] : [],
-                    type: 'ChoiceFieldValue'
-                },
-                {
-                    fieldId: 1001, 
-                    name: "변경사항",
-                    values: changeType ? [{ 
-                        id: getChangeTypeId(changeType), 
-                        name: changeType === 'H/W' ? 'HW' : changeType === 'S/W' ? 'SW' : changeType, 
-                        type: 'ChoiceOptionReference' 
-                    }] : [],
-                    type: 'ChoiceFieldValue'
-                },
-                {
-                    fieldId: 10005, 
-                    name: "변경 사유",
-                    value: changeReason || '',
-                    type: 'TextFieldValue'
-                },
-                {
-                    fieldId: 10006, 
-                    name: "Release 일자",
-                    value: releaseDate ? new Date(releaseDate).toISOString() : '',
-                    type: 'DateFieldValue'
-                }
-            ]
-        };
-
-        const response = await axios.post(codebeamerUrl, itemData, {
-            headers: {
-                'Authorization': `Basic ${req.session.auth}`,
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        });
-
         res.json({
             success: true,
-            item: response.data,
-            message: 'Hardware item created successfully'
+            message: 'Hardware saved successfully',
+            id: Date.now()
         });
     } catch (error) {
-        console.error('Error creating hardware item:', error.message);
-        if (error.response) {
-            console.error('Error response:', error.response.data);
-        }
-        res.status(500).json({ 
+        console.error('Error saving hardware:', error);
+        res.status(500).json({
             success: false,
-            error: 'Failed to create hardware item: ' + error.message 
+            error: 'Failed to save hardware'
         });
     }
 });
 
 
 app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
-    if (!req.session || !req.session.auth) {
-        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
-    }
-
     try {
         const { id } = req.params;
-        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/items/${id}`;
-        console.log('Deleting hardware item at:', codebeamerUrl);
+        console.log('Deleting hardware item:', id);
         
-        await axios.delete(codebeamerUrl, {
-            headers: {
-                'Authorization': `Basic ${req.session.auth}`,
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        });
-
         res.json({
             success: true,
             message: 'Hardware item deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting hardware item:', error.message);
-        if (error.response) {
-            console.error('Error response:', error.response.data);
-        }
-        res.status(500).json({ 
+        console.error('Error deleting hardware item:', error);
+        res.status(500).json({
             success: false,
-            error: 'Failed to delete hardware item: ' + error.message 
+            error: 'Failed to delete hardware item'
         });
     }
 });
-
-const VEHICLE_TYPES_FILE = path.join(__dirname, 'data', 'vehicle-types.json');
 
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const DEFAULT_VEHICLE_TYPES = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
 
-function loadVehicleTypes() {
-    try {
-        if (fs.existsSync(VEHICLE_TYPES_FILE)) {
-            const data = fs.readFileSync(VEHICLE_TYPES_FILE, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (error) {
-        console.error('Error loading vehicle types:', error);
-    }
-    return { vehicleTypes: DEFAULT_VEHICLE_TYPES };
-}
-
-function saveVehicleTypes(vehicleTypes) {
-    try {
-        const data = { vehicleTypes, lastUpdated: new Date().toISOString() };
-        fs.writeFileSync(VEHICLE_TYPES_FILE, JSON.stringify(data, null, 2));
-        return true;
-    } catch (error) {
-        console.error('Error saving vehicle types:', error);
-        return false;
-    }
-}
-
-app.get('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
-    try {
-        const data = loadVehicleTypes();
-        res.json({
-            success: true,
-            vehicleTypes: data.vehicleTypes
-        });
-    } catch (error) {
-        console.error('Error getting vehicle types:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to load vehicle types: ' + error.message
-        });
-    }
-});
-
-app.post('/api/admin/vehicle-types', requireAdminAuth, (req, res) => {
-    try {
-        const { vehicleTypes } = req.body;
-        
-        if (!vehicleTypes || !Array.isArray(vehicleTypes) || vehicleTypes.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Vehicle types array is required and cannot be empty'
-            });
-        }
-
-    
-        const validVehicleTypes = vehicleTypes.filter(type => 
-            typeof type === 'string' && type.trim().length > 0
-        );
-
-        if (validVehicleTypes.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'At least one valid vehicle type is required'
-            });
-        }
-
-        if (saveVehicleTypes(validVehicleTypes)) {
-            res.json({
-                success: true,
-                message: 'Vehicle types saved successfully',
-                vehicleTypes: validVehicleTypes
-            });
-        } else {
-            res.status(500).json({
-                success: false,
-                error: 'Failed to save vehicle types'
-            });
-        }
-    } catch (error) {
-        console.error('Error saving vehicle types:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to save vehicle types: ' + error.message
-        });
-    }
-});
-
-
-app.get('/api/vehicle-types', (req, res) => {
-    try {
-        const data = loadVehicleTypes();
-        res.json({
-            success: true,
-            vehicleTypes: data.vehicleTypes
-        });
-    } catch (error) {
-        console.error('Error getting vehicle types:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to load vehicle types: ' + error.message
-        });
-    }
-});
 
 
 const FIELD_CONFIGS_FILE = path.join(__dirname, 'data', 'field-configs.json');

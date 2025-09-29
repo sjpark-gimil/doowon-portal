@@ -124,22 +124,7 @@
             <div class="section-header">
                 <h3>하드웨어 목록</h3>
                 <div class="filter-controls">
-                    <select id="vehicleTypeFilter" onchange="filterHardware()">
-                        <option value="">전체 차종</option>
-                    </select>
-                    <select id="changeTypeFilter" onchange="filterHardware()">
-                        <option value="">전체 변경사항</option>
-                        <option value="H/W">HW</option>
-                        <option value="S/W">SW</option>
-                    </select>
-                    <select id="statusFilter" onchange="filterHardware()">
-                        <option value="">전체 상태</option>
-                        <option value="ToDo">ToDo</option>
-                        <option value="In progress">In progress</option>
-                        <option value="To verify">To verify</option>
-                        <option value="Done">Done</option>
-                    </select>
-                    <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="하드웨어명, 버전, 차종으로 검색...">
+                    <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="검색...">
                 </div>
             </div>
 
@@ -158,59 +143,7 @@
     <script src="/js/dynamic-forms.js"></script>
     
     <script>
-        let hardwareItems = [];
-        let vehicleTypes = [];
         let formHandler = new DynamicFormHandler();
-
-        // Load vehicle types from API
-        async function loadVehicleTypes() {
-            try {
-                const response = await fetch('/api/vehicle-types');
-                const data = await response.json();
-                
-                if (data.success) {
-                    vehicleTypes = data.vehicleTypes;
-                    populateVehicleTypeSelects();
-                } else {
-                    console.error('Failed to load vehicle types:', data.error);
-                    // Fallback to default types
-                    vehicleTypes = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
-                    populateVehicleTypeSelects();
-                }
-            } catch (error) {
-                console.error('Error loading vehicle types:', error);
-                // Fallback to default types
-                vehicleTypes = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
-                populateVehicleTypeSelects();
-            }
-        }
-
-        // Populate vehicle type select elements
-        function populateVehicleTypeSelects() {
-            const formSelect = document.getElementById('vehicleType');
-            const filterSelect = document.getElementById('vehicleTypeFilter');
-            
-            // Clear existing options (except first option)
-            if (formSelect) {
-                formSelect.innerHTML = '<option value="">선택하세요</option>';
-                vehicleTypes.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type;
-                    formSelect.appendChild(option);
-                });
-            }
-            
-            if (filterSelect) {
-                filterSelect.innerHTML = '<option value="">전체 차종</option>';
-                vehicleTypes.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type;
-                    filterSelect.appendChild(option);
-                });
-            }
-        }
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
@@ -236,85 +169,21 @@
         });
 
         async function loadHardwareItems() {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const emptyState = document.getElementById('emptyState');
-            const hardwareList = document.getElementById('hardwareList');
-            
-            if (loadingIndicator) loadingIndicator.style.display = 'block';
-            if (emptyState) emptyState.style.display = 'none';
-            
             try {
                 const response = await fetch('/api/hardware');
                 const data = await response.json();
                 
                 if (data.success) {
-                    hardwareItems = data.items;
-                    await renderHardwareList();
+                    const hardwareList = document.getElementById('hardwareList');
+                    if (hardwareList) {
+                        await formHandler.renderTable('hardwareList', data.items, 'hardware-management');
+                    }
                 } else {
                     console.error('Failed to load hardware items:', data.error);
-                    showError('하드웨어 목록을 불러오는데 실패했습니다.');
                 }
             } catch (error) {
                 console.error('Error loading hardware items:', error);
-                showError('하드웨어 목록을 불러오는 중 오류가 발생했습니다.');
-            } finally {
-                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
-        }
-
-        async function renderHardwareList() {
-            const hardwareList = document.getElementById('hardwareList');
-            const emptyState = document.getElementById('emptyState');
-            
-            if (!hardwareList) return;
-            
-            if (hardwareItems.length === 0) {
-                if (emptyState) emptyState.style.display = 'block';
-                return;
-            }
-            
-            if (emptyState) emptyState.style.display = 'none';
-            
-            const filteredItems = filterHardwareItems();
-            
-            try {
-                await formHandler.renderTable('hardwareList', filteredItems, 'hardware-management');
-            } catch (error) {
-                console.error('Error rendering dynamic table:', error);
-                hardwareList.innerHTML = '<div class="empty-state"><i>❌</i><p>테이블을 불러올 수 없습니다.</p></div>';
-            }
-        }
-
-        function getStatusClass(status) {
-            switch(status) {
-                case 'ToDo': return 'inactive';
-                case 'In progress': return 'active';
-                case 'To verify': return 'warning';
-                case 'Done': return 'success';
-                default: return 'inactive';
-            }
-        }
-
-        function filterHardwareItems() {
-            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
-            const vehicleTypeFilter = document.getElementById('vehicleTypeFilter').value;
-            const changeTypeFilter = document.getElementById('changeTypeFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            
-            return hardwareItems.filter(item => {
-                const matchesSearch = !searchFilter || 
-                    item.name.toLowerCase().includes(searchFilter) ||
-                    (item.hwVersion && item.hwVersion.toLowerCase().includes(searchFilter)) ||
-                    (item.swVersion && item.swVersion.toLowerCase().includes(searchFilter)) ||
-                    (item.vehicleType && item.vehicleType.toLowerCase().includes(searchFilter)) ||
-                    (item.changeReason && item.changeReason.toLowerCase().includes(searchFilter));
-                
-                const matchesVehicleType = !vehicleTypeFilter || item.vehicleType === vehicleTypeFilter;
-                const matchesChangeType = !changeTypeFilter || item.changeType === changeTypeFilter;
-                const matchesStatus = !statusFilter || item.status === statusFilter;
-                
-                return matchesSearch && matchesVehicleType && matchesChangeType && matchesStatus;
-            });
         }
 
         async function showCreateForm() {
@@ -328,7 +197,6 @@
             hideValidationErrors();
         }
 
-        // Load dynamic form
         async function loadDynamicForm() {
             try {
                 await formHandler.renderForm('dynamicForm', 'hardware-management');
@@ -396,96 +264,24 @@
             document.getElementById('validationErrors').classList.remove('show');
         }
 
-        // Edit item function for dynamic table
         function editItem(itemId) {
-            const item = hardwareItems.find(h => h.id === itemId);
-            if (item) {
-                showCreateForm();
-                formHandler.setFormData(item);
-            }
+            console.log('Editing hardware:', itemId);
+            showCreateForm();
         }
 
-        // Delete item function for dynamic table
         function deleteItem(itemId) {
-            deleteHardware(itemId);
+            console.log('Deleting hardware:', itemId);
         }
 
         function filterHardware() {
-            renderHardwareList();
-        }
-
-        // Note: CodeBeamer does not support updating items, only creating and deleting
-
-        function viewHardware(id) {
-            const item = hardwareItems.find(h => h.id === id);
-            if (!item) return;
-            
-            alert(`하드웨어 상세정보:\n\n이름: ${item.name}\nH/W 버전: ${item.hwVersion || 'N/A'}\nS/W 버전: ${item.swVersion || 'N/A'}\n차종: ${item.vehicleType || 'N/A'}\n변경사항: ${item.changeType || 'N/A'}\n변경 사유: ${item.changeReason || 'N/A'}\nRelease 일자: ${item.releaseDate || 'N/A'}\n상태: ${item.status}\n설명: ${item.description || 'N/A'}`);
-        }
-
-        async function deleteHardware(id) {
-            if (!confirm('정말로 이 하드웨어를 삭제하시겠습니까?')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/hardware/${id}`, {
-                    method: 'DELETE'
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    showSuccess('하드웨어가 삭제되었습니다.');
-                    loadHardwareItems();
-                } else {
-                    showError('하드웨어 삭제에 실패했습니다: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Error deleting hardware:', error);
-                showError('하드웨어 삭제 중 오류가 발생했습니다.');
-            }
-        }
-
-        async function saveHardware(formData) {
-            try {
-                const response = await fetch('/api/hardware', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showSuccess('하드웨어가 등록되었습니다.');
-                    hideCreateForm();
-                    loadHardwareItems();
-                } else {
-                    showError('저장에 실패했습니다: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Error saving hardware:', error);
-                showError('저장 중 오류가 발생했습니다.');
-            }
-        }
-
-        function showSuccess(message) {
-            alert('성공: ' + message);
-        }
-
-        function showError(message) {
-            alert('오류: ' + message);
+            console.log('Filtering hardware');
         }
 
 
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadVehicleTypes();
             loadHardwareItems();
             
-            // Check if we should show create form
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'create') {
                 showCreateForm();
