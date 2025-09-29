@@ -7,7 +7,7 @@ const path = require('path');
 const cors = require('cors');
 
 const defaults = {
-    cbApiUrl: process.env.CB_BASE_URL || 'http://codebeamer.mdsit.co.kr:8080/cb',
+    cbApiUrl: process.env.CB_BASE_URL || 'http://codebeamer.mdsit.co.kr:3008',
     sessionSecret: process.env.SESSION_SECRET || 'default-secret',
 };
 
@@ -522,13 +522,54 @@ app.get('/api/admin/tracker-configuration/:trackerId', requireAdminAuth, async (
     }
 });
 
+app.get('/api/admin/tracker-types', requireAdminAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const trackerTypesUrl = `${defaults.cbApiUrl}/api/v3/trackerTypes`;
+        console.log('Fetching tracker types from:', trackerTypesUrl);
+        
+        const response = await axios.get(trackerTypesUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 10000
+        });
+
+        const trackerTypes = response.data.map(type => ({
+            id: type.id,
+            name: type.name,
+            description: type.description || ''
+        }));
+
+        res.json({
+            success: true,
+            trackerTypes: trackerTypes
+        });
+    } catch (error) {
+        console.error('Error fetching tracker types:', error.message);
+        if (error.response) {
+            console.error('Error response status:', error.response.status);
+            console.error('Error response data:', error.response.data);
+        }
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch tracker types: ' + error.message 
+        });
+    }
+});
+
 app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
         return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
     }
 
     try {
-        const { projectId, trackerName, trackerKey, description, section } = req.body;
+        const { projectId, trackerName, trackerKey, summary, description, section } = req.body;
         
         if (!projectId || !trackerName || !trackerKey) {
             return res.status(400).json({
@@ -537,11 +578,39 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
             });
         }
 
+        // First, try to get available tracker types
+        let trackerTypeId = 1; // Default fallback
+        try {
+            const trackerTypesUrl = `${defaults.cbApiUrl}/api/v3/trackerTypes`;
+            const typesResponse = await axios.get(trackerTypesUrl, {
+                headers: {
+                    'Authorization': `Basic ${req.session.auth}`,
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
+                },
+                timeout: 10000
+            });
+            
+            if (typesResponse.data && typesResponse.data.length > 0) {
+                // Use the first available tracker type
+                trackerTypeId = typesResponse.data[0].id;
+                console.log('Using tracker type ID:', trackerTypeId);
+            }
+        } catch (error) {
+            console.log('Could not fetch tracker types, using default ID:', trackerTypeId);
+        }
+
         const trackerData = {
-            projectId: parseInt(projectId),
             name: trackerName,
-            key: trackerKey,
+            summary: summary || trackerName, // Use provided summary or fallback to name
             description: description || `Tracker for ${section} management`,
+            project: {
+                id: parseInt(projectId)
+            },
+            trackerType: {
+                id: trackerTypeId
+            },
+            key: trackerKey,
             color: "#007bff",
             defaultLayout: "TABLE",
             workflowIsActive: true,
@@ -559,7 +628,7 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
 
         console.log('Creating new tracker:', trackerData);
         
-        const createUrl = `${defaults.cbApiUrl}/api/v3/trackers`;
+        const createUrl = `${defaults.cbApiUrl}/tracker`;
         const response = await axios.post(createUrl, trackerData, {
             headers: {
                 'Authorization': `Basic ${req.session.auth}`,
@@ -1188,79 +1257,68 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
     const existingFields = existingConfig?.fields || [];
     const newFields = [];
     
+    // Keep only mandatory/system fields from existing configuration (ID, name, description, attachments)
+    const mandatoryFields = existingFields.filter(field => 
+        field.mandatory === true || 
+        field.referenceId === 88 || // Attachment field
+        field.referenceId === 0 ||  // ID field
+        field.referenceId === 1 ||  // Name field
+        field.referenceId === 2 ||  // Description field
+        field.referenceId === 3     // Status field
+    );
+    
+    console.log(`Keeping ${mandatoryFields.length} mandatory/system fields, removing all other custom fields`);
+
     // Process new field configurations
+    let customReferenceId = 10001; // Start from 10001 for custom fields
     fieldConfigs.forEach((field, index) => {
-        const referenceId = field.codebeamerId ? parseInt(field.codebeamerId.replace('custom_field_', '')) : (position + index + 1000);
-        
-        // Check if field already exists
-        const existingField = existingFields.find(f => f.referenceId === referenceId);
-        
-        if (existingField) {
-            // Update existing field without changing type
-            const updatedField = {
-                ...existingField,
-                label: field.name,
-                mandatory: field.required || false,
-                hidden: false,
-                listable: true
-            };
-            
-            // Only update choice options if it's a selector field and type matches
-            if (field.type === 'selector' && field.options && field.options.length > 0 && existingField.typeId === 6) {
-                updatedField.choiceOptionSetting = {
-                    type: "CHOICE_OPTIONS",
-                    choiceOptions: field.options.map((option, optIndex) => ({
-                        id: optIndex + 1,
-                        name: option
-                    }))
-                };
-            }
-            
-            newFields.push(updatedField);
-        } else {
-            // Create new field
-            const fieldConfig = {
-                referenceId: referenceId,
-                typeId: getCodebeamerTypeId(field.type),
-                position: position + index,
-                label: field.name,
-                hidden: false,
-                listable: true,
-                mandatory: field.required || false,
-                mandatoryExceptInStatus: [],
-                multipleSelection: false,
-                propagateSuspect: false,
-                reversedSuspect: false,
-                bidirectionalSuspect: false,
-                propagateDependencies: false,
-                omitSuspectedWhenChange: false,
-                omitMerge: false,
-                newLine: false,
-                permission: {
-                    type: "UNRESTRICTED"
-                },
-                computedFieldReferences: []
-            };
-
-            if (field.type === 'selector' && field.options && field.options.length > 0) {
-                fieldConfig.choiceOptionSetting = {
-                    type: "CHOICE_OPTIONS",
-                    choiceOptions: field.options.map((option, optIndex) => ({
-                        id: optIndex + 1,
-                        name: option
-                    }))
-                };
-            }
-
-            newFields.push(fieldConfig);
+        // Skip fields with empty names
+        if (!field.name || field.name.trim() === '') {
+            console.warn(`Skipping field with empty name at index ${index}`);
+            return;
         }
+        
+        const fieldConfig = {
+            referenceId: customReferenceId++,
+            typeId: getCodebeamerTypeId(field.type),
+            position: 9080 + (index * 10), // Start from 9080 and increment
+            label: field.name.trim(), // Use 'label' for Codebeamer API and trim whitespace
+            hidden: false,
+            listable: true,
+            mandatory: field.required || false,
+            mandatoryExceptInStatus: [],
+            multipleSelection: false,
+            propagateSuspect: false,
+            reversedSuspect: false,
+            bidirectionalSuspect: false,
+            propagateDependencies: false,
+            omitSuspectedWhenChange: false,
+            omitMerge: false,
+            newLine: false,
+            permission: {
+                type: "UNRESTRICTED"
+            },
+            computedFieldReferences: []
+        };
+
+        if (field.type === 'selector' && field.options && field.options.length > 0) {
+            fieldConfig.choiceOptionSetting = {
+                type: "CHOICE_OPTIONS",
+                choiceOptions: field.options.map((option, optIndex) => ({
+                    id: optIndex + 1,
+                    name: option
+                }))
+            };
+        }
+
+        newFields.push(fieldConfig);
     });
 
-    // Preserve other existing fields that aren't being updated
-    const updatedReferenceIds = newFields.map(f => f.referenceId);
-    const preservedFields = existingFields.filter(f => !updatedReferenceIds.includes(f.referenceId));
+    // Combine mandatory fields with new custom fields from admin settings
+    // This will REMOVE any existing custom fields that are not in the admin settings
+    const allFields = [...mandatoryFields, ...newFields];
     
-    const allFields = [...preservedFields, ...newFields];
+    console.log(`Final configuration: ${mandatoryFields.length} mandatory + ${newFields.length} custom fields from admin settings`);
 
     return {
         basicInformation: {
@@ -1291,12 +1349,12 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
 
 function getCodebeamerTypeId(fieldType) {
     const typeMapping = {
-        'string': 0,
-        'number': 1,
-        'calendar': 3,
-        'selector': 6
+        'string': 0,    // String/Text
+        'number': 1,    // Integer
+        'calendar': 3,  // Date/Timestamp
+        'selector': 6   // Options/Choice
     };
-    return typeMapping[fieldType] || 0;
+    return typeMapping[fieldType] || 0; // Default to String/Text
 }
 
 
