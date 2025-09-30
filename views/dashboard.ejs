@@ -13,7 +13,7 @@
 <body>
     <header class="header">
         <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
-        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+
         <div class="menu-container">
             <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
             <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
@@ -36,7 +36,7 @@
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>하드웨어관리</span>
+                <span>HW/SW 버전관리</span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
@@ -67,7 +67,7 @@
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>하드웨어관리</span>
+                <span>HW/SW 버전관리</span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
@@ -96,7 +96,7 @@
                     </button>
                     <button class="action-btn" onclick="createHardware()">
                         <span class="btn-icon">🔧</span>
-                        <span>하드웨어 등록</span>
+                        <span>SW/HW 등록</span>
                     </button>
                     <button class="action-btn" onclick="createEquipment()">
                         <span class="btn-icon">⚙️</span>
@@ -104,7 +104,7 @@
                     </button>
                     <button class="action-btn" onclick="createTraining()">
                         <span class="btn-icon">📚</span>
-                        <span>교육 신청</span>
+                        <span>교육 등록</span>
                     </button>
                 </div>
             </div>
@@ -148,8 +148,8 @@
 
                 <div class="dashboard-card">
                     <div class="card-icon">💻</div>
-                    <h3>하드웨어관리</h3>
-                    <p>하드웨어 자산 등록, 관리 및 추적</p>
+                    <h3>HW/SW 버전관리</h3>
+                    <p>SW/HW 자산 등록, 관리 및 추적</p>
                     <a href="/hardware-management" class="card-button">바로가기</a>
                 </div>
 
@@ -163,7 +163,7 @@
                 <div class="dashboard-card">
                     <div class="card-icon">🎓</div>
                     <h3>외부교육관리</h3>
-                    <p>외부 교육 신청, 참석 및 수료 관리</p>
+                    <p>외부 교육 등록, 참석 및 수료 관리</p>
                     <a href="/external-training" class="card-button">바로가기</a>
                 </div>
 
@@ -391,7 +391,7 @@
             const labels = {
                 'weekly-report': '주간보고',
                 'travel-report': '출장보고',
-                'hardware': '하드웨어',
+                'hardware': 'SW/HW',
                 'equipment': '장비',
                 'training': '외부교육'
             };

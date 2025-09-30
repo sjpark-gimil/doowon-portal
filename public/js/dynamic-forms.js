@@ -290,6 +290,47 @@ class DynamicFormHandler {
     }
 
     /**
+     * Transform form data to CodeBeamer API format
+     * @param {Object} formData - Form data from the form
+     * @param {string} section - Section name for field configuration
+     * @param {string} trackerId - Tracker ID for the item
+     */
+    transformFormDataForCodeBeamer(formData, section, trackerId) {
+        const fieldConfigs = this.getFieldConfigs(section);
+        const transformedData = {
+            name: formData.name || formData.title || 'Untitled Item',
+            description: formData.description || '',
+            descriptionFormat: 'PlainText'
+        };
+
+        // Map custom fields
+        const customFields = {};
+        fieldConfigs.forEach(field => {
+            const value = formData[field.codebeamerId];
+            if (value !== undefined && value !== null && value !== '') {
+                // Handle different field types
+                if (field.type === 'number' && !isNaN(Number(value))) {
+                    customFields[field.id] = Number(value);
+                } else if (field.type === 'calendar' && value) {
+                    // Convert date to ISO format if needed
+                    customFields[field.id] = new Date(value).toISOString().split('T')[0];
+                } else {
+                    customFields[field.id] = value;
+                }
+            }
+        });
+
+        if (Object.keys(customFields).length > 0) {
+            transformedData.customFields = Object.keys(customFields).map(fieldId => ({
+                fieldId: parseInt(fieldId),
+                value: customFields[fieldId]
+            }));
+        }
+
+        return transformedData;
+    }
+
+    /**
      * Create a dynamic table for listing items with pagination
      * @param {string} containerId - Container element ID
      * @param {Array} items - Array of items to display
@@ -613,4 +654,8 @@ window.filterTable = function(searchTerm) {
                 window.dynamicFormHandler.filterItems(searchTerm, fieldConfigs);
             });
     }
+};
+
+window.transformFormDataForCodeBeamer = function(formData, section, trackerId) {
+    return window.dynamicFormHandler.transformFormDataForCodeBeamer(formData, section, trackerId);
 };

@@ -972,9 +972,17 @@ function loadFieldConfigs() {
 }
 
 
-function saveFieldConfigs(fieldConfigs) {
+function saveFieldConfigs(fieldConfigs, trackerIds = null) {
     try {
-        const data = { fieldConfigs, lastUpdated: new Date().toISOString() };
+        const data = { 
+            fieldConfigs, 
+            lastUpdated: new Date().toISOString() 
+        };
+        
+        if (trackerIds) {
+            data.trackerIds = trackerIds;
+        }
+        
         fs.writeFileSync(FIELD_CONFIGS_FILE, JSON.stringify(data, null, 2));
         return true;
     } catch (error) {
@@ -1001,7 +1009,7 @@ app.get('/api/admin/field-configs', requireAdminAuth, (req, res) => {
 
 app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
     try {
-        const { fieldConfigs } = req.body;
+        const { fieldConfigs, trackerIds } = req.body;
         
         if (!fieldConfigs || typeof fieldConfigs !== 'object') {
             return res.status(400).json({
@@ -1010,11 +1018,13 @@ app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
             });
         }
 
-        if (saveFieldConfigs(fieldConfigs)) {
+        // Save both field configs and tracker IDs
+        if (saveFieldConfigs(fieldConfigs, trackerIds)) {
             res.json({
                 success: true,
-                message: 'Field configurations saved successfully',
-                fieldConfigs: fieldConfigs
+                message: 'Field configurations and tracker IDs saved successfully',
+                fieldConfigs: fieldConfigs,
+                trackerIds: trackerIds
             });
         } else {
             res.status(500).json({
@@ -1559,6 +1569,206 @@ app.post('/api/weekly-reports', requireAuth, async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to save weekly report'
+        });
+    }
+});
+
+// Get tracker ID for a section
+app.get('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) => {
+    try {
+        const { section } = req.params;
+        const data = loadFieldConfigs();
+        
+        // Check if tracker ID is stored in field configs
+        const trackerId = data.trackerIds && data.trackerIds[section];
+        
+        res.json({
+            success: true,
+            trackerId: trackerId || null,
+            section: section
+        });
+    } catch (error) {
+        console.error('Error getting tracker ID:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get tracker ID: ' + error.message
+        });
+    }
+});
+
+// Set tracker ID for a section
+app.post('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) => {
+    try {
+        const { section } = req.params;
+        const { trackerId } = req.body;
+        
+        if (!trackerId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Tracker ID is required'
+            });
+        }
+
+        const data = loadFieldConfigs();
+        if (!data.trackerIds) {
+            data.trackerIds = {};
+        }
+        
+        data.trackerIds[section] = trackerId;
+        
+        // Save the updated data
+        const updatedData = {
+            fieldConfigs: data.fieldConfigs,
+            trackerIds: data.trackerIds,
+            lastUpdated: new Date().toISOString()
+        };
+        
+        try {
+            fs.writeFileSync(FIELD_CONFIGS_FILE, JSON.stringify(updatedData, null, 2));
+            res.json({
+                success: true,
+                message: 'Tracker ID saved successfully',
+                section: section,
+                trackerId: trackerId
+            });
+        } catch (error) {
+            console.error('Error saving tracker ID:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to save tracker ID'
+            });
+        }
+    } catch (error) {
+        console.error('Error setting tracker ID:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to set tracker ID: ' + error.message
+        });
+    }
+});
+
+// Get tracker ID for a section (user endpoint)
+app.get('/api/tracker-id/:section', requireAuth, async (req, res) => {
+    try {
+        const { section } = req.params;
+        console.log(`Getting tracker ID for section: ${section}`);
+        
+        const data = loadFieldConfigs();
+        console.log('Loaded data structure:', {
+            hasFieldConfigs: !!data.fieldConfigs,
+            hasTrackerIds: !!data.trackerIds,
+            trackerIdsKeys: data.trackerIds ? Object.keys(data.trackerIds) : 'None'
+        });
+        
+        // Check if tracker ID is stored in field configs
+        const trackerId = data.trackerIds && data.trackerIds[section];
+        console.log(`Tracker ID for ${section}: ${trackerId || 'Not found'}`);
+        
+        res.json({
+            success: true,
+            trackerId: trackerId || null,
+            section: section
+        });
+    } catch (error) {
+        console.error('Error getting tracker ID:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get tracker ID: ' + error.message
+        });
+    }
+});
+
+// Create tracker item endpoint
+app.post('/api/v33/trackers/:trackerId/items', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { trackerId } = req.params;
+        const itemData = req.body;
+        
+        console.log('Creating tracker item:', { trackerId, itemData });
+        
+        // Validate required fields
+        if (!itemData.name) {
+            return res.status(400).json({
+                success: false,
+                error: 'Item name is required'
+            });
+        }
+
+        // Prepare the request body for CodeBeamer API
+        const codebeamerItemData = {
+            name: itemData.name,
+            description: itemData.description || '',
+            descriptionFormat: 'PlainText'
+        };
+
+        // Add optional fields if provided
+        if (itemData.storyPoints) {
+            codebeamerItemData.storyPoints = parseInt(itemData.storyPoints);
+        }
+
+        if (itemData.priority) {
+            codebeamerItemData.priority = {
+                id: parseInt(itemData.priority.id),
+                name: itemData.priority.name,
+                type: 'ChoiceOptionReference'
+            };
+        }
+
+        if (itemData.subjects && Array.isArray(itemData.subjects)) {
+            codebeamerItemData.subjects = itemData.subjects.map(subject => ({
+                id: parseInt(subject.id),
+                name: subject.name,
+                type: 'TrackerItemReference'
+            }));
+        }
+
+        // Add custom fields if provided
+        if (itemData.customFields && Object.keys(itemData.customFields).length > 0) {
+            codebeamerItemData.customFields = Object.keys(itemData.customFields).map(fieldId => ({
+                fieldId: parseInt(fieldId),
+                value: itemData.customFields[fieldId]
+            }));
+        }
+
+        console.log('Sending to CodeBeamer:', codebeamerItemData);
+        
+        const createUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}/items`;
+        const response = await axios.post(createUrl, codebeamerItemData, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 30000
+        });
+
+        console.log('CodeBeamer response:', response.data);
+
+        res.json({
+            success: true,
+            message: 'Tracker item created successfully',
+            item: {
+                id: response.data.id,
+                name: response.data.name,
+                trackerId: trackerId,
+                createdAt: response.data.createdAt,
+                createdBy: response.data.createdBy
+            }
+        });
+    } catch (error) {
+        console.error('Error creating tracker item:', error.message);
+        if (error.response) {
+            console.error('Error response status:', error.response.status);
+            console.error('Error response data:', error.response.data);
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create tracker item: ' + error.message,
+            details: error.response?.data || null
         });
     }
 });

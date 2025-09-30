@@ -138,6 +138,7 @@
             renderManagementSections();
             updateStats();
             await loadProjects();
+            await loadTrackerIds(); // Load saved tracker IDs
         });
 
         // Load available projects from Codebeamer
@@ -196,6 +197,8 @@
                 if (data.success) {
                     availableTrackers = data.trackers;
                     populateTrackerSelectors();
+                    // Load saved tracker IDs after populating selectors
+                    await loadTrackerIds();
                     alert(`트래커 ${data.trackers.length}개를 불러왔습니다.`);
                 } else {
                     alert(`트래커 불러오기 실패: ${data.error}`);
@@ -228,6 +231,7 @@
                     // Restore previously selected tracker
                     if (selectedTrackers[section]) {
                         selector.value = selectedTrackers[section];
+                        console.log(`Restored tracker for ${section}: ${selectedTrackers[section]}`);
                     }
                 }
             });
@@ -236,6 +240,101 @@
         function updateTrackerSelection(section, trackerId) {
             selectedTrackers[section] = trackerId;
             console.log(`Updated tracker for ${section}: ${trackerId}`);
+            
+            // Save tracker ID to server
+            if (trackerId) {
+                saveTrackerIdForSection(section, trackerId);
+            }
+        }
+
+        // Save tracker ID for a section
+        async function saveTrackerIdForSection(section, trackerId) {
+            try {
+                const response = await fetch(`/api/admin/tracker-id/${section}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ trackerId: trackerId })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log(`Tracker ID saved for ${section}: ${trackerId}`);
+                    // Show success message
+                    showNotification(`트래커 ID가 저장되었습니다: ${section} -> ${trackerId}`, 'success');
+                } else {
+                    console.error('Failed to save tracker ID:', data.error);
+                    showNotification(`트래커 ID 저장 실패: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving tracker ID:', error);
+                showNotification(`트래커 ID 저장 중 오류: ${error.message}`, 'error');
+            }
+        }
+
+        // Load tracker IDs for all sections
+        async function loadTrackerIds() {
+            const sections = ['weekly-reports', 'travel-reports', 'hardware-management', 'equipment-management', 'external-training'];
+            
+            for (const section of sections) {
+                try {
+                    const response = await fetch(`/api/admin/tracker-id/${section}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.trackerId) {
+                        selectedTrackers[section] = data.trackerId;
+                        const selector = document.getElementById(`tracker-${section}`);
+                        if (selector) {
+                            selector.value = data.trackerId;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error loading tracker ID for ${section}:`, error);
+                }
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            // Style the notification
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 4px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                max-width: 400px;
+                word-wrap: break-word;
+            `;
+            
+            // Set background color based on type
+            if (type === 'success') {
+                notification.style.backgroundColor = '#28a745';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#dc3545';
+            } else {
+                notification.style.backgroundColor = '#17a2b8';
+            }
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
         }
 
         async function refreshTrackers(section) {
@@ -390,7 +489,7 @@
             const sections = [
                 { key: 'weekly-reports', name: '주간보고관리', icon: '📊' },
                 { key: 'travel-reports', name: '출장보고관리', icon: '✈️' },
-                { key: 'hardware-management', name: '하드웨어관리', icon: '💻' },
+                { key: 'hardware-management', name: 'HW/SW 버전관리', icon: '💻' },
                 { key: 'equipment-management', name: '장비관리', icon: '🔧' },
                 { key: 'external-training', name: '외부교육관리', icon: '🎓' }
             ];
@@ -515,18 +614,24 @@
         // Save field configurations
         async function saveFieldConfigs() {
             try {
+                // Include tracker IDs in the save request
+                const saveData = {
+                    fieldConfigs: fieldConfigs,
+                    trackerIds: selectedTrackers
+                };
+                
                 const response = await fetch('/api/admin/field-configs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ fieldConfigs })
+                    body: JSON.stringify(saveData)
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log('Field configs saved successfully');
+                    console.log('Field configs and tracker IDs saved successfully');
                     return true;
                 } else {
                     console.error('Failed to save field configs:', data.error);
@@ -702,7 +807,7 @@
             const names = {
                 'weekly-reports': '주간보고관리',
                 'travel-reports': '출장보고관리',
-                'hardware-management': '하드웨어관리',
+                'hardware-management': 'HW/SW 버전관리',
                 'equipment-management': '장비관리',
                 'external-training': '외부교육관리'
             };

@@ -140,7 +140,8 @@
           "HE1i",
           "SX3",
           "NQ6",
-          "LT2"
+          "LT2",
+          ""
         ]
       },
       {
@@ -383,5 +384,12 @@
       }
     ]
   },
-  "lastUpdated": "2025-09-29T07:59:20.351Z"
+  "trackerIds": {
+    "weekly-reports": "17867",
+    "travel-reports": "18107", 
+    "hardware-management": "18320",
+    "equipment-management": "18249",
+    "external-training": "18178"
+  },
+  "lastUpdated": "2025-09-30T01:40:11.052Z"
 }

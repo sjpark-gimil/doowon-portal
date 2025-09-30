@@ -18,9 +18,19 @@
 }
 
 .data-table td {
+    font-size: 0.8rem;
     padding: 12px;
     border-bottom: 1px solid #dee2e6;
     vertical-align: middle;
+}
+
+.data-table td:last-child {
+    white-space: nowrap;
+}
+
+.data-table td:last-child .btn-small {
+    display: inline-block;
+    margin-right: 8px;
 }
 
 .data-table tr:hover {
@@ -75,11 +85,13 @@
 }
 
 .btn-small {
-    padding: 12px;
+    padding: 8px 12px;
     font-size: 12px;
     border-radius: 4px;
     border: none;
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .btn-info {

@@ -27,7 +27,7 @@ html, body {
 }
 
 .header .logo img {
-    max-width: 150px;  
+    max-width: 200px;  
     height: auto;
 }
 
@@ -1184,12 +1184,29 @@ select.report-select option {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    min-height: 50px;
 }
 
 .admin-button-container .btn-add-field {
     flex-shrink: 0;
     margin: 0;
+}
+
+/* Responsive button container for smaller screens */
+@media (max-width: 768px) {
+    .admin-button-container {
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: auto;
+    }
+    
+    .admin-button-container .btn-admin {
+        font-size: 0.85em;
+        padding: 8px 12px;
+        flex: 1;
+        min-width: 0;
+    }
 }
 
 /* Delete Icon Button */
@@ -3251,7 +3268,7 @@ select.report-select option {
     }
     
     .header .logo img {
-        max-width: 120px;
+        max-width: 200px;
     }
     
     .header .title-container h1 {
@@ -3368,6 +3385,8 @@ select.report-select option {
     .action-buttons {
         flex-direction: column;
         gap: 10px;
+        min-height: auto;
+        flex-wrap: wrap;
     }
     
     .action-btn {
@@ -3398,7 +3417,7 @@ select.report-select option {
         color: #495057;
         border: 2px solid #e9ecef !important;
         box-sizing: border-box !important;
-        width: 140% !important; /* Take full width like other inputs */
+        width: 125% !important; /* Take full width like other inputs */
 
     }
     
@@ -3955,12 +3974,9 @@ body.admin-login-body .admin-login-container {
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 0;
+    padding: 1rem;
 }
 
-.field-item:last-child {
-    padding: 1rem 2rem 0 2rem;
-}
 
 .field-item.mapping {
     justify-content: space-between;
@@ -4134,6 +4150,7 @@ body.admin-login-body .admin-login-container {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5rem;
+    padding-left: 1rem;
 }
 
 .info-item:last-child {

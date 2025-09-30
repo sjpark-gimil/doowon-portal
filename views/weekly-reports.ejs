@@ -13,7 +13,7 @@
 <body>
     <header class="header">
         <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
-        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+
         <div class="menu-container">
             <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
             <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
@@ -36,7 +36,7 @@
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>하드웨어관리</span>
+                <span>HW/SW 버전관리</span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
@@ -63,7 +63,7 @@
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>하드웨어관리</span>
+                <span>HW/SW 버전관리</span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
@@ -211,12 +211,23 @@
             console.log('Submitting weekly report form data:', formData);
             
             try {
-                const response = await fetch('/api/weekly-reports', {
+                // Get tracker ID from admin configuration or use a default
+                const trackerId = await getTrackerIdForSection('weekly-reports');
+                if (!trackerId) {
+                    alert('주간보고 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
+                    return;
+                }
+
+                // Transform form data for CodeBeamer API
+                const codebeamerData = transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
+                console.log('Transformed data for CodeBeamer:', codebeamerData);
+
+                const response = await fetch(`/api/v33/trackers/${trackerId}/items`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(codebeamerData)
                 });
                 
                 const data = await response.json();
@@ -230,6 +241,24 @@
             } catch (error) {
                 console.error('Error submitting weekly report form:', error);
                 alert('주간보고 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Get tracker ID for a specific section
+        async function getTrackerIdForSection(section) {
+            try {
+                const response = await fetch(`/api/tracker-id/${section}`);
+                const data = await response.json();
+                
+                if (data.success && data.trackerId) {
+                    return data.trackerId;
+                }
+                
+                console.warn(`No tracker ID configured for section: ${section}`);
+                return null;
+            } catch (error) {
+                console.error('Error getting tracker ID:', error);
+                return null;
             }
         }
 

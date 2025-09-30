@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/images/favicon.ico">
-    <title>Doowon Portal - 하드웨어관리</title>
+    <title>Doowon Portal - HW/SW 버전관리</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
  
@@ -13,7 +13,7 @@
 <body>
     <header class="header">
         <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
-        <div class="title-container"><h1>Doowon Portal</h1><p>두원공조 포탈</p></div>
+
         <div class="menu-container">
             <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
             <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
@@ -36,7 +36,7 @@
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>하드웨어관리</span>
+                <span>HW/SW 버전관리</span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
@@ -63,7 +63,7 @@
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>하드웨어관리</span>
+                <span>HW/SW 버전관리</span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
@@ -78,14 +78,14 @@
 
     <div class="main-container">
         <div class="page-header">
-            <h2>💻 하드웨어관리</h2>
-            <p>하드웨어 자산을 등록, 관리 및 추적할 수 있습니다.</p>
+            <h2>💻 HW/SW 버전관리</h2>
+            <p>SW/HW 자산을 등록, 관리 및 추적할 수 있습니다.</p>
         </div>
 
         <div class="content-section">
             <div class="section-header">
-                <h3>새 하드웨어 등록</h3>
-                <button class="btn-primary" onclick="showCreateForm()">+ 새 하드웨어 등록</button>
+                <h3>새 SW/HW 등록</h3>
+                <button class="btn-primary" onclick="showCreateForm()">+ 새 SW/HW 등록</button>
             </div>
 
             <div class="create-form" id="createForm" style="display: none;">
@@ -114,7 +114,7 @@
                     
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="button" class="btn-primary" onclick="submitHardwareForm()">하드웨어 등록</button>
+                        <button type="button" class="btn-primary" onclick="submitHardwareForm()">SW/HW 등록</button>
                     </div>
                 </div>
             </div>
@@ -122,7 +122,7 @@
 
         <div class="content-section mobile-hide">
             <div class="section-header">
-                <h3>하드웨어 목록</h3>
+                <h3>SW/HW 목록</h3>
                 <div class="filter-controls">
                     <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="검색...">
                 </div>
@@ -130,10 +130,10 @@
 
             <div class="hardware-list" id="hardwareList">
                 <div class="loading" id="loadingIndicator" style="display: none;">
-                    <p>하드웨어 목록을 불러오는 중...</p>
+                    <p>SW/HW 목록을 불러오는 중...</p>
                 </div>
                 <div class="empty-state" id="emptyState" style="display: none;">
-                    <p>등록된 하드웨어가 없습니다.</p>
+                    <p>등록된 SW/HW가 없습니다.</p>
                 </div>
             </div>
         </div>
@@ -278,26 +278,55 @@
             console.log('Submitting hardware form data:', formData);
             
             try {
-                const response = await fetch('/api/hardware', {
+                // Get tracker ID from admin configuration or use a default
+                const trackerId = await getTrackerIdForSection('hardware-management');
+                if (!trackerId) {
+                    alert('SW/HW 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
+                    return;
+                }
+
+                // Transform form data for CodeBeamer API
+                const codebeamerData = transformFormDataForCodeBeamer(formData, 'hardware-management', trackerId);
+                console.log('Transformed data for CodeBeamer:', codebeamerData);
+
+                const response = await fetch(`/api/v33/trackers/${trackerId}/items`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(codebeamerData)
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('하드웨어가 등록되었습니다!');
+                    alert('SW/HW가 등록되었습니다!');
                     hideCreateForm();
                     loadHardwareItems();
                 } else {
-                    alert('하드웨어 등록에 실패했습니다: ' + data.error);
+                    alert('SW/HW 등록에 실패했습니다: ' + data.error);
                 }
             } catch (error) {
                 console.error('Error submitting hardware form:', error);
-                alert('하드웨어 등록 중 오류가 발생했습니다.');
+                alert('SW/HW 등록 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Get tracker ID for a specific section
+        async function getTrackerIdForSection(section) {
+            try {
+                const response = await fetch(`/api/tracker-id/${section}`);
+                const data = await response.json();
+                
+                if (data.success && data.trackerId) {
+                    return data.trackerId;
+                }
+                
+                console.warn(`No tracker ID configured for section: ${section}`);
+                return null;
+            } catch (error) {
+                console.error('Error getting tracker ID:', error);
+                return null;
             }
         }
 
