@@ -765,62 +765,25 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
 
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
-    if (!req.session || !req.session.auth) {
-        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
-    }
-
     try {
-        const data = loadFieldConfigs();
-        const trackerId = data.trackerIds && data.trackerIds['hardware-management'];
-        
-        if (!trackerId) {
-            return res.json({
-                success: true,
-                items: [],
-                pagination: {
-                    currentPage: 1,
-                    totalPages: 0,
-                    totalItems: 0,
-                    itemsPerPage: 25,
-                    hasNextPage: false,
-                    hasPrevPage: false
-                }
-            });
-        }
-
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 25;
-        const search = req.query.search || '';
-        
-        console.log('Hardware API called with params:', { trackerId, page, limit, search });
-
-        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}/items?page=${page}&pageSize=${limit}`;
-        
-        const response = await axios.get(codebeamerUrl, {
-            headers: {
-                'Authorization': `Basic ${req.session.auth}`,
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            },
-            timeout: 10000
-        });
-
-        const items = response.data.items || response.data.itemRefs || response.data || [];
+        const mockHardware = [
+            {
+                id: 1,
+                name: "SW 버전 1.0",
+                category: "SW",
+                version: "1.0.0",
+                changeItem: "UI 개선",
+                changeReason: "사용자 편의성 향상",
+                swVersion: "1.0.0"
+            }
+        ];
         
         res.json({
             success: true,
-            items: items,
-            pagination: {
-                currentPage: page,
-                totalPages: Math.ceil((response.data.total || items.length) / limit),
-                totalItems: response.data.total || items.length,
-                itemsPerPage: limit,
-                hasNextPage: page * limit < (response.data.total || items.length),
-                hasPrevPage: page > 1
-            }
+            items: mockHardware
         });
     } catch (error) {
-        console.error('Error fetching hardware items:', error.message);
+        console.error('Error fetching hardware items:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch hardware items'

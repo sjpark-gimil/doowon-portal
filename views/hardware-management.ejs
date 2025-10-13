@@ -7,7 +7,7 @@
     <title>Doowon Portal - <%= sectionTitles['hardware-management'].name %></title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
- 
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
 </head>
 
 <body>
@@ -142,46 +142,31 @@
     <script>
         let formHandler = new DynamicFormHandler();
         
-        // Override the getTableContainerId method for hardware management
         formHandler.getTableContainerId = function() {
             return 'hardwareList';
         };
 
-        // Override pagination methods to use server-side pagination
         formHandler.changePage = function(direction) {
             const newPage = this.pagination.currentPage + direction;
             if (newPage >= 1 && newPage <= this.pagination.totalPages) {
                 this.pagination.currentPage = newPage;
-                loadHardwareItems(newPage, this.pagination.itemsPerPage, getCurrentSearchTerm());
+                this.refreshTable();
             }
         };
 
         formHandler.goToPage = function(page) {
             if (page >= 1 && page <= this.pagination.totalPages) {
                 this.pagination.currentPage = page;
-                loadHardwareItems(page, this.pagination.itemsPerPage, getCurrentSearchTerm());
+                this.refreshTable();
             }
         };
 
         formHandler.changeItemsPerPage = function(newItemsPerPage) {
-            console.log('changeItemsPerPage called with:', newItemsPerPage);
-            console.log('Current pagination state:', this.pagination);
             this.pagination.itemsPerPage = parseInt(newItemsPerPage);
             this.pagination.currentPage = 1;
-            console.log('Updated pagination state:', this.pagination);
-            console.log('Calling loadHardwareItems with:', 1, this.pagination.itemsPerPage, getCurrentSearchTerm());
-            loadHardwareItems(1, this.pagination.itemsPerPage, getCurrentSearchTerm());
+            this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
+            this.refreshTable();
         };
-
-        formHandler.filterItems = function(searchTerm, fieldConfigs) {
-            loadHardwareItems(1, this.pagination.itemsPerPage, searchTerm);
-        };
-
-        // Helper function to get current search term
-        function getCurrentSearchTerm() {
-            const searchFilter = document.getElementById('searchFilter');
-            return searchFilter ? searchFilter.value : '';
-        }
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
@@ -206,30 +191,14 @@
             }
         });
 
-        async function loadHardwareItems(page = 1, limit = 25, search = '') {
+        async function loadHardwareItems() {
             try {
-                console.log('Loading hardware items with params:', { page, limit, search });
-                const params = new URLSearchParams({
-                    page: page,
-                    limit: limit,
-                    search: search
-                });
-                
-                const response = await fetch(`/api/hardware?${params}`);
+                const response = await fetch('/api/hardware');
                 const data = await response.json();
-                console.log('Server response:', data);
                 
                 if (data.success) {
                     const hardwareList = document.getElementById('hardwareList');
                     if (hardwareList) {
-                        // Store pagination info from server
-                        if (data.pagination) {
-                            formHandler.pagination = {
-                                ...formHandler.pagination,
-                                ...data.pagination,
-                                currentPage: data.pagination.currentPage
-                            };
-                        }
                         await formHandler.renderTable('hardwareList', data.items, 'hardware-management');
                     }
                 } else {
@@ -399,9 +368,10 @@
         function filterHardware() {
             const searchFilter = document.getElementById('searchFilter');
             if (searchFilter) {
-                loadHardwareItems(1, formHandler.pagination.itemsPerPage, searchFilter.value);
+                window.filterTable(searchFilter.value);
             }
         }
+
 
 
 
