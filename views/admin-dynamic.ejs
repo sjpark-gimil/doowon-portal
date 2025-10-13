@@ -21,6 +21,7 @@
             <div class="admin-nav-title">Codebeamer 연동 설정</div>
             <div class="admin-nav-actions">
                 <span class="admin-username">관리자: <%= username %></span>
+                <a href="/" class="btn-admin btn-secondary">← 두원공조 포탈로 돌아가기</a>
                 <a href="/admin/logout" class="btn-admin btn-secondary">로그아웃</a>
             </div>
         </div>
@@ -43,20 +44,9 @@
                 <select id="projectId" class="field-mapping-input" onchange="onProjectChange()">
                     <option value="">프로젝트를 선택하세요</option>
                 </select>
-                <button class="btn-admin btn-info" onclick="loadProjects()">프로젝트 목록 불러오기</button>
-                <button class="btn-admin btn-info" onclick="loadTrackers()">트래커 목록 불러오기</button>
+                <button class="btn-admin btn-info" onclick="loadProjects()">프로젝트 목록 새로고침</button>
             </div>
             
-            <h4>🔧 트래커 관리</h4>
-            <div class="field-item">
-                <span class="field-label">새 트래커 생성</span>
-                <input type="text" id="newTrackerName" class="field-mapping-input" placeholder="트래커명 입력" required>
-                <input type="text" id="newTrackerKey" class="field-mapping-input" placeholder="트래커 키 입력" required>
-                <input type="text" id="newTrackerSummary" class="field-mapping-input" placeholder="요약 (선택사항)">
-                <textarea id="newTrackerDescription" class="field-mapping-input" placeholder="설명 (선택사항)" rows="1"></textarea>
-                <button class="btn-admin btn-success" onclick="createNewTrackerAtProjectLevel()">트래커 생성</button>
-            </div>
-            <br>
 
             <h4>📊 필드 매핑 현황</h4>
             <div class="mapping-stats">
@@ -84,7 +74,6 @@
     </div>
 
     <script>
-        // Field configuration data
         let fieldConfigs = {
             'weekly-reports': [],
             'travel-reports': [],
@@ -93,7 +82,6 @@
             'external-training': []
         };
 
-        // Tracker selection data
         let availableTrackers = [];
         let selectedTrackers = {
             'weekly-reports': '',
@@ -101,6 +89,14 @@
             'hardware-management': '',
             'equipment-management': '',
             'external-training': ''
+        };
+
+        let sectionTitles = {
+            'weekly-reports': { name: '주간보고관리', icon: '📊' },
+            'travel-reports': { name: '출장보고관리', icon: '✈️' },
+            'hardware-management': { name: 'HW/SW 버전관리', icon: '💻' },
+            'equipment-management': { name: '장비관리', icon: '🔧' },
+            'external-training': { name: '외부교육관리', icon: '🎓' }
         };
 
         // Field type configurations
@@ -131,14 +127,44 @@
             }
         };
 
-        // Initialize page
         document.addEventListener('DOMContentLoaded', async function() {
             checkConnection();
+            await loadSectionTitles();
             await loadFieldConfigs();
             renderManagementSections();
             updateStats();
             await loadProjects();
-            await loadTrackerIds(); // Load saved tracker IDs
+            await loadTrackerIds();
+            
+            const savedProjectId = localStorage.getItem('adminSelectedProjectId');
+            if (savedProjectId) {
+                const projectSelect = document.getElementById('projectId');
+                projectSelect.value = savedProjectId;
+                console.log('Restored saved project:', savedProjectId);
+                
+                await loadTrackers();
+                
+                setTimeout(() => {
+                    const savedTrackers = JSON.parse(localStorage.getItem('adminSelectedTrackers') || '{}');
+                    Object.keys(savedTrackers).forEach(section => {
+                        const trackerSelect = document.getElementById(`tracker-${section}`);
+                        if (trackerSelect && savedTrackers[section]) {
+                            trackerSelect.value = savedTrackers[section];
+                            selectedTrackers[section] = savedTrackers[section];
+                            console.log(`Restored tracker for ${section}:`, savedTrackers[section]);
+                        }
+                    });
+                    
+                    const savedSection = localStorage.getItem('adminExpandedSection');
+                    if (savedSection) {
+                        const sectionElement = document.getElementById(`section-${savedSection}`);
+                        if (sectionElement && sectionElement.classList.contains('collapsed')) {
+                            toggleSection(savedSection);
+                        }
+                        console.log('Restored expanded section:', savedSection);
+                    }
+                }, 1000);
+            }
         });
 
         // Load available projects from Codebeamer
@@ -172,13 +198,15 @@
         }
 
         // Handle project selection change
-        function onProjectChange() {
+        async function onProjectChange() {
             const projectId = document.getElementById('projectId').value;
             if (projectId) {
                 console.log(`Selected project ID: ${projectId}`);
-                // Clear existing trackers when project changes
+                localStorage.setItem('adminSelectedProjectId', projectId);
                 availableTrackers = [];
                 populateTrackerSelectors();
+                
+                await loadTrackers();
             }
         }
 
@@ -241,7 +269,10 @@
             selectedTrackers[section] = trackerId;
             console.log(`Updated tracker for ${section}: ${trackerId}`);
             
-            // Save tracker ID to server
+            const savedTrackers = JSON.parse(localStorage.getItem('adminSelectedTrackers') || '{}');
+            savedTrackers[section] = trackerId;
+            localStorage.setItem('adminSelectedTrackers', JSON.stringify(savedTrackers));
+            
             if (trackerId) {
                 saveTrackerIdForSection(section, trackerId);
             }
@@ -341,66 +372,163 @@
             await loadTrackers();
         }
 
-        // Create new tracker at project level
-        async function createNewTrackerAtProjectLevel() {
-            const projectId = document.getElementById('projectId').value;
-            const trackerName = document.getElementById('newTrackerName').value;
-            const trackerKey = document.getElementById('newTrackerKey').value;
-            const trackerSummary = document.getElementById('newTrackerSummary').value;
-            const trackerDescription = document.getElementById('newTrackerDescription').value;
-
-            if (!projectId) {
-                alert('프로젝트를 선택해주세요.');
-                return;
-            }
-
-            if (!trackerName || !trackerKey) {
-                alert('트래커명과 트래커 키를 입력해주세요.');
-                return;
-            }
-
+        async function loadSectionTitles() {
             try {
-                const response = await fetch('/api/admin/create-tracker', {
+                const response = await fetch('/api/admin/section-titles');
+                const data = await response.json();
+                
+                if (data.success && data.sectionTitles) {
+                    sectionTitles = data.sectionTitles;
+                    console.log('Loaded section titles:', sectionTitles);
+                }
+            } catch (error) {
+                console.log('Using default section titles');
+            }
+        }
+
+        async function saveSectionTitles() {
+            try {
+                const response = await fetch('/api/admin/section-titles', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        projectId: projectId,
-                        trackerName: trackerName,
-                        trackerKey: trackerKey,
-                        summary: trackerSummary || trackerName, // Use provided summary or fallback to name
-                        description: trackerDescription || `${trackerName}를 위한 트래커입니다.`,
-                        section: 'project-level'
-                    })
+                    body: JSON.stringify({ sectionTitles: sectionTitles })
                 });
 
                 const data = await response.json();
-
-                if (data.success) {
-                    // Clear the form
-                    document.getElementById('newTrackerName').value = '';
-                    document.getElementById('newTrackerKey').value = '';
-                    document.getElementById('newTrackerSummary').value = '';
-                    document.getElementById('newTrackerDescription').value = '';
-                    
-                    // Refresh trackers list
-                    await loadTrackers();
-
-                    alert(`새 트래커가 생성되었습니다!\n트래커명: ${data.tracker.name}\n트래커 ID: ${data.tracker.id}`);
-                } else {
-                    if (data.error && data.error.includes('403')) {
-                        alert(`트래커 생성 실패: 권한이 없습니다.\n\n해결 방법:\n1. CodeBeamer에서 관리자 권한으로 로그인\n2. 또는 CodeBeamer UI에서 수동으로 트래커 생성\n3. 생성 후 "트래커 목록 불러오기" 클릭`);
-                    } else {
-                        alert(`트래커 생성 실패: ${data.error}`);
-                    }
-                }
+                return data.success;
             } catch (error) {
-                console.error('Error creating tracker:', error);
-                alert('트래커 생성 중 오류가 발생했습니다.');
+                console.error('Error saving section titles:', error);
+                return false;
             }
         }
 
+        async function editSectionTitle(sectionKey) {
+            const titleElement = document.getElementById(`section-title-${sectionKey}`);
+            const currentTitle = sectionTitles[sectionKey].name;
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentTitle;
+            input.className = 'section-title-input';
+            input.style.fontSize = '1.2em';
+            input.style.fontWeight = '600';
+            input.style.padding = '4px 8px';
+            input.style.border = '2px solid #007bff';
+            input.style.borderRadius = '4px';
+            input.style.marginLeft = '8px';
+            
+            input.addEventListener('keydown', async function(e) {
+                if (e.key === 'Enter') {
+                    const newTitle = input.value.trim();
+                    if (newTitle) {
+                        sectionTitles[sectionKey].name = newTitle;
+                        await saveSectionTitles();
+                        renderManagementSections();
+                        populateTrackerSelectors();
+                        updateStats();
+                        showNotification('섹션 제목이 저장되었습니다', 'success');
+                    }
+                } else if (e.key === 'Escape') {
+                    renderManagementSections();
+                    populateTrackerSelectors();
+                }
+            });
+            
+            input.addEventListener('blur', async function() {
+                const newTitle = input.value.trim();
+                if (newTitle && newTitle !== currentTitle) {
+                    sectionTitles[sectionKey].name = newTitle;
+                    await saveSectionTitles();
+                    showNotification('섹션 제목이 저장되었습니다', 'success');
+                }
+                renderManagementSections();
+                populateTrackerSelectors();
+            });
+            
+            titleElement.innerHTML = '';
+            titleElement.appendChild(input);
+            input.focus();
+            input.select();
+        }
+
+        let draggedElement = null;
+        let draggedFieldId = null;
+        let draggedSection = null;
+
+        function handleFieldDragStart(e, section, fieldId) {
+            draggedElement = e.target;
+            draggedFieldId = fieldId;
+            draggedSection = section;
+            e.target.style.opacity = '0.4';
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+        }
+
+        function handleFieldDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleFieldDragEnter(e) {
+            if (e.target.classList.contains('field-config-row')) {
+                e.target.style.borderTop = '2px solid #007bff';
+            }
+        }
+
+        function handleFieldDragLeave(e) {
+            if (e.target.classList.contains('field-config-row')) {
+                e.target.style.borderTop = '';
+            }
+        }
+
+        async function handleFieldDrop(e, section, targetFieldId) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            if (e.target.classList.contains('field-config-row')) {
+                e.target.style.borderTop = '';
+            }
+            
+            if (draggedSection !== section) {
+                return false;
+            }
+            
+            if (draggedFieldId !== targetFieldId) {
+                const fields = fieldConfigs[section];
+                const draggedIndex = fields.findIndex(f => f.id === draggedFieldId);
+                const targetIndex = fields.findIndex(f => f.id === targetFieldId);
+                
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    const draggedField = fields.splice(draggedIndex, 1)[0];
+                    fields.splice(targetIndex, 0, draggedField);
+                    
+                    await saveFieldConfigs();
+                    renderManagementSections();
+                    populateTrackerSelectors();
+                    showNotification('필드 순서가 변경되었습니다', 'success');
+                }
+            }
+            
+            return false;
+        }
+
+        function handleFieldDragEnd(e) {
+            e.target.style.opacity = '1';
+            
+            document.querySelectorAll('.field-config-row').forEach(row => {
+                row.style.borderTop = '';
+            });
+            
+            draggedElement = null;
+            draggedFieldId = null;
+            draggedSection = null;
+        }
 
         // View current tracker configuration
         async function viewTrackerConfig(section) {
@@ -462,6 +590,7 @@
                 
                 if (saved) {
                     renderManagementSections();
+                    populateTrackerSelectors();
                     updateStats();
                 } else {
                     alert('필드 삭제에 실패했습니다.');
@@ -477,8 +606,12 @@
             
             if (sectionElement.classList.contains('collapsed')) {
                 toggleIcon.textContent = '▶';
+                if (localStorage.getItem('adminExpandedSection') === section) {
+                    localStorage.removeItem('adminExpandedSection');
+                }
             } else {
                 toggleIcon.textContent = '▼';
+                localStorage.setItem('adminExpandedSection', section);
             }
         }
 
@@ -486,43 +619,39 @@
             const container = document.getElementById('managementSections');
             container.innerHTML = '';
             
-            const sections = [
-                { key: 'weekly-reports', name: '주간보고관리', icon: '📊' },
-                { key: 'travel-reports', name: '출장보고관리', icon: '✈️' },
-                { key: 'hardware-management', name: 'HW/SW 버전관리', icon: '💻' },
-                { key: 'equipment-management', name: '장비관리', icon: '🔧' },
-                { key: 'external-training', name: '외부교육관리', icon: '🎓' }
-            ];
+            const sectionKeys = ['weekly-reports', 'travel-reports', 'hardware-management', 'equipment-management', 'external-training'];
             
-            sections.forEach(section => {
-                const allFields = fieldConfigs[section.key];
+            sectionKeys.forEach(sectionKey => {
+                const section = sectionTitles[sectionKey];
+                const allFields = fieldConfigs[sectionKey];
                 const fields = allFields.filter(field => !field.readonly);
                 const sectionHtml = `
-                    <div class="management-section" id="section-${section.key}">
+                    <div class="management-section" id="section-${sectionKey}">
                         <div class="management-section-header">
                         <div class="section-toggle">
-                            <button class="toggle-btn" onclick="toggleSection('${section.key}')">
+                            <button class="toggle-btn" onclick="toggleSection('${sectionKey}')">
                                 <span class="toggle-icon">▼</span>
                             </button>
-                            <h3>${section.icon} ${section.name}</h3>
+                            <h3 id="section-title-${sectionKey}" style="cursor: pointer; display: inline-flex; align-items: center;" onclick="editSectionTitle('${sectionKey}')" title="클릭하여 제목 수정">
+                                ${section.icon} ${section.name} <span style="margin-left: 8px; font-size: 0.8em; color: #666;">✏️</span>
+                            </h3>
                             <span class="field-count">(${fields.length}개 필드)</span>
                         </div>
                             <div class="admin-button-container">
-                                <button class="btn-add-field" onclick="showAddFieldForm('${section.key}')" title="필드 추가">
+                                <button class="btn-add-field" onclick="showAddFieldForm('${sectionKey}')" title="필드 추가">
                                     <img src="/images/plus-sign.png" alt="필드 추가" style="width: 40px; height: 40px;">
                                 </button>
-                                <button class="btn-admin btn-primary" onclick="saveSectionMapping('${section.key}')">매핑 저장</button>
-                                <button class="btn-admin btn-warning" onclick="testSectionMapping('${section.key}')">매핑 테스트</button>
-                                <button class="btn-admin btn-info" onclick="viewTrackerConfig('${section.key}')">현재 설정 보기</button>
+                                <button class="btn-admin btn-primary" onclick="saveSectionMapping('${sectionKey}')">매핑 저장</button>
+                                <button class="btn-admin btn-warning" onclick="testSectionMapping('${sectionKey}')">매핑 테스트</button>
+                                <button class="btn-admin btn-info" onclick="viewTrackerConfig('${sectionKey}')">현재 설정 보기</button>
                             </div>
                         </div>
                         <div class="tracker-selection">
                             <div class="field-item">
                                 <span class="field-label">연결된 트래커</span>
-                                <select id="tracker-${section.key}" class="field-mapping-input" onchange="updateTrackerSelection('${section.key}', this.value)">
-                                    <option value="">트래커를 선택하세요</option>
+                                <select id="tracker-${sectionKey}" class="field-mapping-input" onchange="updateTrackerSelection('${sectionKey}', this.value)">
+                                    <option value="">트래커를 선택하세요 (프로젝트 선택 시 자동 로드)</option>
                                 </select>
-                                <button class="btn-admin btn-info" onclick="refreshTrackers('${section.key}')">새로고침</button>
                             </div>
                         
                         </div>
@@ -531,15 +660,25 @@
                                 ${fields.length === 0 ? 
                                     '<div class="empty-state"><i>📝</i><p>등록된 필드가 없습니다.<br>상단의 "필드 추가" 버튼을 클릭하여 새 필드를 추가하세요.</p></div>' :
                                     fields.map(field => `
-                                        <div class="field-config-row" id="field-${field.id}">
+                                        <div class="field-config-row" 
+                                             id="field-${field.id}" 
+                                             draggable="true"
+                                             ondragstart="handleFieldDragStart(event, '${sectionKey}', ${field.id})"
+                                             ondragover="handleFieldDragOver(event)"
+                                             ondragenter="handleFieldDragEnter(event)"
+                                             ondragleave="handleFieldDragLeave(event)"
+                                             ondrop="handleFieldDrop(event, '${sectionKey}', ${field.id})"
+                                             ondragend="handleFieldDragEnd(event)"
+                                             style="cursor: move;">
+                                            <div class="drag-handle" title="드래그하여 순서 변경" style="margin-right: 12px; color: #999; font-size: 1.2em;">⋮⋮</div>
                                             <div class="field-properties">
                                                 <div class="field-prop">
                                                     <label>필드명</label>
-                                                    <input type="text" value="${field.name}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'name', this.value)">
+                                                    <input type="text" value="${field.name}" onchange="updateFieldProperty('${sectionKey}', ${field.id}, 'name', this.value)">
                                                 </div>
                                                 <div class="field-prop">
                                                     <label>타입</label>
-                                                    <select onchange="updateFieldProperty('${section.key}', ${field.id}, 'type', this.value)">
+                                                    <select onchange="updateFieldProperty('${sectionKey}', ${field.id}, 'type', this.value)">
                                                         <option value="string" ${field.type === 'string' ? 'selected' : ''}>📝 문자열</option>
                                                         <option value="number" ${field.type === 'number' ? 'selected' : ''}>🔢 숫자</option>
                                                         <option value="calendar" ${field.type === 'calendar' ? 'selected' : ''}>📅 날짜</option>
@@ -548,18 +687,18 @@
                                                 </div>
                                                 <div class="field-prop" style="display: ${field.type === 'selector' ? 'flex' : 'none'};" id="options-${field.id}">
                                                     <label>선택 옵션</label>
-                                                    <input type="text" value="${field.options ? field.options.join(', ') : ''}" onchange="updateFieldProperty('${section.key}', ${field.id}, 'options', this.value)" placeholder="옵션1,옵션2,옵션3">
+                                                    <input type="text" value="${field.options ? field.options.join(', ') : ''}" onchange="updateFieldProperty('${sectionKey}', ${field.id}, 'options', this.value)" placeholder="옵션1,옵션2,옵션3">
                                                 </div>
                                                 <div class="field-prop required-field-prop">
                                                     <label>필수 여부</label>
-                                                    <select onchange="updateFieldProperty('${section.key}', ${field.id}, 'required', this.value === 'required')">
+                                                    <select onchange="updateFieldProperty('${sectionKey}', ${field.id}, 'required', this.value === 'required')">
                                                         <option value="optional" ${!field.required ? 'selected' : ''}>필수 아님</option>
                                                         <option value="required" ${field.required ? 'selected' : ''}>필수</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="field-actions">
-                                                <button class="btn-delete-icon" onclick="removeField('${section.key}', ${field.id})" title="삭제">
+                                                <button class="btn-delete-icon" onclick="removeField('${sectionKey}', ${field.id})" title="삭제">
                                                     <img src="/images/trash.png" alt="삭제" style="width: 20px; height: 20px;">
                                                 </button>
                                             </div>
@@ -592,7 +731,6 @@
             document.getElementById('activeSections').textContent = activeSections;
         }
 
-        // Load field configurations
         async function loadFieldConfigs() {
             try {
                 const response = await fetch('/api/admin/field-configs');
@@ -600,6 +738,7 @@
                 
                 if (data.success) {
                     fieldConfigs = data.fieldConfigs;
+                    cleanupFieldConfigs();
                     return true;
                 } else {
                     console.error('Failed to load field configs:', data.error);
@@ -610,11 +749,85 @@
                 return false;
             }
         }
+        
+        function cleanupFieldConfigs() {
+            let cleaned = false;
+            
+            if (!fieldConfigs || typeof fieldConfigs !== 'object') {
+                console.error('❌ Invalid fieldConfigs structure');
+                return;
+            }
+            
+            Object.keys(fieldConfigs).forEach(section => {
+                if (!Array.isArray(fieldConfigs[section])) {
+                    console.error(`❌ Invalid section: ${section}`);
+                    return;
+                }
+                
+                fieldConfigs[section].forEach((field, index) => {
+                    if (!field) return;
+                    if (!field.referenceId) {
+                        const maxReferenceId = Math.max(10000, ...fieldConfigs[section].filter(f => f && f.referenceId).map(f => f.referenceId));
+                        field.referenceId = maxReferenceId + index + 1;
+                        console.warn(`⚠️ Auto-assigned referenceId ${field.referenceId} to field: ${field.name} (${section})`);
+                        cleaned = true;
+                    }
+                });
+                
+                let hasTimestampIds = fieldConfigs[section].some(f => f && f.id > 1000000000);
+                if (hasTimestampIds) {
+                    console.warn(`⚠️ Normalizing timestamp IDs in ${section}`);
+                    fieldConfigs[section].forEach((field, index) => {
+                        if (!field) return;
+                        const oldId = field.id;
+                        field.id = index + 1;
+                        if (field.codebeamerId && field.codebeamerId.startsWith('field_')) {
+                            field.codebeamerId = `custom_field_${field.id}`;
+                        }
+                        console.log(`  → Normalized field "${field.name}": ${oldId} → ${field.id}`);
+                    });
+                    cleaned = true;
+                }
+                
+                fieldConfigs[section].forEach(field => {
+                    if (!field) return;
+                    if (field.type !== 'selector' && field.options) {
+                        console.warn(`⚠️ Removing options from non-selector field: ${field.name} (${section})`);
+                        delete field.options;
+                        cleaned = true;
+                    }
+                    if (field.type === 'selector' && !field.options) {
+                        console.log(`✓ Adding empty options to selector field: ${field.name} (${section})`);
+                        field.options = [];
+                        cleaned = true;
+                    }
+                    if (field.options && Array.isArray(field.options)) {
+                        const originalLength = field.options.length;
+                        field.options = field.options.filter(opt => opt && opt.trim() !== '');
+                        if (field.options.length === 0 && field.type !== 'selector') {
+                            console.warn(`⚠️ Removing empty options array from ${field.name} (${section})`);
+                            delete field.options;
+                            cleaned = true;
+                        } else if (originalLength !== field.options.length) {
+                            cleaned = true;
+                        }
+                    }
+                });
+            });
+            
+            if (cleaned) {
+                console.log('🧹 Cleaned up field configurations - saving...');
+                saveFieldConfigs();
+            }
+        }
 
         // Save field configurations
         async function saveFieldConfigs() {
             try {
-                // Include tracker IDs in the save request
+                console.log('💾 Saving field configs to server...');
+                console.log('  - Sections:', Object.keys(fieldConfigs));
+                console.log('  - Tracker IDs:', selectedTrackers);
+                
                 const saveData = {
                     fieldConfigs: fieldConfigs,
                     trackerIds: selectedTrackers
@@ -631,14 +844,16 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log('Field configs and tracker IDs saved successfully');
+                    console.log('✓ Field configs saved successfully');
                     return true;
                 } else {
-                    console.error('Failed to save field configs:', data.error);
+                    console.error('✗ Failed to save field configs:', data.error);
+                    alert('설정 저장 실패: ' + data.error);
                     return false;
                 }
             } catch (error) {
-                console.error('Error saving field configs:', error);
+                console.error('✗ Error saving field configs:', error);
+                alert('설정 저장 중 오류 발생: ' + error.message);
                 return false;
             }
         }
@@ -777,7 +992,7 @@
                             <div class="field-config-row">
                                 <span class="field-label">필수 여부</span>
                                 <select id="newFieldRequired">
-                                    <option value="optional">선택</option>
+                                    <option value="optional">필수 아님</option>
                                     <option value="required">필수</option>
                                 </select>
                             </div>
@@ -888,21 +1103,34 @@
                 return;
             }
             
+            const maxId = Math.max(0, ...fieldConfigs[section].map(f => f.id));
+            const newId = maxId + 1;
+            
+            const maxReferenceId = Math.max(10000, ...fieldConfigs[section].filter(f => f.referenceId).map(f => f.referenceId));
+            const newReferenceId = maxReferenceId + 1;
+            
             const fieldConfig = {
-                id: Date.now(),
+                id: newId,
                 name: name,
-                codebeamerId: `field_${Date.now()}`, // Auto-generated ID
+                codebeamerId: `custom_field_${newId}`,
                 type: type,
                 required: required,
                 readonly: false,
-                options: type === 'selector' ? options.split(',').map(opt => opt.trim()) : []
+                referenceId: newReferenceId
             };
+            
+            if (type === 'selector') {
+                fieldConfig.options = options ? options.split(',').map(opt => opt.trim()).filter(opt => opt !== '') : [];
+            }
+            
+            console.log(`✓ Created field with ID ${newId}, referenceId ${newReferenceId} for ${section}`);
             
             fieldConfigs[section].push(fieldConfig);
             const saved = await saveFieldConfigs();
             
             if (saved) {
                 renderManagementSections();
+                populateTrackerSelectors();
                 updateStats();
                 closeModal();
                 alert('필드가 추가되었습니다.');
@@ -916,16 +1144,22 @@
             const field = fieldConfigs[section].find(f => f.id === fieldId);
             if (field) {
                 if (property === 'options') {
-                    field[property] = value ? value.split(',').map(opt => opt.trim()) : [];
+                    field[property] = value ? value.split(',').map(opt => opt.trim()).filter(opt => opt !== '') : [];
                 } else {
                     field[property] = value;
                 }
                 
-                // Show/hide options field based on type
                 if (property === 'type') {
                     const optionsField = document.getElementById(`options-${fieldId}`);
                     if (optionsField) {
                         optionsField.style.display = value === 'selector' ? 'flex' : 'none';
+                    }
+                    
+                    if (value === 'selector' && !field.options) {
+                        field.options = [];
+                    } else if (value !== 'selector' && field.options) {
+                        delete field.options;
+                        console.log(`Cleaned up options from field ${field.name} (changed to ${value})`);
                     }
                 }
                 

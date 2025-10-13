@@ -13,15 +13,7 @@
 <body>
     <header class="header">
         <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
-
-        <div class="menu-container">
-            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
-            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
-        </div>                  
-    </header>
-
-    <nav class="main-nav">
-        <div class="nav-container">
+        <nav class="header-nav">
             <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
                 <img src="images/home.svg" alt="Home" />
                 <span>대시보드</span>
@@ -50,7 +42,7 @@
                 <img src="images/settings.svg" alt="Admin" />
                 <span>관리자 설정</span>
             </a>
-        </div>
+        </nav>
         <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
         <div class="mobile-nav" id="mobileNav">
             <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
@@ -78,13 +70,15 @@
                 <span>외부교육관리</span>
             </a>
         </div>
-    </nav>
+        <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+        <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+    </header>
 
     <div class="main-container">
         <div class="dashboard-content">
 
             <div class="quick-actions">
-                <h3>빠른 작업</h3>
+                <h3>⚡ 빠른 작업</h3>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="createWeeklyReport()">
                         <span class="btn-icon">📝</span>
@@ -96,15 +90,15 @@
                     </button>
                     <button class="action-btn" onclick="createHardware()">
                         <span class="btn-icon">🔧</span>
-                        <span>SW/HW 등록</span>
+                        <span>새 버전관리 등록</span>
                     </button>
                     <button class="action-btn" onclick="createEquipment()">
                         <span class="btn-icon">⚙️</span>
-                        <span>장비 등록</span>
+                        <span>새 장비 등록</span>
                     </button>
                     <button class="action-btn" onclick="createTraining()">
                         <span class="btn-icon">📚</span>
-                        <span>교육 등록</span>
+                        <span>새 교육 등록</span>
                     </button>
                 </div>
             </div>
@@ -135,45 +129,39 @@
                 <div class="dashboard-card">
                     <div class="card-icon">📊</div>
                     <h3>주간보고관리</h3>
-                    <p>주간 보고서 작성, 제출 및 관리</p>
                     <a href="/weekly-reports" class="card-button">바로가기</a>
                 </div>
 
                 <div class="dashboard-card">
                     <div class="card-icon">✈️</div>
                     <h3>출장보고관리</h3>
-                    <p>출장 보고서 작성, 승인 및 관리</p>
                     <a href="/travel-reports" class="card-button">바로가기</a>
                 </div>
 
                 <div class="dashboard-card">
                     <div class="card-icon">💻</div>
                     <h3>HW/SW 버전관리</h3>
-                    <p>SW/HW 자산 등록, 관리 및 추적</p>
                     <a href="/hardware-management" class="card-button">바로가기</a>
                 </div>
 
                 <div class="dashboard-card">
                     <div class="card-icon">🔧</div>
                     <h3>장비관리</h3>
-                    <p>공장 장비 등록, 관리 및 추적</p>
                     <a href="/equipment-management" class="card-button">바로가기</a>
                 </div>
 
                 <div class="dashboard-card">
                     <div class="card-icon">🎓</div>
                     <h3>외부교육관리</h3>
-                    <p>외부 교육 등록, 참석 및 수료 관리</p>
                     <a href="/external-training" class="card-button">바로가기</a>
                 </div>
 
                 <div class="dashboard-card mobile-hide">
                     <div class="card-icon">🔗</div>
                     <h3>외부시스템 바로가기</h3>
-                    <p>외부 시스템 및 도구 접근</p>
                     <div class="card-buttons">
-                        <a href="#" class="card-button" onclick="openFileUploader()">파일업로더</a>
-                        <a href="#" class="card-button" onclick="openGanttChart()">간트</a>
+                        <a href="<%= fileUploaderUrl %>" class="card-button" target="_blank">파일 업로더</a>
+                        <a href="<%= ganttChartUrl %>" class="card-button" target="_blank">간트 차트</a>
                     </div>
                 </div>
             </div>
@@ -315,7 +303,6 @@
                             <th>타입</th>
                             <th>제출일</th>
                             <th>작성자</th>
-                            <th>작업</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -335,10 +322,6 @@
                                     <td>${item.typeName}</td>
                                     <td>${submittedDate}</td>
                                     <td>${item.submittedBy || 'N/A'}</td>
-                                    <td>
-                                        <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.typeName}')">보기</button>
-                                        <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.typeName}')">처리</button>
-                                    </td>
                                 </tr>
                             `;
                         }).join('')}
@@ -374,10 +357,6 @@
                                     <div class="mobile-card-detail-label">작성자</div>
                                     <div class="mobile-card-detail-value">${item.submittedBy || 'N/A'}</div>
                                 </div>
-                            </div>
-                            <div class="mobile-card-actions">
-                                <button class="btn-small btn-primary" onclick="viewItem(${item.id}, '${item.typeName}')">보기</button>
-                                <button class="btn-small btn-success" onclick="processItem(${item.id}, '${item.typeName}')">처리</button>
                             </div>
                         </div>
                     `;

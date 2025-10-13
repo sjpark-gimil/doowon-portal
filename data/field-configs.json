@@ -7,19 +7,24 @@
         "codebeamerId": "custom_field_2",
         "type": "string",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10001
       },
       {
-        "id": 5,
+        "id": 8,
         "name": "차종",
-        "codebeamerId": "custom_field_3",
+        "codebeamerId": "custom_field_8",
         "type": "selector",
-        "required": true,
+        "required": false,
         "readonly": false,
+        "referenceId": 10005,
         "options": [
-          "A",
-          "B",
-          "D"
+          "SW",
+          "OV1",
+          "HE1i",
+          "SX3",
+          "NQ6",
+          "LT2"
         ]
       },
       {
@@ -28,20 +33,17 @@
         "codebeamerId": "custom_field_4",
         "type": "string",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10003
       },
       {
-        "id": 9,
-        "name": "차주 주간보고",
-        "codebeamerId": "custom_field_50",
+        "id": 7,
+        "name": "차주보고",
+        "codebeamerId": "custom_field_7",
         "type": "string",
         "required": true,
         "readonly": false,
-        "options": [
-          "높음",
-          "보통",
-          "낮음"
-        ]
+        "referenceId": 10004
       }
     ],
     "travel-reports": [
@@ -51,7 +53,8 @@
         "codebeamerId": "custom_field_5",
         "type": "string",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10001
       },
       {
         "id": 3,
@@ -59,7 +62,8 @@
         "codebeamerId": "custom_field_6",
         "type": "string",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10002
       },
       {
         "id": 4,
@@ -67,15 +71,17 @@
         "codebeamerId": "custom_field_7",
         "type": "calendar",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10003
       },
       {
         "id": 5,
-        "name": "귀환일",
+        "name": "도착일",
         "codebeamerId": "custom_field_8",
         "type": "calendar",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10004
       },
       {
         "id": 6,
@@ -83,313 +89,127 @@
         "codebeamerId": "custom_field_9",
         "type": "string",
         "required": false,
-        "readonly": false
-      },
-      {
-        "id": 7,
-        "name": "교통비",
-        "codebeamerId": "custom_field_10",
-        "type": "number",
-        "required": false,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10005
       },
       {
         "id": 8,
-        "name": "숙박비",
+        "name": "총 경비",
         "codebeamerId": "custom_field_11",
         "type": "number",
         "required": false,
-        "readonly": false
-      },
-      {
-        "id": 9,
-        "name": "식비",
-        "codebeamerId": "custom_field_12",
-        "type": "number",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 10,
-        "name": "기타 경비",
-        "codebeamerId": "custom_field_13",
-        "type": "number",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 11,
-        "name": "출장 내용",
-        "codebeamerId": "description",
-        "type": "string",
-        "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10007
       }
     ],
     "hardware-management": [
       {
-        "id": 4,
-        "name": "차종",
-        "codebeamerId": "custom_field_1000",
-        "type": "selector",
-        "required": true,
-        "readonly": false,
-        "options": [
-          "SW",
-          "OV1",
-          "HE1i",
-          "SX3",
-          "NQ6",
-          "LT2",
-          ""
-        ]
-      },
-      {
-        "id": 5,
-        "name": "변경사항",
-        "codebeamerId": "custom_field_1001",
-        "type": "selector",
-        "required": true,
-        "readonly": false,
-        "options": [
-          "H/W",
-          "S/W"
-        ]
-      },
-      {
-        "id": 6,
+        "id": 1,
         "name": "변경 사유",
-        "codebeamerId": "custom_field_10005",
+        "codebeamerId": "custom_field_1",
         "type": "string",
         "required": true,
-        "readonly": false
-      },
-      {
-        "id": 7,
-        "name": "Release 일자",
-        "codebeamerId": "custom_field_10006",
-        "type": "calendar",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 8,
-        "name": "설명",
-        "codebeamerId": "description",
-        "type": "string",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 1758607132373,
-        "name": "선택테스트",
-        "codebeamerId": "field_1758607132373",
-        "type": "selector",
-        "required": false,
         "readonly": false,
-        "options": [
-          "선택1",
-          "선택2",
-          "선택3"
-        ]
+        "referenceId": 10001
+      },
+      {
+        "id": 3,
+        "name": "버전",
+        "codebeamerId": "custom_field_3",
+        "type": "string",
+        "required": true,
+        "readonly": false,
+        "referenceId": 10003
       }
     ],
     "equipment-management": [
       {
-        "id": 2,
-        "name": "카테고리",
-        "codebeamerId": "custom_field_14",
+        "id": 1,
+        "name": "모델명",
+        "codebeamerId": "custom_field_1",
         "type": "string",
         "required": true,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10001
+      },
+      {
+        "id": 2,
+        "name": "시리얼번호",
+        "codebeamerId": "custom_field_2",
+        "type": "string",
+        "required": true,
+        "readonly": false,
+        "referenceId": 10002
       },
       {
         "id": 3,
-        "name": "제조사",
-        "codebeamerId": "custom_field_15",
-        "type": "string",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 4,
-        "name": "모델명",
-        "codebeamerId": "custom_field_16",
-        "type": "string",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 5,
-        "name": "시리얼 번호",
-        "codebeamerId": "custom_field_17",
-        "type": "string",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 6,
-        "name": "구매일",
-        "codebeamerId": "custom_field_18",
-        "type": "selector",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 7,
-        "name": "보증만료일",
-        "codebeamerId": "custom_field_19",
-        "type": "calendar",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 8,
-        "name": "설치위치",
-        "codebeamerId": "custom_field_20",
-        "type": "string",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 9,
         "name": "담당자",
-        "codebeamerId": "custom_field_21",
+        "codebeamerId": "custom_field_3",
         "type": "string",
         "required": false,
-        "readonly": false
-      },
-      {
-        "id": 10,
-        "name": "사양",
-        "codebeamerId": "description",
-        "type": "string",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 11,
-        "name": "비고",
-        "codebeamerId": "custom_field_22",
-        "type": "string",
-        "required": false,
-        "readonly": false
+        "readonly": false,
+        "referenceId": 10003
       }
     ],
     "external-training": [
       {
-        "id": 2,
-        "name": "교육기관",
-        "codebeamerId": "custom_field_23",
-        "type": "string",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 3,
-        "name": "교육유형",
-        "codebeamerId": "custom_field_24",
-        "type": "string",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 4,
-        "name": "교육시작일",
-        "codebeamerId": "custom_field_25",
-        "type": "calendar",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 5,
-        "name": "교육종료일",
-        "codebeamerId": "custom_field_26",
-        "type": "calendar",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 6,
-        "name": "교육장소",
-        "codebeamerId": "custom_field_27",
-        "type": "string",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 7,
-        "name": "참석자",
-        "codebeamerId": "custom_field_28",
-        "type": "string",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 8,
-        "name": "수강료",
-        "codebeamerId": "custom_field_29",
-        "type": "number",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 9,
-        "name": "숙박비",
-        "codebeamerId": "custom_field_30",
-        "type": "number",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 10,
-        "name": "교통비",
-        "codebeamerId": "custom_field_31",
-        "type": "number",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 11,
-        "name": "식비",
-        "codebeamerId": "custom_field_32",
-        "type": "number",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 12,
-        "name": "교육내용",
-        "codebeamerId": "description",
-        "type": "string",
-        "required": true,
-        "readonly": false
-      },
-      {
-        "id": 13,
-        "name": "기대효과",
-        "codebeamerId": "custom_field_33",
-        "type": "string",
-        "required": false,
-        "readonly": false
-      },
-      {
-        "id": 1758609673498,
-        "name": "tttt",
-        "codebeamerId": "field_1758609673498",
+        "id": 1,
+        "name": "교육명",
+        "codebeamerId": "custom_field_1",
         "type": "string",
         "required": false,
         "readonly": false,
-        "options": []
+        "referenceId": 10001
+      },
+      {
+        "id": 2,
+        "name": "교육기관",
+        "codebeamerId": "custom_field_2",
+        "type": "string",
+        "required": true,
+        "readonly": false,
+        "referenceId": 10002
+      },
+      {
+        "id": 3,
+        "name": "교육시작일",
+        "codebeamerId": "custom_field_3",
+        "type": "calendar",
+        "required": false,
+        "readonly": false,
+        "referenceId": 10003
+      },
+      {
+        "id": 4,
+        "name": "교육종료일",
+        "codebeamerId": "custom_field_4",
+        "type": "calendar",
+        "required": false,
+        "readonly": false,
+        "referenceId": 10004
+      },
+      {
+        "id": 5,
+        "name": "수료여부",
+        "codebeamerId": "custom_field_5",
+        "type": "selector",
+        "required": true,
+        "readonly": false,
+        "referenceId": 10005,
+        "options": [
+          "수료",
+          "중단",
+          "필요 없음"
+        ]
       }
     ]
   },
+  "lastUpdated": "2025-10-13T05:09:08.306Z",
   "trackerIds": {
-    "weekly-reports": "17867",
-    "travel-reports": "18107", 
-    "hardware-management": "18320",
-    "equipment-management": "18249",
-    "external-training": "18178"
-  },
-  "lastUpdated": "2025-09-30T01:40:11.052Z"
+    "weekly-reports": "7036",
+    "travel-reports": "7107",
+    "hardware-management": "7178",
+    "equipment-management": "7249",
+    "external-training": "7320"
+  }
 }

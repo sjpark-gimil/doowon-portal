@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/images/favicon.ico">
-    <title>Doowon Portal - 주간보고관리</title>
+    <title>Doowon Portal - <%= sectionTitles['weekly-reports'].name %></title>
     <link rel="stylesheet" type="text/css" href="css/style.css" />
     <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
     <link rel="stylesheet" type="text/css" href="css/table.css" />
@@ -13,40 +13,36 @@
 <body>
     <header class="header">
         <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/doowon_logo.png" alt="Logo" /></a></div>
-
-        <div class="menu-container">
-            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
-            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
-        </div>                  
-    </header>
-
-    <nav class="main-nav">
-        <div class="nav-container">
+        <nav class="header-nav">
             <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
                 <img src="images/home.svg" alt="Home" />
                 <span>대시보드</span>
             </a>
             <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Weekly Reports" />
-                <span>주간보고관리</span>
+                <span><%= sectionTitles['weekly-reports'].name %></span>
             </a>
             <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Travel Reports" />
-                <span>출장보고관리</span>
+                <span><%= sectionTitles['travel-reports'].name %></span>
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>HW/SW 버전관리</span>
+                <span><%= sectionTitles['hardware-management'].name %></span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
-                <span>장비관리</span>
+                <span><%= sectionTitles['equipment-management'].name %></span>
             </a>
             <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="External Training" />
-                <span>외부교육관리</span>
+                <span><%= sectionTitles['external-training'].name %></span>
             </a>
-        </div>
+            <a href="/admin" class="nav-item <%= currentPath === '/admin' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Admin" />
+                <span>관리자 설정</span>
+            </a>
+        </nav>
         <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
         <div class="mobile-nav" id="mobileNav">
             <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
@@ -55,37 +51,38 @@
             </a>
             <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Weekly Reports" />
-                <span>주간보고관리</span>
+                <span><%= sectionTitles['weekly-reports'].name %></span>
             </a>
             <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Travel Reports" />
-                <span>출장보고관리</span>
+                <span><%= sectionTitles['travel-reports'].name %></span>
             </a>
             <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Hardware Management" />
-                <span>HW/SW 버전관리</span>
+                <span><%= sectionTitles['hardware-management'].name %></span>
             </a>
             <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Equipment Management" />
-                <span>장비관리</span>
+                <span><%= sectionTitles['equipment-management'].name %></span>
             </a>
             <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="External Training" />
-                <span>외부교육관리</span>
+                <span><%= sectionTitles['external-training'].name %></span>
             </a>
         </div>
-    </nav>
+        <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+        <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+    </header>
 
     <div class="main-container">
         <div class="page-header">
-            <h2>📊 주간보고관리</h2>
-            <p>주간 보고서를 작성, 제출 및 관리할 수 있습니다.</p>
+            <h2><%= sectionTitles['weekly-reports'].icon %> <%= sectionTitles['weekly-reports'].name %></h2>
         </div>
 
         <div class="content-section">
             <div class="section-header">
-                <h3>새 주간보고 작성</h3>
-                <button class="btn-primary" onclick="showCreateForm()">+ 새 보고서 작성</button>
+                <h3>주간보고</h3>
+                <button class="btn-primary" onclick="showCreateForm()">+ New</button>
             </div>
 
             <div class="create-form" id="createForm" style="display: none;">
@@ -114,7 +111,7 @@
                     
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="button" class="btn-primary" onclick="submitWeeklyReportForm()">보고서 저장</button>
+                        <button type="button" class="btn-primary" onclick="submitWeeklyReportForm()">저장</button>
                     </div>
                 </div>
             </div>
@@ -199,7 +196,14 @@
         }
 
         // Submit weekly report form
+        let isSubmitting = false;
+        
         async function submitWeeklyReportForm() {
+            if (isSubmitting) {
+                console.log('⚠️ Already submitting, ignoring duplicate call');
+                return;
+            }
+            
             const validation = formHandler.validateForm();
             
             if (!validation.isValid) {
@@ -210,19 +214,20 @@
             const formData = formHandler.getFormData();
             console.log('Submitting weekly report form data:', formData);
             
+            isSubmitting = true;
+            
             try {
-                // Get tracker ID from admin configuration or use a default
                 const trackerId = await getTrackerIdForSection('weekly-reports');
                 if (!trackerId) {
                     alert('주간보고 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
+                    isSubmitting = false;
                     return;
                 }
 
-                // Transform form data for CodeBeamer API
-                const codebeamerData = transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
+                const codebeamerData = await transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
                 console.log('Transformed data for CodeBeamer:', codebeamerData);
 
-                const response = await fetch(`/api/v33/trackers/${trackerId}/items`, {
+                const response = await fetch(`/api/v3/trackers/${trackerId}/items`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -233,7 +238,38 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('주간보고가 저장되었습니다!');
+                    const itemId = data.item?.id;
+                    
+                    const fileInput = document.getElementById('weeklyAttachments');
+                    if (fileInput && fileInput.files.length > 0 && itemId) {
+                        console.log(`Uploading ${fileInput.files.length} attachments to item ${itemId}`);
+                        
+                        const attachmentFormData = new FormData();
+                        for (let i = 0; i < fileInput.files.length; i++) {
+                            attachmentFormData.append('attachments', fileInput.files[i]);
+                        }
+                        
+                        try {
+                            const attachResponse = await fetch(`/api/v3/items/${itemId}/attachments`, {
+                                method: 'POST',
+                                body: attachmentFormData
+                            });
+                            
+                            const attachData = await attachResponse.json();
+                            
+                            if (attachData.success) {
+                                alert(`주간보고가 저장되었습니다! (첨부파일 ${attachData.attachments.length}개 업로드 완료)`);
+                            } else {
+                                alert(`주간보고는 저장되었으나 첨부파일 업로드 실패: ${attachData.message}`);
+                            }
+                        } catch (attachError) {
+                            console.error('Attachment upload error:', attachError);
+                            alert('주간보고는 저장되었으나 첨부파일 업로드 중 오류가 발생했습니다.');
+                        }
+                    } else {
+                        alert('주간보고가 저장되었습니다!');
+                    }
+                    
                     hideCreateForm();
                 } else {
                     alert('주간보고 저장에 실패했습니다: ' + data.error);
@@ -241,6 +277,8 @@
             } catch (error) {
                 console.error('Error submitting weekly report form:', error);
                 alert('주간보고 저장 중 오류가 발생했습니다.');
+            } finally {
+                isSubmitting = false;
             }
         }
 

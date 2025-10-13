@@ -5,11 +5,20 @@ const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const multer = require('multer');
+const FormData = require('form-data');
 
 const defaults = {
     cbApiUrl: process.env.CB_BASE_URL || 'http://codebeamer.mdsit.co.kr:3008',
     sessionSecret: process.env.SESSION_SECRET || 'default-secret',
+    fileUploaderUrl: process.env.FILE_UPLOADER_URL || 'http://codebeamer.mdsit.co.kr:3001',
+    ganttChartUrl: process.env.GANTT_CHART_URL || 'http://codebeamer.mdsit.co.kr:3002',
 };
+
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }
+});
 
 const app = express();
 const PORT = 3000;
@@ -267,16 +276,21 @@ app.get('/', requireAuth, (req, res) => {
         currentPath: '/',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
+        cbBaseUrl: process.env.CB_BASE_URL || '',
+        fileUploaderUrl: defaults.fileUploaderUrl,
+        ganttChartUrl: defaults.ganttChartUrl
     });
 });
 
 app.get('/weekly-reports', requireAuth, (req, res) => {
+    const data = loadFieldConfigs();
+    const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
     res.render('weekly-reports', {
         currentPath: '/weekly-reports',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
+        cbBaseUrl: process.env.CB_BASE_URL || '',
+        sectionTitles: sectionTitles
     });
 });
 
@@ -290,38 +304,50 @@ app.get('/weekly-reports/dynamic', requireAuth, (req, res) => {
 });
 
 app.get('/travel-reports', requireAuth, (req, res) => {
+    const data = loadFieldConfigs();
+    const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
     res.render('travel-reports', {
         currentPath: '/travel-reports',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
+        cbBaseUrl: process.env.CB_BASE_URL || '',
+        sectionTitles: sectionTitles
     });
 });
 
 app.get('/hardware-management', requireAuth, (req, res) => {
+    const data = loadFieldConfigs();
+    const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
     res.render('hardware-management', {
         currentPath: '/hardware-management',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
+        cbBaseUrl: process.env.CB_BASE_URL || '',
+        sectionTitles: sectionTitles
     });
 });
 
 app.get('/equipment-management', requireAuth, (req, res) => {
+    const data = loadFieldConfigs();
+    const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
     res.render('equipment-management', {
         currentPath: '/equipment-management',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
+        cbBaseUrl: process.env.CB_BASE_URL || '',
+        sectionTitles: sectionTitles
     });
 });
 
 app.get('/external-training', requireAuth, (req, res) => {
+    const data = loadFieldConfigs();
+    const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
     res.render('external-training', {
         currentPath: '/external-training',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
+        cbBaseUrl: process.env.CB_BASE_URL || '',
+        sectionTitles: sectionTitles
     });
 });
 
@@ -602,33 +628,29 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
 
         const trackerData = {
             name: trackerName,
-            summary: summary || trackerName, // Use provided summary or fallback to name
             description: description || `Tracker for ${section} management`,
+            descriptionFormat: "PlainText",
+            keyName: trackerKey,
+            color: "#007bff",
+            availableAsTemplate: false,
+            defaultShowAncestorItems: false,
+            defaultShowDescendantItems: false,
+            hidden: false,
+            onlyWorkflowCanCreateNewReferringItem: false,
+            sharedInWorkingSet: true,
+            usingQuickTransitions: false,
+            usingWorkflow: true,
             project: {
                 id: parseInt(projectId)
             },
-            trackerType: {
+            type: {
                 id: trackerTypeId
-            },
-            key: trackerKey,
-            color: "#007bff",
-            defaultLayout: "TABLE",
-            workflowIsActive: true,
-            onlyWorkflowActionsCanCreateNewReferringItems: false,
-            alwaysUseQuickTransitions: false,
-            locked: false,
-            hidden: false,
-            showAncestorItems: false,
-            showDescendantItems: false,
-            sharedInWorkingSets: true,
-            itemCountVisibility: true,
-            referenceVisibility: true,
-            recentReferringTrackersMenu: false
+            }
         };
 
         console.log('Creating new tracker:', trackerData);
         
-        const createUrl = `${defaults.cbApiUrl}/tracker`;
+        const createUrl = `${defaults.cbApiUrl}/api/v3/${projectId}/trackers`;
         const response = await axios.post(createUrl, trackerData, {
             headers: {
                 'Authorization': `Basic ${req.session.auth}`,
@@ -743,97 +765,62 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
 
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
-    try {
-        // Generate more mock data for testing pagination
-        const mockHardware = [];
-        const vehicleTypes = ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'];
-        const changeTypes = ['H/W', 'S/W'];
-        const statuses = ['Done', 'In progress', 'ToDo', 'To verify'];
-        const changeReasons = ['성능 개선', '버그 수정', '신규 기능 추가', '보안 업데이트', '호환성 개선'];
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
 
-        for (let i = 1; i <= 150; i++) {
-            mockHardware.push({
-                id: i,
-                name: `하드웨어 컴포넌트 v${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}`,
-                description: `하드웨어 컴포넌트 ${i}번 설명`,
-                custom_field_1000: vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)],
-                custom_field_1001: changeTypes[Math.floor(Math.random() * changeTypes.length)],
-                custom_field_10005: changeReasons[Math.floor(Math.random() * changeReasons.length)],
-                custom_field_10006: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
-                custom_field_3: `v${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}`,
-                custom_field_10002: `v${Math.floor(Math.random() * 3) + 1}.${Math.floor(Math.random() * 10)}`,
-                status: statuses[Math.floor(Math.random() * statuses.length)]
+    try {
+        const data = loadFieldConfigs();
+        const trackerId = data.trackerIds && data.trackerIds['hardware-management'];
+        
+        if (!trackerId) {
+            return res.json({
+                success: true,
+                items: [],
+                pagination: {
+                    currentPage: 1,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: 25,
+                    hasNextPage: false,
+                    hasPrevPage: false
+                }
             });
         }
 
-        // Handle pagination parameters
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
         const search = req.query.search || '';
-        const sortBy = req.query.sortBy || 'id';
-        const sortOrder = req.query.sortOrder || 'asc';
         
-        console.log('Hardware API called with params:', { page, limit, search, sortBy, sortOrder });
+        console.log('Hardware API called with params:', { trackerId, page, limit, search });
 
-        // Filter items based on search
-        let filteredItems = mockHardware;
-        if (search) {
-            const searchLower = search.toLowerCase();
-            filteredItems = mockHardware.filter(item => 
-                item.name.toLowerCase().includes(searchLower) ||
-                item.description.toLowerCase().includes(searchLower) ||
-                item.custom_field_1000.toLowerCase().includes(searchLower) ||
-                item.custom_field_1001.toLowerCase().includes(searchLower) ||
-                item.custom_field_10005.toLowerCase().includes(searchLower) ||
-                item.id.toString().includes(search)
-            );
-        }
-
-        // Sort items
-        filteredItems.sort((a, b) => {
-            let aVal = a[sortBy];
-            let bVal = b[sortBy];
-            
-            if (typeof aVal === 'string') {
-                aVal = aVal.toLowerCase();
-                bVal = bVal.toLowerCase();
-            }
-            
-            if (sortOrder === 'desc') {
-                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-            } else {
-                return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-            }
+        const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}/items?page=${page}&pageSize=${limit}`;
+        
+        const response = await axios.get(codebeamerUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 10000
         });
 
-        // Calculate pagination
-        const totalItems = filteredItems.length;
-        const totalPages = Math.ceil(totalItems / limit);
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedItems = filteredItems.slice(startIndex, endIndex);
-
-        const response = {
+        const items = response.data.items || response.data.itemRefs || response.data || [];
+        
+        res.json({
             success: true,
-            items: paginatedItems,
+            items: items,
             pagination: {
                 currentPage: page,
-                totalPages: totalPages,
-                totalItems: totalItems,
+                totalPages: Math.ceil((response.data.total || items.length) / limit),
+                totalItems: response.data.total || items.length,
                 itemsPerPage: limit,
-                hasNextPage: page < totalPages,
+                hasNextPage: page * limit < (response.data.total || items.length),
                 hasPrevPage: page > 1
             }
-        };
-        
-        console.log('Hardware API response:', {
-            itemsCount: paginatedItems.length,
-            pagination: response.pagination
         });
-        
-        res.json(response);
     } catch (error) {
-        console.error('Error fetching hardware items:', error);
+        console.error('Error fetching hardware items:', error.message);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch hardware items'
@@ -883,9 +870,6 @@ const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
-
-
-
 
 const FIELD_CONFIGS_FILE = path.join(__dirname, 'data', 'field-configs.json');
 
@@ -959,16 +943,33 @@ const DEFAULT_FIELD_CONFIGS = {
 };
 
 
+function getDefaultSectionTitles() {
+    return {
+        'weekly-reports': { name: '주간보고관리', icon: '📊' },
+        'travel-reports': { name: '출장보고관리', icon: '✈️' },
+        'hardware-management': { name: 'HW/SW 버전관리', icon: '💻' },
+        'equipment-management': { name: '장비관리', icon: '🔧' },
+        'external-training': { name: '외부교육관리', icon: '🎓' }
+    };
+}
+
 function loadFieldConfigs() {
     try {
         if (fs.existsSync(FIELD_CONFIGS_FILE)) {
             const data = fs.readFileSync(FIELD_CONFIGS_FILE, 'utf8');
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            if (!parsed.sectionTitles) {
+                parsed.sectionTitles = getDefaultSectionTitles();
+            }
+            return parsed;
         }
     } catch (error) {
         console.error('Error loading field configs:', error);
     }
-    return { fieldConfigs: DEFAULT_FIELD_CONFIGS };
+    return { 
+        fieldConfigs: DEFAULT_FIELD_CONFIGS,
+        sectionTitles: getDefaultSectionTitles()
+    };
 }
 
 
@@ -1011,6 +1012,9 @@ app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
     try {
         const { fieldConfigs, trackerIds } = req.body;
         
+        console.log('=== SAVING FIELD CONFIGS ===');
+        console.log('Sections:', Object.keys(fieldConfigs));
+        
         if (!fieldConfigs || typeof fieldConfigs !== 'object') {
             return res.status(400).json({
                 success: false,
@@ -1018,8 +1022,8 @@ app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
             });
         }
 
-        // Save both field configs and tracker IDs
         if (saveFieldConfigs(fieldConfigs, trackerIds)) {
+            console.log('✓ Field configs saved successfully to:', FIELD_CONFIGS_FILE);
             res.json({
                 success: true,
                 message: 'Field configurations and tracker IDs saved successfully',
@@ -1027,6 +1031,7 @@ app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
                 trackerIds: trackerIds
             });
         } else {
+            console.error('✗ Failed to save field configurations');
             res.status(500).json({
                 success: false,
                 error: 'Failed to save field configurations'
@@ -1037,6 +1042,59 @@ app.post('/api/admin/field-configs', requireAdminAuth, (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to save field configs: ' + error.message
+        });
+    }
+});
+
+app.get('/api/admin/section-titles', requireAdminAuth, (req, res) => {
+    try {
+        const data = loadFieldConfigs();
+        res.json({
+            success: true,
+            sectionTitles: data.sectionTitles || {
+                'weekly-reports': { name: '주간보고관리', icon: '📊' },
+                'travel-reports': { name: '출장보고관리', icon: '✈️' },
+                'hardware-management': { name: 'HW/SW 버전관리', icon: '💻' },
+                'equipment-management': { name: '장비관리', icon: '🔧' },
+                'external-training': { name: '외부교육관리', icon: '🎓' }
+            }
+        });
+    } catch (error) {
+        console.error('Error getting section titles:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load section titles: ' + error.message
+        });
+    }
+});
+
+app.post('/api/admin/section-titles', requireAdminAuth, (req, res) => {
+    try {
+        const { sectionTitles } = req.body;
+        
+        if (!sectionTitles || typeof sectionTitles !== 'object') {
+            return res.status(400).json({
+                success: false,
+                error: 'Section titles object is required'
+            });
+        }
+
+        const data = loadFieldConfigs();
+        data.sectionTitles = sectionTitles;
+        data.lastUpdated = new Date().toISOString();
+
+        fs.writeFileSync(FIELD_CONFIGS_FILE, JSON.stringify(data, null, 2));
+        console.log('Section titles saved successfully');
+
+        res.json({
+            success: true,
+            message: 'Section titles saved successfully'
+        });
+    } catch (error) {
+        console.error('Error saving section titles:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to save section titles: ' + error.message
         });
     }
 });
@@ -1213,13 +1271,28 @@ app.post('/api/admin/update-codebeamer-config', requireAdminAuth, async (req, re
                 timeout: 30000
             });
 
-            res.json({
-                success: true,
-                message: 'Codebeamer configuration updated successfully',
-                trackerId: trackerId,
-                fieldCount: fieldConfigs.length,
-                response: response.data
-            });
+            try {
+                const updatedFieldConfigs = await syncFieldReferenceIds(section, trackerId, fieldConfigs, req.session.auth);
+                console.log('Synced field reference IDs for section:', section);
+                
+                res.json({
+                    success: true,
+                    message: 'Codebeamer configuration updated and field IDs synced successfully',
+                    trackerId: trackerId,
+                    fieldCount: updatedFieldConfigs.length,
+                    response: response.data
+                });
+            } catch (syncError) {
+                console.warn('Failed to sync field reference IDs:', syncError.message);
+                res.json({
+                    success: true,
+                    message: 'Codebeamer configuration updated successfully (field sync failed)',
+                    trackerId: trackerId,
+                    fieldCount: fieldConfigs.length,
+                    response: response.data,
+                    warning: 'Field reference IDs were not synced: ' + syncError.message
+                });
+            }
         } catch (error) {
             console.error('Error updating Codebeamer configuration:', error);
             if (error.response) {
@@ -1237,6 +1310,97 @@ app.post('/api/admin/update-codebeamer-config', requireAdminAuth, async (req, re
         res.status(500).json({
             success: false,
             error: 'Failed to update Codebeamer configuration: ' + error.message
+        });
+    }
+});
+
+async function syncFieldReferenceIds(section, trackerId, fieldConfigs, auth) {
+    try {
+        const configUrl = `${defaults.cbApiUrl}/api/v3/tracker/${trackerId}/configuration`;
+        const response = await axios.get(configUrl, {
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            timeout: 10000
+        });
+
+        const codebeamerFields = response.data.fields || [];
+        console.log(`Retrieved ${codebeamerFields.length} fields from Codebeamer tracker ${trackerId}`);
+        
+        const data = loadFieldConfigs();
+        const updatedFieldConfigs = fieldConfigs.map(field => {
+            const matchingField = codebeamerFields.find(cbField => 
+                cbField.label === field.name.trim()
+            );
+            
+            if (matchingField) {
+                console.log(`Matched field "${field.name}" to Codebeamer referenceId: ${matchingField.referenceId}`);
+                return {
+                    ...field,
+                    referenceId: matchingField.referenceId
+                };
+            } else {
+                console.warn(`Could not find Codebeamer field for: ${field.name}`);
+                return field;
+            }
+        });
+
+        data.fieldConfigs[section] = updatedFieldConfigs;
+        saveFieldConfigs(data.fieldConfigs, data.trackerIds);
+        
+        console.log(`Successfully synced ${updatedFieldConfigs.length} field reference IDs for section: ${section}`);
+        return updatedFieldConfigs;
+    } catch (error) {
+        console.error('Error syncing field reference IDs:', error.message);
+        throw error;
+    }
+}
+
+app.post('/api/admin/sync-field-ids', requireAdminAuth, async (req, res) => {
+    try {
+        const { section, trackerId } = req.body;
+        
+        if (!section || !trackerId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Section and trackerId are required'
+            });
+        }
+
+        if (!req.session || !req.session.auth) {
+            return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+        }
+
+        const data = loadFieldConfigs();
+        const fieldConfigs = data.fieldConfigs[section];
+        
+        if (!fieldConfigs) {
+            return res.status(404).json({
+                success: false,
+                error: 'Field configuration not found for section: ' + section
+            });
+        }
+
+        const updatedFieldConfigs = await syncFieldReferenceIds(section, trackerId, fieldConfigs, req.session.auth);
+        
+        res.json({
+            success: true,
+            message: 'Field reference IDs synced successfully',
+            section: section,
+            trackerId: trackerId,
+            fieldCount: updatedFieldConfigs.length,
+            fields: updatedFieldConfigs.map(f => ({
+                name: f.name,
+                referenceId: f.referenceId || 'NOT SYNCED'
+            }))
+        });
+    } catch (error) {
+        console.error('Error syncing field IDs:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to sync field reference IDs: ' + error.message
         });
     }
 });
@@ -1267,32 +1431,41 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
     const existingFields = existingConfig?.fields || [];
     const newFields = [];
     
-    // Keep only mandatory/system fields from existing configuration (ID, name, description, attachments)
-    const mandatoryFields = existingFields.filter(field => 
-        field.mandatory === true || 
-        field.referenceId === 88 || // Attachment field
+    // Keep ONLY system fields from existing configuration (ID, Tracker, Summary, Attachments)
+    // DO NOT keep custom fields even if they are mandatory - we'll add fresh ones from admin settings
+    const systemFields = existingFields.filter(field => 
         field.referenceId === 0 ||  // ID field
-        field.referenceId === 1 ||  // Name field
-        field.referenceId === 2 ||  // Description field
-        field.referenceId === 3     // Status field
+        field.referenceId === 1 ||  // Tracker field
+        field.referenceId === 3 ||  // Summary field
+        field.referenceId === 88    // Attachment field
     );
     
-    console.log(`Keeping ${mandatoryFields.length} mandatory/system fields, removing all other custom fields`);
+    console.log(`Keeping ${systemFields.length} system fields, removing ALL custom fields (will be replaced with admin settings)`);
 
-    // Process new field configurations
-    let customReferenceId = 10001; // Start from 10001 for custom fields
+    let customReferenceId = 10001;
     fieldConfigs.forEach((field, index) => {
-        // Skip fields with empty names
         if (!field.name || field.name.trim() === '') {
             console.warn(`Skipping field with empty name at index ${index}`);
             return;
         }
         
+        const useReferenceId = field.referenceId || customReferenceId++;
+        
+        const existingField = existingFields.find(f => f.referenceId === useReferenceId);
+        const existingTypeId = existingField?.typeId;
+        const newTypeId = getCodebeamerTypeId(field.type);
+        
+        const finalTypeId = existingTypeId !== undefined ? existingTypeId : newTypeId;
+        
+        if (existingTypeId !== undefined && existingTypeId !== newTypeId) {
+            console.warn(`⚠️ Preserving existing type for field ${useReferenceId}: ${existingTypeId} (admin wants ${newTypeId} but CodeBeamer doesn't allow type changes)`);
+        }
+        
         const fieldConfig = {
-            referenceId: customReferenceId++,
-            typeId: getCodebeamerTypeId(field.type),
-            position: 9080 + (index * 10), // Start from 9080 and increment
-            label: field.name.trim(), // Use 'label' for Codebeamer API and trim whitespace
+            referenceId: useReferenceId,
+            typeId: finalTypeId,
+            position: 9080 + (index * 10),
+            label: field.name.trim(),
             hidden: false,
             listable: true,
             mandatory: field.required || false,
@@ -1311,24 +1484,44 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
             computedFieldReferences: []
         };
 
-        if (field.type === 'selector' && field.options && field.options.length > 0) {
-            fieldConfig.choiceOptionSetting = {
-                type: "CHOICE_OPTIONS",
-                choiceOptions: field.options.map((option, optIndex) => ({
-                    id: optIndex + 1,
-                    name: option
-                }))
-            };
-        }
-
         newFields.push(fieldConfig);
+        console.log(`  → Adding custom field: ${fieldConfig.label} (referenceId: ${useReferenceId}, typeId: ${finalTypeId}, mandatory: ${fieldConfig.mandatory})`);
     });
 
-    // Combine mandatory fields with new custom fields from admin settings
-    // This will REMOVE any existing custom fields that are not in the admin settings
-    const allFields = [...mandatoryFields, ...newFields];
+    // Ensure field 80 (Description) exists - this is required by field 84 (Description Format)
+    const field80Exists = systemFields.some(f => f.referenceId === 80) || newFields.some(f => f.referenceId === 80);
+    const descriptionField = {
+        referenceId: 80,
+        typeId: 0,
+        position: 8000,
+        label: "Description",
+        hidden: true,
+        listable: false,
+        mandatory: false,
+        mandatoryExceptInStatus: [],
+        multipleSelection: false,
+        propagateSuspect: false,
+        reversedSuspect: false,
+        bidirectionalSuspect: false,
+        propagateDependencies: false,
+        omitSuspectedWhenChange: false,
+        omitMerge: false,
+        newLine: false,
+        permission: {
+            type: "UNRESTRICTED"
+        },
+        computedFieldReferences: []
+    };
     
-    console.log(`Final configuration: ${mandatoryFields.length} mandatory + ${newFields.length} custom fields from admin settings`);
+    // Combine fields: system + field 80 (if not exists) + new custom fields ONLY
+    const allFields = [...systemFields];
+    if (!field80Exists) {
+        console.log('Adding field 80 (Description) to satisfy field 84 (Description Format) dependency');
+        allFields.push(descriptionField);
+    }
+    allFields.push(...newFields);
+    
+    console.log(`Final configuration: ${systemFields.length} system + ${field80Exists ? 0 : 1} description + ${newFields.length} custom fields = ${allFields.length} total fields`);
 
     return {
         basicInformation: {
@@ -1340,8 +1533,8 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
             key: existingConfig?.basicInformation?.key || "DYNAMIC",
             color: existingConfig?.basicInformation?.color || "",
             defaultLayout: existingConfig?.basicInformation?.defaultLayout || "TABLE",
-            description: existingConfig?.basicInformation?.description || "Dynamic tracker created from admin configuration",
-            workflowIsActive: existingConfig?.basicInformation?.workflowIsActive !== false,
+        
+            workflowIsActive: false,
             onlyWorkflowActionsCanCreateNewReferringItems: existingConfig?.basicInformation?.onlyWorkflowActionsCanCreateNewReferringItems || false,
             alwaysUseQuickTransitions: existingConfig?.basicInformation?.alwaysUseQuickTransitions || false,
             locked: existingConfig?.basicInformation?.locked || false,
@@ -1362,7 +1555,7 @@ function getCodebeamerTypeId(fieldType) {
         'string': 0,    // String/Text
         'number': 1,    // Integer
         'calendar': 3,  // Date/Timestamp
-        'selector': 6   // Options/Choice
+        'selector': 0   // Treat as String/Text (not Choice field)
     };
     return typeMapping[fieldType] || 0; // Default to String/Text
 }
@@ -1679,7 +1872,11 @@ app.get('/api/tracker-id/:section', requireAuth, async (req, res) => {
 });
 
 // Create tracker item endpoint
-app.post('/api/v33/trackers/:trackerId/items', requireAuth, async (req, res) => {
+app.post('/api/v3/trackers/:trackerId/items', requireAuth, async (req, res) => {
+    console.log('=== CREATE TRACKER ITEM REQUEST ===');
+    console.log('Tracker ID:', req.params.trackerId);
+    console.log('Session auth exists:', !!req.session?.auth);
+    
     if (!req.session || !req.session.auth) {
         return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
     }
@@ -1688,9 +1885,8 @@ app.post('/api/v33/trackers/:trackerId/items', requireAuth, async (req, res) => 
         const { trackerId } = req.params;
         const itemData = req.body;
         
-        console.log('Creating tracker item:', { trackerId, itemData });
+        console.log('Creating tracker item:', { trackerId, itemData: JSON.stringify(itemData, null, 2) });
         
-        // Validate required fields
         if (!itemData.name) {
             return res.status(400).json({
                 success: false,
@@ -1698,77 +1894,205 @@ app.post('/api/v33/trackers/:trackerId/items', requireAuth, async (req, res) => 
             });
         }
 
-        // Prepare the request body for CodeBeamer API
+
         const codebeamerItemData = {
             name: itemData.name,
-            description: itemData.description || '',
-            descriptionFormat: 'PlainText'
+            description: itemData.description || 'Auto-generated entry'
         };
-
-        // Add optional fields if provided
-        if (itemData.storyPoints) {
-            codebeamerItemData.storyPoints = parseInt(itemData.storyPoints);
+        
+        if (itemData.status) {
+            codebeamerItemData.status = itemData.status;
         }
 
-        if (itemData.priority) {
-            codebeamerItemData.priority = {
-                id: parseInt(itemData.priority.id),
-                name: itemData.priority.name,
-                type: 'ChoiceOptionReference'
-            };
+        if (itemData.customFields && Array.isArray(itemData.customFields) && itemData.customFields.length > 0) {
+            codebeamerItemData.customFields = itemData.customFields;
+        } else {
+            codebeamerItemData.customFields = [];
+        }
+        
+        const field80Exists = codebeamerItemData.customFields.some(f => f.fieldId === 80);
+        if (!field80Exists) {
+            codebeamerItemData.customFields.push({
+                fieldId: 80,
+                value: codebeamerItemData.description,
+                type: "TextFieldValue"
+            });
         }
 
-        if (itemData.subjects && Array.isArray(itemData.subjects)) {
-            codebeamerItemData.subjects = itemData.subjects.map(subject => ({
-                id: parseInt(subject.id),
-                name: subject.name,
-                type: 'TrackerItemReference'
-            }));
-        }
-
-        // Add custom fields if provided
-        if (itemData.customFields && Object.keys(itemData.customFields).length > 0) {
-            codebeamerItemData.customFields = Object.keys(itemData.customFields).map(fieldId => ({
-                fieldId: parseInt(fieldId),
-                value: itemData.customFields[fieldId]
-            }));
-        }
-
-        console.log('Sending to CodeBeamer:', codebeamerItemData);
+        console.log('Sending to CodeBeamer:', JSON.stringify(codebeamerItemData, null, 2));
         
         const createUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}/items`;
+        console.log('Creating item at URL:', createUrl);
+        console.log('Using auth:', req.session.auth);
+        console.log('Codebeamer base URL:', defaults.cbApiUrl);
+        
         const response = await axios.post(createUrl, codebeamerItemData, {
             headers: {
                 'Authorization': `Basic ${req.session.auth}`,
                 'Content-Type': 'application/json',
                 'accept': 'application/json'
             },
-            timeout: 30000
-        });
-
-        console.log('CodeBeamer response:', response.data);
-
-        res.json({
-            success: true,
-            message: 'Tracker item created successfully',
-            item: {
-                id: response.data.id,
-                name: response.data.name,
-                trackerId: trackerId,
-                createdAt: response.data.createdAt,
-                createdBy: response.data.createdBy
+            timeout: 30000,
+            validateStatus: function (status) {
+                return status < 500; // Accept any status less than 500
             }
         });
+
+        console.log('CodeBeamer response status:', response.status);
+        console.log('CodeBeamer response:', JSON.stringify(response.data, null, 2));
+
+        if (response.status >= 200 && response.status < 300) {
+            res.json({
+                success: true,
+                message: 'Tracker item created successfully',
+                item: {
+                    id: response.data.id,
+                    name: response.data.name,
+                    trackerId: trackerId,
+                    createdAt: response.data.createdAt,
+                    createdBy: response.data.createdBy
+                }
+            });
+        } else {
+            console.error('Codebeamer returned error status:', response.status);
+            res.status(response.status).json({
+                success: false,
+                error: 'Codebeamer API error: ' + (response.data?.message || 'Unknown error'),
+                details: response.data,
+                status: response.status
+            });
+        }
     } catch (error) {
-        console.error('Error creating tracker item:', error.message);
+        console.error('=== ERROR IN CREATE TRACKER ITEM ===');
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
         if (error.response) {
             console.error('Error response status:', error.response.status);
-            console.error('Error response data:', error.response.data);
+            console.error('Error response data:', JSON.stringify(error.response.data, null, 2));
+            
+            if (error.response.status === 403) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Permission denied: You do not have permission to create items in this tracker',
+                    message: 'The Codebeamer tracker requires specific permissions to create items. Please contact your administrator to grant you the necessary permissions.',
+                    details: error.response.data,
+                    troubleshooting: 'See TROUBLESHOOTING_403_PERMISSION.md for detailed steps to fix this issue'
+                });
+            }
+            
+            return res.status(error.response.status).json({
+                success: false,
+                error: 'Codebeamer API error: ' + error.message,
+                details: error.response.data,
+                status: error.response.status
+            });
         }
+        
         res.status(500).json({
             success: false,
-            error: 'Failed to create tracker item: ' + error.message,
-            details: error.response?.data || null
+            error: 'Internal server error: ' + error.message,
+            details: error.stack
+        });
+    }
+});
+
+app.post('/api/v3/items/:itemId/attachments', requireAuth, upload.array('attachments', 10), async (req, res) => {
+    console.log('=== UPLOAD ATTACHMENTS REQUEST ===');
+    console.log('Item ID:', req.params.itemId);
+    console.log('Files count:', req.files?.length || 0);
+    
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { itemId } = req.params;
+        
+        if (!req.files || req.files.length === 0) {
+            return res.json({
+                success: true,
+                message: 'No files to upload',
+                attachments: []
+            });
+        }
+
+        const uploadedAttachments = [];
+        
+        for (const file of req.files) {
+            console.log(`Uploading file: ${file.originalname} (${file.size} bytes, mimetype: ${file.mimetype})`);
+            
+            const formData = new FormData();
+            formData.append('attachments', file.buffer, {
+                filename: file.originalname,
+                contentType: file.mimetype
+            });
+            
+            const uploadUrl = `${defaults.cbApiUrl}/api/v3/items/${itemId}/attachments`;
+            console.log(`Upload URL: ${uploadUrl}`);
+            
+            try {
+                const response = await axios.post(uploadUrl, formData, {
+                    headers: {
+                        'Authorization': `Basic ${req.session.auth}`,
+                        ...formData.getHeaders()
+                    },
+                    maxBodyLength: Infinity,
+                    maxContentLength: Infinity,
+                    timeout: 60000,
+                    validateStatus: function (status) {
+                        return status < 500;
+                    }
+                });
+                
+                console.log(`CodeBeamer attachment response status: ${response.status}`);
+                console.log(`CodeBeamer attachment response:`, JSON.stringify(response.data, null, 2));
+                
+                if (response.status >= 200 && response.status < 300) {
+                    console.log(`✓ Uploaded: ${file.originalname}`);
+                    
+                    const attachmentId = response.data?.id || response.data?.[0]?.id || 'unknown';
+                    uploadedAttachments.push({
+                        name: file.originalname,
+                        id: attachmentId,
+                        size: file.size,
+                        rawResponse: response.data
+                    });
+                } else {
+                    console.error(`✗ Upload failed with status ${response.status}`);
+                    uploadedAttachments.push({
+                        name: file.originalname,
+                        error: response.data?.message || `HTTP ${response.status}`
+                    });
+                }
+            } catch (error) {
+                console.error(`✗ Failed to upload ${file.originalname}:`, error.response?.data || error.message);
+                if (error.response) {
+                    console.error(`  Status: ${error.response.status}`);
+                    console.error(`  Data:`, error.response.data);
+                }
+                uploadedAttachments.push({
+                    name: file.originalname,
+                    error: error.response?.data?.message || error.message
+                });
+            }
+        }
+
+        const failedUploads = uploadedAttachments.filter(a => a.error);
+        
+        res.json({
+            success: failedUploads.length === 0,
+            message: `Uploaded ${uploadedAttachments.length - failedUploads.length} of ${req.files.length} files`,
+            attachments: uploadedAttachments,
+            failedCount: failedUploads.length
+        });
+    } catch (error) {
+        console.error('=== ERROR IN UPLOAD ATTACHMENTS ===');
+        console.error('Error message:', error.message);
+        
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error: ' + error.message
         });
     }
 });

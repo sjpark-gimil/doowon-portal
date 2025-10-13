@@ -213,6 +213,10 @@ class DynamicFormHandler {
         inputElement.addEventListener('input', (e) => {
             this.updateFormData(field.codebeamerId, e.target.value);
         });
+        
+        inputElement.addEventListener('change', (e) => {
+            this.updateFormData(field.codebeamerId, e.target.value);
+        });
 
         inputContainer.appendChild(inputElement);
         return inputContainer;
@@ -295,38 +299,98 @@ class DynamicFormHandler {
      * @param {string} section - Section name for field configuration
      * @param {string} trackerId - Tracker ID for the item
      */
-    transformFormDataForCodeBeamer(formData, section, trackerId) {
-        const fieldConfigs = this.getFieldConfigs(section);
+    async transformFormDataForCodeBeamer(formData, section, trackerId) {
+        let fieldConfigs = this.getFieldConfigs(section);
+        
+        if (!fieldConfigs || fieldConfigs.length === 0) {
+            console.warn('[Transform] Field configs not loaded, loading now...');
+            fieldConfigs = await this.loadFieldConfigs(section);
+        }
+        
+        console.log('[Transform] Input formData:', formData);
+        console.log('[Transform] Field configs:', fieldConfigs);
+        
+        let itemName = formData.name || formData.title || '';
+        if (!itemName) {
+            const today = new Date().toISOString().split('T')[0];
+            itemName = `${section} - ${today}`;
+        }
+        
+        let descriptionValue = formData.description || '';
+        if (!descriptionValue || descriptionValue.trim() === '') {
+            const firstFieldValue = Object.values(formData).find(val => val && val.toString().trim() !== '');
+            descriptionValue = firstFieldValue ? `Entry created: ${firstFieldValue}` : 'Auto-generated entry';
+        }
+        
         const transformedData = {
-            name: formData.name || formData.title || 'Untitled Item',
-            description: formData.description || '',
-            descriptionFormat: 'PlainText'
+            name: itemName,
+            description: descriptionValue,
+            customFields: []
         };
 
-        // Map custom fields
-        const customFields = {};
         fieldConfigs.forEach(field => {
             const value = formData[field.codebeamerId];
-            if (value !== undefined && value !== null && value !== '') {
-                // Handle different field types
-                if (field.type === 'number' && !isNaN(Number(value))) {
-                    customFields[field.id] = Number(value);
-                } else if (field.type === 'calendar' && value) {
-                    // Convert date to ISO format if needed
-                    customFields[field.id] = new Date(value).toISOString().split('T')[0];
-                } else {
-                    customFields[field.id] = value;
+            console.log(`[Transform] Field: ${field.name}, required: ${field.required}, codebeamerId: ${field.codebeamerId}, value: ${value}, referenceId: ${field.referenceId}`);
+            
+            if (field.codebeamerId === 'description') {
+                if (value && (!descriptionValue || descriptionValue === 'Auto-generated entry')) {
+                    descriptionValue = value;
+                    console.log(`[Transform] Using field "${field.name}" as description`);
                 }
+                return;
+            }
+            
+            if (value !== undefined && value !== null && value !== '') {
+                const referenceId = field.referenceId || field.id;
+                console.log(`  ✓ Adding field to customFields: ${field.name}`);
+                
+                if (field.type === 'number' && !isNaN(Number(value))) {
+                    transformedData.customFields.push({
+                        fieldId: parseInt(referenceId),
+                        value: Number(value),
+                        type: "IntegerFieldValue"
+                    });
+                } else if (field.type === 'calendar' && value) {
+                    let dateValue;
+                    try {
+                        const date = new Date(value);
+                        if (isNaN(date.getTime())) {
+                            console.warn(`Invalid date for field ${field.name}: ${value}`);
+                            return;
+                        }
+                        dateValue = date.toISOString();
+                    } catch (e) {
+                        console.warn(`Error parsing date for field ${field.name}: ${value}`, e);
+                        return;
+                    }
+                    
+                    transformedData.customFields.push({
+                        fieldId: parseInt(referenceId),
+                        value: dateValue,
+                        type: "DateFieldValue"
+                    });
+                } else if (field.type === 'selector' && value) {
+                    transformedData.customFields.push({
+                        fieldId: parseInt(referenceId),
+                        value: value,
+                        type: "TextFieldValue"
+                    });
+                } else {
+                    transformedData.customFields.push({
+                        fieldId: parseInt(referenceId),
+                        value: value,
+                        type: "TextFieldValue"
+                    });
+                }
+            } else {
+                console.log(`  ✗ Skipping field (no value): ${field.name}, required: ${field.required}`);
             }
         });
+        
+        transformedData.description = descriptionValue;
 
-        if (Object.keys(customFields).length > 0) {
-            transformedData.customFields = Object.keys(customFields).map(fieldId => ({
-                fieldId: parseInt(fieldId),
-                value: customFields[fieldId]
-            }));
-        }
-
+        console.log('[Transform] Output transformed data:', JSON.stringify(transformedData, null, 2));
+        console.log('[Transform] Summary - name:', transformedData.name, ', description:', transformedData.description, ', customFields count:', transformedData.customFields.length);
         return transformedData;
     }
 
