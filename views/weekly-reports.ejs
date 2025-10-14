@@ -38,6 +38,10 @@
                 <img src="images/settings.svg" alt="External Training" />
                 <span><%= sectionTitles['external-training'].name %></span>
             </a>
+            <a href="/list" class="nav-item <%= currentPath === '/list' ? 'active' : '' %>">
+                <img src="images/add-list.png" alt="List" />
+                <span>리포트 첨부</span>
+            </a>
             <a href="/admin" class="nav-item <%= currentPath === '/admin' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Admin" />
                 <span>관리자 설정</span>
@@ -69,6 +73,10 @@
                 <img src="images/settings.svg" alt="External Training" />
                 <span><%= sectionTitles['external-training'].name %></span>
             </a>
+            <a href="/list" class="nav-item <%= currentPath === '/list' ? 'active' : '' %>">
+                <img src="images/add-list.png" alt="List" />
+                <span>리포트 첨부</span>
+            </a>
         </div>
         <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
         <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
@@ -77,13 +85,9 @@
     <div class="main-container">
         <div class="page-header">
             <h2><%= sectionTitles['weekly-reports'].icon %> <%= sectionTitles['weekly-reports'].name %></h2>
+            <button class="btn-primary" onclick="showCreateForm()">+ New</button>     
         </div>
 
-        <div class="content-section">
-            <div class="section-header">
-                <h3>주간보고</h3>
-                <button class="btn-primary" onclick="showCreateForm()">+ New</button>
-            </div>
 
             <div class="create-form" id="createForm" style="display: none;">
                 <div class="dynamic-form-container">
@@ -99,9 +103,9 @@
                     
                     <!-- Attachment Field -->
                     <div class="field-group">
-                        <h4>첨부파일</h4>
+                        <h4>첨부 파일</h4>
                         <div class="field-item">
-                            <span class="field-label">첨부파일</span>
+                            <span class="field-label">파일 업로드</span>
                             <div class="field-input-container">
                                 <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
                                 <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
@@ -115,20 +119,28 @@
                     </div>
                 </div>
             </div>
-        </div>
+        
 
         <div class="content-section mobile-hide">
             <div class="section-header">
                 <h3>주간보고 목록</h3>
-                <div class="filter-controls">
-                    <select id="statusFilter" onchange="filterReports()">
-                        <option value="">전체 상태</option>
-                        <option value="draft">임시저장</option>
-                        <option value="submitted">제출됨</option>
-                        <option value="approved">승인됨</option>
-                        <option value="rejected">반려됨</option>
-                    </select>
-                    <input type="month" id="monthFilter" onchange="filterReports()" placeholder="월별 필터">
+                <div class="vscode-search-bar">
+                    <div class="search-bar-container">
+                        <button class="chevron-btn" onclick="toggleSearchOptions()">></button>
+                        <input type="text" id="searchFilter" class="search-input" placeholder="검색..." oninput="applySearch()">
+                        <div class="search-options">
+                            <button class="search-option-btn" id="caseSensitiveBtn" onclick="toggleCaseSensitive()" title="대소문자 구분">Aa</button>
+                            <button class="search-option-btn" id="wholeWordBtn" onclick="toggleWholeWord()" title="전체 단어 일치">ab</button>
+                            <button class="search-option-btn" id="regexBtn" onclick="toggleRegex()" title="정규식">*</button>
+                        </div>
+                        <div class="search-results-info" id="searchResultsInfo">0 of 0</div>
+                        <div class="search-navigation">
+                            <button class="nav-btn" id="prevResultBtn" onclick="previousResult()" title="이전 결과">↑</button>
+                            <button class="nav-btn" id="nextResultBtn" onclick="nextResult()" title="다음 결과">↓</button>
+                        </div>
+                        <button class="menu-btn" onclick="showSearchMenu()" title="검색 옵션">≡</button>
+                        <button class="close-btn" onclick="closeSearch()" title="검색 닫기">✕</button>
+                    </div>
                 </div>
             </div>
 
@@ -138,6 +150,26 @@
                 </div>
                 <div class="empty-state" id="emptyState" style="display: none;">
                     <p>등록된 주간보고가 없습니다.</p>
+                </div>
+            </div>
+            
+            <div class="pagination-controls" id="paginationControls" style="display: none;">
+                <div class="pagination-info">
+                    <span>페이지 당 아이템:</span>
+                    <select onchange="changePageSize(this.value)" id="pageSizeSelect">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="pagination-buttons">
+                    <button onclick="prevPage()" id="prevBtn" disabled>이전</button>
+                    <button onclick="nextPage()" id="nextBtn" disabled>다음</button>
+                </div>
+                <div class="pagination-status">
+                    <span id="pageInfo">페이지 1</span>
+                    <span id="itemCount">총 0개</span>
                 </div>
             </div>
         </div>
@@ -258,13 +290,13 @@
                             const attachData = await attachResponse.json();
                             
                             if (attachData.success) {
-                                alert(`주간보고가 저장되었습니다! (첨부파일 ${attachData.attachments.length}개 업로드 완료)`);
+                                alert(`주간보고가 저장되었습니다! (첨부 파일 ${attachData.attachments.length}개 업로드 완료)`);
                             } else {
-                                alert(`주간보고는 저장되었으나 첨부파일 업로드 실패: ${attachData.message}`);
+                                alert(`주간보고는 저장되었으나 첨부 파일 업로드 실패: ${attachData.message}`);
                             }
                         } catch (attachError) {
                             console.error('Attachment upload error:', attachError);
-                            alert('주간보고는 저장되었으나 첨부파일 업로드 중 오류가 발생했습니다.');
+                            alert('주간보고는 저장되었으나 첨부 파일 업로드 중 오류가 발생했습니다.');
                         }
                     } else {
                         alert('주간보고가 저장되었습니다!');
@@ -344,34 +376,439 @@
             }
         }
 
-        function filterReports() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const monthFilter = document.getElementById('monthFilter').value;
+        let allReports = [];
+        let filteredReports = [];
+        let currentPage = 1;
+        let pageSize = 25;
+        let totalPages = 1;
+        let searchQuery = '';
+        let fieldConfigs = [];
+        let currentFilters = {};
+
+        async function loadReportsWithFilters() {
+            try {
+                showLoadingIndicator();
+                
+                const trackerId = await getTrackerIdForSection('weekly-reports');
+                if (!trackerId) {
+                    console.log('No tracker ID configured for weekly-reports');
+                    hideLoadingIndicator();
+                    return;
+                }
+
+                // Load all items first (server-side pagination only for initial load)
+                const response = await fetch(`/api/codebeamer/trackers/${trackerId}/items?includeFields=true&pageSize=1000`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch items: ${response.status}`);
+                }
+
+                const data = await response.json();
+                allReports = data.items || [];
+                
+                await loadFieldConfigsForSection('weekly-reports');
+                createFieldFilters();
+                applyAllFilters(); // Apply browser-side filtering
+                hideLoadingIndicator();
+
+                showStatus(`총 ${allReports.length}개의 아이템을 가져왔습니다`, true);
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                hideLoadingIndicator();
+                showStatus('주간보고 목록을 불러오는데 실패했습니다', false);
+            }
+        }
+
+        async function getTrackerIdForSection(section) {
+            try {
+                const response = await fetch(`/api/tracker-id/${section}`);
+                const data = await response.json();
+                return data.success ? data.trackerId : null;
+            } catch (error) {
+                console.error('Error getting tracker ID:', error);
+                return null;
+            }
+        }
+
+        async function loadFieldConfigsForSection(section) {
+            try {
+                const response = await fetch(`/api/field-configs/${section}`);
+                if (!response.ok) {
+                    fieldConfigs = [];
+                    return;
+                }
+                const data = await response.json();
+                if (data.success) {
+                    fieldConfigs = data.fieldConfigs || [];
+                } else {
+                    fieldConfigs = [];
+                }
+            } catch (error) {
+                console.error('Error loading field configs:', error);
+                fieldConfigs = [];
+            }
+        }
+
+        function createFieldFilters() {
+            const fieldFiltersContainer = document.getElementById('fieldFilters');
+            fieldFiltersContainer.innerHTML = '';
+
+            if (!fieldConfigs || fieldConfigs.length === 0) {
+                fieldFiltersContainer.style.display = 'none';
+                return;
+            }
+
+            const filterableFields = fieldConfigs.filter(field => 
+                field.type === 'selector' && field.options && field.options.length > 0
+            );
+
+            if (filterableFields.length === 0) {
+                fieldFiltersContainer.style.display = 'none';
+                return;
+            }
+
+            fieldFiltersContainer.innerHTML = '<span class="filter-label">필터:</span>';
             
-            console.log('Filtering reports by status:', statusFilter, 'month:', monthFilter);
+            filterableFields.forEach(field => {
+                const filterDiv = document.createElement('div');
+                filterDiv.className = 'filter-item';
+                
+                const select = document.createElement('select');
+                select.id = `filter-${field.referenceId}`;
+                select.className = 'filter-select';
+                select.onchange = () => applyFieldFilter(field.referenceId, select.value);
+                
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = `전체 ${field.name}`;
+                select.appendChild(allOption);
+                
+                field.options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    select.appendChild(optionElement);
+                });
+                
+                filterDiv.appendChild(select);
+                fieldFiltersContainer.appendChild(filterDiv);
+            });
+
+            fieldFiltersContainer.style.display = 'flex';
+        }
+
+        function applySearch() {
+            const searchInput = document.getElementById('searchFilter');
+            searchQuery = searchInput.value.toLowerCase().trim();
+            
+            const clearBtn = document.querySelector('.clear-search-btn');
+            if (searchQuery) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+            
+            currentPage = 1; // Reset to first page when searching
+            applyAllFilters();
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('searchFilter');
+            searchInput.value = '';
+            searchQuery = '';
+            
+            const clearBtn = document.querySelector('.clear-search-btn');
+            clearBtn.style.display = 'none';
+            
+            currentPage = 1;
+            applyAllFilters();
+        }
+
+        function applyAllFilters() {
+            // Apply search filter
+            filteredReports = allReports.filter(report => {
+                if (searchQuery) {
+                    const reportId = String(report.id).toLowerCase();
+                    const reportName = String(report.name || '').toLowerCase();
+                    
+                    if (!reportId.includes(searchQuery) && !reportName.includes(searchQuery)) {
+                        return false;
+                    }
+                }
+
+                // Apply field filters
+                for (const [referenceId, filterValue] of Object.entries(currentFilters)) {
+                    const field = fieldConfigs.find(f => f.referenceId == referenceId);
+                    if (!field) continue;
+
+                    const reportValue = getReportFieldValue(report, field);
+                    if (reportValue !== filterValue) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+
+            // Update pagination
+            totalPages = Math.ceil(filteredReports.length / pageSize);
+            currentPage = Math.min(currentPage, totalPages || 1);
+            
+            displayReports();
+            updatePaginationControls();
+            
+            // Update status message
+            const filterCount = Object.keys(currentFilters).length;
+            let statusMsg = '';
+            
+            if (searchQuery && filterCount > 0) {
+                statusMsg = `검색 및 필터 적용: ${filteredReports.length}개의 주간보고`;
+            } else if (searchQuery) {
+                statusMsg = `검색 결과: ${filteredReports.length}개의 주간보고`;
+            } else if (filterCount > 0) {
+                statusMsg = `필터 적용: ${filteredReports.length}개의 주간보고`;
+            } else {
+                statusMsg = `전체: ${filteredReports.length}개의 주간보고`;
+            }
+            
+            showStatus(statusMsg, true);
+        }
+
+        function applyFieldFilter(fieldId, value) {
+            // Store the filter value
+            if (value) {
+                currentFilters[fieldId] = value;
+            } else {
+                delete currentFilters[fieldId];
+            }
+            
+            currentPage = 1;
+            applyAllFilters();
+        }
+
+        function getReportFieldValue(report, field) {
+            if (field.codebeamerId === 'name') return report.name;
+            if (field.codebeamerId === 'status') return report.status?.name || report.status;
+            
+            if (report.customFields && Array.isArray(report.customFields)) {
+                const customField = report.customFields.find(cf => 
+                    cf.fieldId == field.referenceId || 
+                    cf.id == field.referenceId ||
+                    cf.referenceId == field.referenceId
+                );
+                
+                if (customField) {
+                    if (typeof customField.value === 'string') {
+                        return customField.value;
+                    }
+                    if (customField.value && customField.value.name) {
+                        return customField.value.name;
+                    }
+                    if (Array.isArray(customField.values) && customField.values.length > 0) {
+                        return customField.values[0].name || customField.values[0];
+                    }
+                    if (customField.value && typeof customField.value === 'object') {
+                        return JSON.stringify(customField.value);
+                    }
+                    return customField.value;
+                }
+            }
+            
+            const fieldKey = `custom_field_${field.referenceId}`;
+            if (report[fieldKey]) {
+                if (typeof report[fieldKey] === 'string') return report[fieldKey];
+                if (report[fieldKey].name) return report[fieldKey].name;
+                if (Array.isArray(report[fieldKey])) {
+                    return report[fieldKey][0]?.name || report[fieldKey][0];
+                }
+            }
+            
+            return null;
+        }
+
+        function clearAllFilters() {
+            const searchInput = document.getElementById('searchFilter');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            const clearBtn = document.querySelector('.clear-search-btn');
+            if (clearBtn) {
+                clearBtn.style.display = 'none';
+            }
+            
+            searchQuery = '';
+            
+            fieldConfigs.forEach(field => {
+                const filterSelect = document.getElementById(`filter-${field.referenceId}`);
+                if (filterSelect) {
+                    filterSelect.value = '';
+                }
+            });
+            
+            currentFilters = {};
+            currentPage = 1;
+            applyAllFilters();
+        }
+
+        function displayReports() {
+            const reportsList = document.getElementById('reportsList');
+            if (!reportsList) return;
+
+            if (filteredReports.length === 0) {
+                reportsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>검색 조건에 맞는 주간보고가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show only items for current page
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageItems = filteredReports.slice(startIndex, endIndex);
+
+            formHandler.renderTable('reportsList', pageItems, 'weekly-reports', { pagination: false });
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayReports();
+                updatePaginationControls();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayReports();
+                updatePaginationControls();
+            }
+        }
+
+        function changePageSize(newPageSize) {
+            pageSize = parseInt(newPageSize);
+            currentPage = 1;
+            totalPages = Math.ceil(filteredReports.length / pageSize);
+            displayReports();
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            const paginationControls = document.getElementById('paginationControls');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            const itemCount = document.getElementById('itemCount');
+
+            if (filteredReports.length > pageSize) {
+                paginationControls.style.display = 'flex';
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+                
+                const startIndex = (currentPage - 1) * pageSize + 1;
+                const endIndex = Math.min(currentPage * pageSize, filteredReports.length);
+                
+                pageInfo.textContent = `페이지 ${currentPage}`;
+                itemCount.textContent = `${startIndex}-${endIndex} / 총 ${filteredReports.length}개`;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        function showLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+        }
+
+        function hideLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function showStatus(message, isSuccess) {
+            const statusElement = document.getElementById('status') || createStatusElement();
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            statusElement.className = 'status ' + (isSuccess ? 'success' : 'error');
+
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function createStatusElement() {
+            const statusElement = document.createElement('div');
+            statusElement.id = 'status';
+            statusElement.className = 'status';
+            document.querySelector('.main-container').appendChild(statusElement);
+            return statusElement;
+        }
+
+        function filterReports() {
+            applyAllFilters();
         }
 
         function editReport(id) {
             console.log('Editing report:', id);
-            showCreateForm();
-        }
-
-        function submitReport(id) {
-            console.log('Submitting report:', id);
+            // Find the report in the current data
+            const report = allReports.find(r => r.id == id);
+            if (report) {
+                // Pre-populate form with existing data
+                showCreateForm();
+                // TODO: Implement form pre-population with report data
+                showStatus(`주간보고 ${id}번을 수정합니다`, true);
+            }
         }
 
         function deleteReport(id) {
-            if (confirm('정말로 이 보고서를 삭제하시겠습니까?')) {
-                console.log('Deleting report:', id);
+            if (confirm(`정말로 주간보고 ${id}번을 삭제하시겠습니까?`)) {
+                deleteReportFromServer(id);
+            }
+        }
+
+        async function deleteReportFromServer(id) {
+            try {
+                showLoadingIndicator();
+                
+                const response = await fetch(`/api/codebeamer/items/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    showStatus(`주간보고 ${id}번이 삭제되었습니다`, true);
+                    // Reload the current page
+                    loadReportsWithFilters();
+                } else {
+                    const errorData = await response.json();
+                    showStatus(`삭제 실패: ${errorData.error || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                showStatus(`삭제 중 오류가 발생했습니다: ${error.message}`, false);
+            } finally {
+                hideLoadingIndicator();
             }
         }
 
         function viewReport(id) {
             console.log('Viewing report:', id);
+            // TODO: Implement view functionality
+            showStatus(`주간보고 ${id}번을 조회합니다`, true);
         }
 
         function downloadReport(id) {
             console.log('Downloading report:', id);
+            // TODO: Implement download functionality
+            showStatus(`주간보고 ${id}번을 다운로드합니다`, true);
         }
 
         function switchTab(tabName) {
@@ -384,7 +821,7 @@
 
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadWeeklyReports();
+            loadReportsWithFilters();
             
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'create') {

@@ -38,6 +38,10 @@
                 <img src="images/settings.svg" alt="External Training" />
                 <span>외부교육관리</span>
             </a>
+            <a href="/list" class="nav-item <%= currentPath === '/list' ? 'active' : '' %>">
+                <img src="images/add-list.png" alt="List" />
+                <span>리포트 첨부</span>
+            </a>
             <a href="/admin" class="nav-item <%= currentPath === '/admin' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Admin" />
                 <span>관리자 설정</span>
@@ -68,6 +72,10 @@
             <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="External Training" />
                 <span>외부교육관리</span>
+            </a>
+            <a href="/list" class="nav-item <%= currentPath === '/list' ? 'active' : '' %>">
+                <img src="images/add-list.png" alt="List" />
+                <span>리포트 첨부</span>
             </a>
         </div>
         <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>

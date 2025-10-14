@@ -99,9 +99,9 @@
                     
                     <!-- Attachment Field -->
                     <div class="field-group">
-                        <h4>첨부파일</h4>
+                        <h4>첨부 파일</h4>
                         <div class="field-item">
-                            <span class="field-label">첨부파일</span>
+                            <span class="field-label">파일 업로드</span>
                             <div class="field-input-container">
                                 <input type="file" id="travelAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
                                 <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
@@ -121,7 +121,15 @@
             <div class="section-header">
                 <h3>출장보고 목록</h3>
                 <div class="filter-controls">
-                    <input type="text" id="searchFilter" onkeyup="filterReports()" placeholder="검색...">
+                    <div class="search-filter-container">
+                        <input type="text" id="searchFilter" class="search-filter-input" placeholder="🔍 아이템 ID 또는 이름으로 검색..." oninput="applySearch()">
+                        <button class="clear-search-btn" onclick="clearSearch()" style="display: none;">✕</button>
+                    </div>
+                    <div id="fieldFilters" class="field-filters" style="display: none;">
+                    </div>
+                    <div class="existing-filters">
+                        <button class="clear-filter-btn" onclick="clearAllFilters()">필터 초기화</button>
+                    </div>
                 </div>
             </div>
 
@@ -276,13 +284,13 @@
                             const attachData = await attachResponse.json();
                             
                             if (attachData.success) {
-                                alert(`출장보고가 저장되었습니다! (첨부파일 ${attachData.attachments.length}개 업로드 완료)`);
+                                alert(`출장보고가 저장되었습니다! (첨부 파일 ${attachData.attachments.length}개 업로드 완료)`);
                             } else {
-                                alert(`출장보고는 저장되었으나 첨부파일 업로드 실패: ${attachData.message}`);
+                                alert(`출장보고는 저장되었으나 첨부 파일 업로드 실패: ${attachData.message}`);
                             }
                         } catch (attachError) {
                             console.error('Attachment upload error:', attachError);
-                            alert('출장보고는 저장되었으나 첨부파일 업로드 중 오류가 발생했습니다.');
+                            alert('출장보고는 저장되었으나 첨부 파일 업로드 중 오류가 발생했습니다.');
                         }
                     } else {
                         alert('출장보고가 저장되었습니다!');
@@ -392,9 +400,321 @@
             console.log('Downloading travel report:', id);
         }
 
+        let allReports = [];
+        let filteredReports = [];
+        let searchQuery = '';
+        let fieldConfigs = [];
+        let currentFilters = {};
+
+        async function loadReportsWithFilters() {
+            try {
+                showLoadingIndicator();
+                
+                const trackerId = await getTrackerIdForSection('travel-reports');
+                if (!trackerId) {
+                    console.log('No tracker ID configured for travel-reports');
+                    hideLoadingIndicator();
+                    return;
+                }
+
+                const response = await fetch(`/api/codebeamer/trackers/${trackerId}/items?includeFields=true`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch items: ${response.status}`);
+                }
+
+                const items = await response.json();
+                allReports = items;
+                filteredReports = [...allReports];
+
+                await loadFieldConfigsForSection('travel-reports');
+                createFieldFilters();
+                displayReports();
+                hideLoadingIndicator();
+
+                showStatus(`총 ${allReports.length}개의 출장보고를 로드했습니다`, true);
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                hideLoadingIndicator();
+                showStatus('출장보고 목록을 불러오는데 실패했습니다', false);
+            }
+        }
+
+        async function getTrackerIdForSection(section) {
+            try {
+                const response = await fetch(`/api/tracker-id/${section}`);
+                const data = await response.json();
+                return data.success ? data.trackerId : null;
+            } catch (error) {
+                console.error('Error getting tracker ID:', error);
+                return null;
+            }
+        }
+
+        async function loadFieldConfigsForSection(section) {
+            try {
+                const response = await fetch(`/api/field-configs/${section}`);
+                if (!response.ok) {
+                    fieldConfigs = [];
+                    return;
+                }
+                const data = await response.json();
+                if (data.success) {
+                    fieldConfigs = data.fieldConfigs || [];
+                } else {
+                    fieldConfigs = [];
+                }
+            } catch (error) {
+                console.error('Error loading field configs:', error);
+                fieldConfigs = [];
+            }
+        }
+
+        function createFieldFilters() {
+            const fieldFiltersContainer = document.getElementById('fieldFilters');
+            fieldFiltersContainer.innerHTML = '';
+
+            if (!fieldConfigs || fieldConfigs.length === 0) {
+                fieldFiltersContainer.style.display = 'none';
+                return;
+            }
+
+            const filterableFields = fieldConfigs.filter(field => 
+                field.type === 'selector' && field.options && field.options.length > 0
+            );
+
+            if (filterableFields.length === 0) {
+                fieldFiltersContainer.style.display = 'none';
+                return;
+            }
+
+            fieldFiltersContainer.innerHTML = '<span class="filter-label">필터:</span>';
+            
+            filterableFields.forEach(field => {
+                const filterDiv = document.createElement('div');
+                filterDiv.className = 'filter-item';
+                
+                const select = document.createElement('select');
+                select.id = `filter-${field.referenceId}`;
+                select.className = 'filter-select';
+                select.onchange = () => applyAllFilters();
+                
+                const allOption = document.createElement('option');
+                allOption.value = '';
+                allOption.textContent = `전체 ${field.name}`;
+                select.appendChild(allOption);
+                
+                field.options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    select.appendChild(optionElement);
+                });
+                
+                filterDiv.appendChild(select);
+                fieldFiltersContainer.appendChild(filterDiv);
+            });
+
+            fieldFiltersContainer.style.display = 'flex';
+        }
+
+        function applySearch() {
+            const searchInput = document.getElementById('searchFilter');
+            searchQuery = searchInput.value.toLowerCase().trim();
+            
+            const clearBtn = document.querySelector('.clear-search-btn');
+            if (searchQuery) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+            
+            applyAllFilters();
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('searchFilter');
+            searchInput.value = '';
+            searchQuery = '';
+            
+            const clearBtn = document.querySelector('.clear-search-btn');
+            clearBtn.style.display = 'none';
+            
+            applyAllFilters();
+        }
+
+        function applyAllFilters() {
+            currentFilters = {};
+            
+            fieldConfigs.forEach(field => {
+                const filterSelect = document.getElementById(`filter-${field.referenceId}`);
+                if (filterSelect && filterSelect.value) {
+                    currentFilters[field.referenceId] = filterSelect.value;
+                }
+            });
+
+            filteredReports = allReports.filter(report => {
+                if (searchQuery) {
+                    const reportId = String(report.id).toLowerCase();
+                    const reportName = String(report.name || '').toLowerCase();
+                    
+                    if (!reportId.includes(searchQuery) && !reportName.includes(searchQuery)) {
+                        return false;
+                    }
+                }
+
+                for (const [referenceId, filterValue] of Object.entries(currentFilters)) {
+                    const field = fieldConfigs.find(f => f.referenceId == referenceId);
+                    if (!field) continue;
+
+                    const reportValue = getReportFieldValue(report, field);
+                    if (reportValue !== filterValue) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+
+            displayReports();
+            
+            const filterCount = Object.keys(currentFilters).length;
+            let statusMsg = '';
+            
+            if (searchQuery && filterCount > 0) {
+                statusMsg = `검색 및 필터 적용: ${filteredReports.length}개의 출장보고`;
+            } else if (searchQuery) {
+                statusMsg = `검색 결과: ${filteredReports.length}개의 출장보고`;
+            } else if (filterCount > 0) {
+                statusMsg = `필터 적용: ${filteredReports.length}개의 출장보고`;
+            } else {
+                statusMsg = `전체: ${filteredReports.length}개의 출장보고`;
+            }
+            
+            showStatus(statusMsg, true);
+        }
+
+        function getReportFieldValue(report, field) {
+            if (field.codebeamerId === 'name') return report.name;
+            if (field.codebeamerId === 'status') return report.status?.name || report.status;
+            
+            if (report.customFields && Array.isArray(report.customFields)) {
+                const customField = report.customFields.find(cf => 
+                    cf.fieldId == field.referenceId || 
+                    cf.id == field.referenceId ||
+                    cf.referenceId == field.referenceId
+                );
+                
+                if (customField) {
+                    if (typeof customField.value === 'string') {
+                        return customField.value;
+                    }
+                    if (customField.value && customField.value.name) {
+                        return customField.value.name;
+                    }
+                    if (Array.isArray(customField.values) && customField.values.length > 0) {
+                        return customField.values[0].name || customField.values[0];
+                    }
+                    if (customField.value && typeof customField.value === 'object') {
+                        return JSON.stringify(customField.value);
+                    }
+                    return customField.value;
+                }
+            }
+            
+            const fieldKey = `custom_field_${field.referenceId}`;
+            if (report[fieldKey]) {
+                if (typeof report[fieldKey] === 'string') return report[fieldKey];
+                if (report[fieldKey].name) return report[fieldKey].name;
+                if (Array.isArray(report[fieldKey])) {
+                    return report[fieldKey][0]?.name || report[fieldKey][0];
+                }
+            }
+            
+            return null;
+        }
+
+        function clearAllFilters() {
+            const searchInput = document.getElementById('searchFilter');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            const clearBtn = document.querySelector('.clear-search-btn');
+            if (clearBtn) {
+                clearBtn.style.display = 'none';
+            }
+            
+            searchQuery = '';
+            
+            fieldConfigs.forEach(field => {
+                const filterSelect = document.getElementById(`filter-${field.referenceId}`);
+                if (filterSelect) {
+                    filterSelect.value = '';
+                }
+            });
+            
+            currentFilters = {};
+            filteredReports = [...allReports];
+            displayReports();
+            
+            showStatus(`검색 및 필터가 초기화되었습니다. ${allReports.length}개의 출장보고를 표시합니다`, true);
+        }
+
+        function displayReports() {
+            const reportsList = document.getElementById('reportsList');
+            if (!reportsList) return;
+
+            if (filteredReports.length === 0) {
+                reportsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>검색 조건에 맞는 출장보고가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            formHandler.renderTable('reportsList', filteredReports, 'travel-reports');
+        }
+
+        function showLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+        }
+
+        function hideLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function showStatus(message, isSuccess) {
+            const statusElement = document.getElementById('status') || createStatusElement();
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            statusElement.className = 'status ' + (isSuccess ? 'success' : 'error');
+
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function createStatusElement() {
+            const statusElement = document.createElement('div');
+            statusElement.id = 'status';
+            statusElement.className = 'status';
+            document.querySelector('.main-container').appendChild(statusElement);
+            return statusElement;
+        }
+
+        function filterReports() {
+            applyAllFilters();
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadTravelReports();
+            loadReportsWithFilters();
             
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'create') {

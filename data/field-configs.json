@@ -15,7 +15,7 @@
         "name": "차종",
         "codebeamerId": "custom_field_8",
         "type": "selector",
-        "required": false,
+        "required": true,
         "readonly": false,
         "referenceId": 10005,
         "options": [
@@ -226,7 +226,7 @@
       }
     ]
   },
-  "lastUpdated": "2025-10-13T07:28:44.528Z",
+  "lastUpdated": "2025-10-13T08:05:34.135Z",
   "trackerIds": {
     "weekly-reports": "7036",
     "travel-reports": "7107",

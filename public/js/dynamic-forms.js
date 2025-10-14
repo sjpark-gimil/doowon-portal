@@ -496,7 +496,7 @@ class DynamicFormHandler {
 
                 fieldConfigs.forEach(field => {
                     const cell = document.createElement('td');
-                    const value = item[field.codebeamerId] || '';
+                    const value = this.getFieldValue(item, field);
                     cell.textContent = value;
                     row.appendChild(cell);
                 });
@@ -649,6 +649,54 @@ class DynamicFormHandler {
     getTableContainerId() {
         // This should be overridden by the calling page
         return null;
+    }
+
+    /**
+     * Extract field value from item data
+     * @param {Object} item - The item data
+     * @param {Object} field - The field configuration
+     */
+    getFieldValue(item, field) {
+        // Handle basic fields
+        if (field.codebeamerId === 'name') return item.name || '';
+        if (field.codebeamerId === 'status') return item.status?.name || item.status || '';
+        
+        // Handle custom fields from CBQL response
+        if (item.customFields && Array.isArray(item.customFields)) {
+            const customField = item.customFields.find(cf => 
+                cf.fieldId == field.referenceId || 
+                cf.id == field.referenceId ||
+                cf.referenceId == field.referenceId
+            );
+            
+            if (customField) {
+                if (typeof customField.value === 'string') {
+                    return customField.value;
+                }
+                if (customField.value && customField.value.name) {
+                    return customField.value.name;
+                }
+                if (Array.isArray(customField.values) && customField.values.length > 0) {
+                    return customField.values[0].name || customField.values[0];
+                }
+                if (customField.value && typeof customField.value === 'object') {
+                    return JSON.stringify(customField.value);
+                }
+                return customField.value || '';
+            }
+        }
+        
+        // Fallback: try direct property access
+        const fieldKey = `custom_field_${field.referenceId}`;
+        if (item[fieldKey]) {
+            if (typeof item[fieldKey] === 'string') return item[fieldKey];
+            if (item[fieldKey].name) return item[fieldKey].name;
+            if (Array.isArray(item[fieldKey])) {
+                return item[fieldKey][0]?.name || item[fieldKey][0];
+            }
+        }
+        
+        return '';
     }
 
     /**

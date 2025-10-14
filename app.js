@@ -351,6 +351,15 @@ app.get('/external-training', requireAuth, (req, res) => {
     });
 });
 
+app.get('/list', requireAuth, (req, res) => {
+    res.render('list', {
+        currentPath: '/list',
+        username: req.session.username || '',
+        serverUrl: defaults.cbApiUrl,
+        cbBaseUrl: process.env.CB_BASE_URL || ''
+    });
+});
+
 app.get('/admin/login', (req, res) => {
     res.render('admin-login', { error: null });
 });
@@ -684,6 +693,33 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
     }
 });
 
+app.delete('/api/codebeamer/items/:itemId', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { itemId } = req.params;
+        const deleteUrl = `${defaults.cbApiUrl}/api/v3/items/${itemId}`;
+        
+        console.log(`Deleting item ${itemId} from: ${deleteUrl}`);
+        
+        const response = await axios.delete(deleteUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        console.log(`Successfully deleted item ${itemId}`);
+        res.json({ success: true, message: 'Item deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting item:', error.message);
+        res.status(500).json({ error: 'Failed to delete item' });
+    }
+});
+
 app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
         return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
@@ -691,72 +727,85 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
 
     try {
         const { trackerId } = req.params;
-        const { maxItems } = req.query;
-        const pageSize = 25;
-        let allItems = [];
-        let currentPage = 1;
-        let hasMorePages = true;
+        const { 
+            maxItems, 
+            includeFields, 
+            page = 1, 
+            pageSize = 25, 
+            search,
+            filters 
+        } = req.query;
+        
+        const fieldParam = includeFields === 'true' ? '&fieldValueFormat=html' : '';
+        const searchParam = search ? `&queryString=${encodeURIComponent(search)}` : '';
+        
+        let codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}/items?page=${page}&pageSize=${pageSize}${fieldParam}${searchParam}`;
+        
+        console.log(`Fetching items from: ${codebeamerUrl}`);
+        
+        const response = await axios.get(codebeamerUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
 
-        while (hasMorePages) {
-            const codebeamerUrl = `${defaults.cbApiUrl}/api/v3/trackers/${trackerId}/items?page=${currentPage}&pageSize=${pageSize}`;
-            
-            console.log(`Fetching page ${currentPage} from: ${codebeamerUrl}`);
+        const responseData = response.data;
+        let items = [];
+
+        if (Array.isArray(responseData)) {
+            items = responseData;
+        } else if (responseData.itemRefs && Array.isArray(responseData.itemRefs)) {
+            items = responseData.itemRefs;
+        } else if (responseData.items && Array.isArray(responseData.items)) {
+            items = responseData.items;
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+            items = responseData.data;
+        }
+
+        // If we need detailed item data, use CBQL query to get all details in one call
+        if (includeFields === 'true' && items.length > 0) {
+            console.log(`Fetching detailed data for ${items.length} items using CBQL query...`);
             
             try {
-                const response = await axios.get(codebeamerUrl, {
+                // Build CBQL query for specific item IDs
+                const itemIds = items.map(item => item.id);
+                const itemIdConditions = itemIds.map(id => `item.id = ${id}`).join(' OR ');
+                const queryString = `tracker.id = ${trackerId} AND (${itemIdConditions})`;
+                
+                const queryUrl = `${defaults.cbApiUrl}/api/v3/items/query?page=1&pageSize=${items.length}&queryString=${encodeURIComponent(queryString)}`;
+                
+                console.log(`CBQL Query URL: ${queryUrl}`);
+                
+                const queryResponse = await axios.get(queryUrl, {
                     headers: {
                         'Authorization': `Basic ${req.session.auth}`,
                         'Content-Type': 'application/json',
                         'accept': 'application/json'
                     }
                 });
-
-                const responseData = response.data;
-                let pageItems = [];
-
-                if (Array.isArray(responseData)) {
-                    pageItems = responseData;
-                } else if (responseData.itemRefs && Array.isArray(responseData.itemRefs)) {
-                    pageItems = responseData.itemRefs;
-                } else if (responseData.items && Array.isArray(responseData.items)) {
-                    pageItems = responseData.items;
-                } else if (responseData.data && Array.isArray(responseData.data)) {
-                    pageItems = responseData.data;
-                }
-
-                allItems = allItems.concat(pageItems);
                 
-                hasMorePages = pageItems.length === pageSize;
-                currentPage++;
-                
-                if (maxItems && allItems.length >= parseInt(maxItems)) {
-                    console.log(`Reached maximum items limit (${maxItems}), stopping pagination`);
-                    allItems = allItems.slice(0, parseInt(maxItems));
-                    break;
-                }
-                
-                if (currentPage > 100) {
-                    console.warn('Reached maximum page limit (100), stopping pagination');
-                    break;
-                }
-
-                if (hasMorePages) {
-                    console.log(`Waiting 1 second before fetching next page...`);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                if (queryResponse.data && queryResponse.data.items) {
+                    items = queryResponse.data.items;
+                    console.log(`Successfully fetched detailed data for ${items.length} items via CBQL`);
+                } else {
+                    console.warn('CBQL query returned no items, using basic item data');
                 }
             } catch (error) {
-                if (error.response && error.response.status === 429) {
-                    console.log('Rate limit hit, waiting 5 seconds before retrying...');
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                    continue;
-                } else {
-                    throw error;
-                }
+                console.warn(`CBQL query failed: ${error.message}, using basic item data`);
+                // Keep the original items if CBQL query fails
             }
         }
 
-        console.log(`Fetched ${allItems.length} total items across ${currentPage - 1} pages`);
-        res.json(allItems);
+        console.log(`Fetched ${items.length} items`);
+        res.json({
+            items: items,
+            page: parseInt(page),
+            pageSize: parseInt(pageSize),
+            total: items.length,
+            hasMore: items.length === parseInt(pageSize)
+        });
     } catch (error) {
         console.error('Error fetching items:', error.message);
         res.status(500).json({ error: 'Failed to fetch items' });
@@ -1108,6 +1157,55 @@ app.get('/api/field-configs/:section', (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to load field configs for section: ' + error.message
+        });
+    }
+});
+
+app.get('/api/field-configs/tracker/:trackerId', requireAuth, (req, res) => {
+    try {
+        const { trackerId } = req.params;
+        const data = loadFieldConfigs();
+        
+        if (!data.trackerIds) {
+            return res.status(404).json({
+                success: false,
+                error: 'No tracker ID mappings found'
+            });
+        }
+        
+        let matchedSection = null;
+        for (const [section, mappedTrackerId] of Object.entries(data.trackerIds)) {
+            if (mappedTrackerId === trackerId) {
+                matchedSection = section;
+                break;
+            }
+        }
+        
+        if (!matchedSection) {
+            return res.status(404).json({
+                success: false,
+                error: 'No field configuration found for this tracker'
+            });
+        }
+        
+        const fieldConfigs = data.fieldConfigs[matchedSection];
+        if (!fieldConfigs) {
+            return res.status(404).json({
+                success: false,
+                error: 'Field configuration not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            section: matchedSection,
+            fieldConfigs: fieldConfigs
+        });
+    } catch (error) {
+        console.error('Error getting field configs for tracker:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load field configs for tracker: ' + error.message
         });
     }
 });
