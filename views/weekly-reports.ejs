@@ -85,48 +85,16 @@
     <div class="main-container">
         <div class="page-header">
             <h2><%= sectionTitles['weekly-reports'].icon %> <%= sectionTitles['weekly-reports'].name %></h2>
-            <button class="btn-primary" onclick="showCreateForm()">+ New</button>     
+            <button class="btn-add-field" onclick="showCreateForm()" title="새 주간보고 추가">
+                <img src="/images/plus-sign.png" alt="새 주간보고 추가" style="width: 24px; height: 24px;">
+            </button>
         </div>
-
-
-            <div class="create-form" id="createForm" style="display: none;">
-                <div class="dynamic-form-container">
-                    <div id="dynamicForm" class="loading">
-                        <i>⏳</i>
-                        <p>필드 구성을 불러오는 중...</p>
-                    </div>
-                    
-                    <div id="validationErrors" class="validation-errors">
-                        <h5>입력 오류:</h5>
-                        <ul id="errorList"></ul>
-                    </div>
-                    
-                    <!-- Attachment Field -->
-                    <div class="field-group">
-                        <h4>첨부 파일</h4>
-                        <div class="field-item">
-                            <span class="field-label">파일 업로드</span>
-                            <div class="field-input-container">
-                                <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
-                                <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="button" class="btn-primary" onclick="submitWeeklyReportForm()">저장</button>
-                    </div>
-                </div>
-            </div>
-        
 
         <div class="content-section mobile-hide">
             <div class="section-header">
                 <h3>주간보고 목록</h3>
                 <div class="vscode-search-bar">
                     <div class="search-bar-container">
-                        <button class="chevron-btn" onclick="toggleSearchOptions()">></button>
                         <input type="text" id="searchFilter" class="search-input" placeholder="검색..." oninput="applySearch()">
                         <div class="search-options">
                             <button class="search-option-btn" id="caseSensitiveBtn" onclick="toggleCaseSensitive()" title="대소문자 구분">Aa</button>
@@ -138,8 +106,6 @@
                             <button class="nav-btn" id="prevResultBtn" onclick="previousResult()" title="이전 결과">↑</button>
                             <button class="nav-btn" id="nextResultBtn" onclick="nextResult()" title="다음 결과">↓</button>
                         </div>
-                        <button class="menu-btn" onclick="showSearchMenu()" title="검색 옵션">≡</button>
-                        <button class="close-btn" onclick="closeSearch()" title="검색 닫기">✕</button>
                     </div>
                 </div>
             </div>
@@ -205,14 +171,78 @@
         });
 
         async function showCreateForm() {
-            document.getElementById('createForm').style.display = 'block';
+            // Clear editing state when creating new item
+            window.editingItemId = null;
+            window.editingItemData = null;
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'reportFormModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>새 주간보고 추가</h3>
+                        <button class="modal-close" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="dynamicForm" class="loading">
+                            <i>⏳</i>
+                            <p>필드 구성을 불러오는 중...</p>
+                        </div>
+                        
+                        <div id="validationErrors" class="validation-errors">
+                            <h5>입력 오류:</h5>
+                            <ul id="errorList"></ul>
+                        </div>
+                        
+                        <!-- Attachment Field -->
+                        <div class="field-group">
+                            <h4>첨부 파일</h4>
+                            <div class="field-item">
+                                <span class="field-label">파일 업로드</span>
+                                <div class="field-input-container">
+                                    <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                    <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" onclick="submitWeeklyReportForm()">저장</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal()">취소</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
             await loadDynamicForm();
+            
+            // Close modal on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('reportFormModal');
+            if (modal) {
+                // Clear form and hide errors before removing modal
+                try {
+                    hideValidationErrors();
+                    formHandler.clearForm();
+                } catch (e) {
+                    console.log('Error during cleanup:', e);
+                }
+                // Remove modal from DOM
+                modal.remove();
+            }
         }
 
         function hideCreateForm() {
-            document.getElementById('createForm').style.display = 'none';
-            formHandler.clearForm();
-            hideValidationErrors();
+            closeModal();
         }
 
         // Load dynamic form
@@ -249,68 +279,145 @@
             isSubmitting = true;
             
             try {
-                const trackerId = await getTrackerIdForSection('weekly-reports');
-                if (!trackerId) {
-                    alert('주간보고 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
-                    isSubmitting = false;
-                    return;
-                }
-
-                const codebeamerData = await transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
-                console.log('Transformed data for CodeBeamer:', codebeamerData);
-
-                const response = await fetch(`/api/v3/trackers/${trackerId}/items`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(codebeamerData)
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    const itemId = data.item?.id;
-                    
-                    const fileInput = document.getElementById('weeklyAttachments');
-                    if (fileInput && fileInput.files.length > 0 && itemId) {
-                        console.log(`Uploading ${fileInput.files.length} attachments to item ${itemId}`);
-                        
-                        const attachmentFormData = new FormData();
-                        for (let i = 0; i < fileInput.files.length; i++) {
-                            attachmentFormData.append('attachments', fileInput.files[i]);
-                        }
-                        
-                        try {
-                            const attachResponse = await fetch(`/api/v3/items/${itemId}/attachments`, {
-                                method: 'POST',
-                                body: attachmentFormData
-                            });
-                            
-                            const attachData = await attachResponse.json();
-                            
-                            if (attachData.success) {
-                                alert(`주간보고가 저장되었습니다! (첨부 파일 ${attachData.attachments.length}개 업로드 완료)`);
-                            } else {
-                                alert(`주간보고는 저장되었으나 첨부 파일 업로드 실패: ${attachData.message}`);
-                            }
-                        } catch (attachError) {
-                            console.error('Attachment upload error:', attachError);
-                            alert('주간보고는 저장되었으나 첨부 파일 업로드 중 오류가 발생했습니다.');
-                        }
-                    } else {
-                        alert('주간보고가 저장되었습니다!');
-                    }
-                    
-                    hideCreateForm();
+                // Check if we're editing an existing item
+                if (window.editingItemId) {
+                    await updateExistingItem(window.editingItemId, formData);
                 } else {
-                    alert('주간보고 저장에 실패했습니다: ' + data.error);
+                    await createNewItem(formData);
                 }
+                
+                // Clear editing state
+                window.editingItemId = null;
+                window.editingItemData = null;
+                
+                // Close modal and reload data
+                closeModal();
+                loadReportsWithFilters();
+                
+                showStatus('주간보고가 성공적으로 저장되었습니다', true);
+                
             } catch (error) {
-                console.error('Error submitting weekly report form:', error);
-                alert('주간보고 저장 중 오류가 발생했습니다.');
+                console.error('Error submitting form:', error);
+                showStatus('주간보고 저장에 실패했습니다: ' + error.message, false);
             } finally {
                 isSubmitting = false;
+            }
+        }
+
+        async function createNewItem(formData) {
+            const trackerId = await getTrackerIdForSection('weekly-reports');
+            if (!trackerId) {
+                throw new Error('주간보고 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
+            }
+
+            const codebeamerData = await transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
+            console.log('Transformed data for CodeBeamer:', codebeamerData);
+
+            const response = await fetch(`/api/v3/trackers/${trackerId}/items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(codebeamerData)
+            });
+                
+            const data = await response.json();
+            
+            if (data.success) {
+                const itemId = data.item?.id;
+                
+                // Handle file attachments
+                const fileInput = document.getElementById('weeklyAttachments');
+                if (fileInput && fileInput.files.length > 0 && itemId) {
+                    await uploadAttachments(itemId, fileInput.files);
+                }
+            } else {
+                throw new Error(data.error || 'Failed to create item');
+            }
+        }
+
+        async function updateExistingItem(itemId, formData) {
+            // Get field configurations to map form data to field IDs (sets global fieldConfigs)
+            await loadFieldConfigsForSection('weekly-reports');
+            const fieldValues = [];
+            
+            // Map form data to field values with proper field IDs
+            if (fieldConfigs && Array.isArray(fieldConfigs)) {
+                fieldConfigs.forEach(field => {
+                    const value = formData[field.codebeamerId];
+                    if (value !== undefined && value !== null && value !== '') {
+                        fieldValues.push({
+                            fieldId: field.referenceId,
+                            type: getFieldValueType(field.type),
+                            name: field.name,
+                            value: value
+                        });
+                    }
+                });
+            } else {
+                throw new Error('Field configurations not loaded properly');
+            }
+            
+            if (fieldValues.length === 0) {
+                throw new Error('No fields to update');
+            }
+            
+            console.log('Updating item fields:', fieldValues);
+            
+            const response = await fetch(`/api/codebeamer/items/${itemId}/fields`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ fieldValues })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update item');
+            }
+        }
+
+        function getFieldValueType(fieldType) {
+            switch (fieldType) {
+                case 'string':
+                case 'text':
+                    return 'TextFieldValue';
+                case 'number':
+                    return 'IntegerFieldValue';
+                case 'date':
+                    return 'DateFieldValue';
+                case 'selector':
+                    return 'ChoiceFieldValue';
+                default:
+                    return 'TextFieldValue';
+            }
+        }
+
+        async function uploadAttachments(itemId, files) {
+            console.log(`Uploading ${files.length} attachments to item ${itemId}`);
+            
+            const attachmentFormData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                attachmentFormData.append('attachments', files[i]);
+            }
+            
+            try {
+                const attachResponse = await fetch(`/api/v3/items/${itemId}/attachments`, {
+                    method: 'POST',
+                    body: attachmentFormData
+                });
+                
+                const attachData = await attachResponse.json();
+                
+                if (attachData.success) {
+                    console.log(`Successfully uploaded ${attachData.attachments.length} attachments`);
+                } else {
+                    console.warn(`Attachment upload failed: ${attachData.message}`);
+                }
+            } catch (attachError) {
+                console.error('Attachment upload error:', attachError);
             }
         }
 
@@ -347,16 +454,12 @@
         }
 
         function hideValidationErrors() {
-            document.getElementById('validationErrors').classList.remove('show');
+            const validationErrors = document.getElementById('validationErrors');
+            if (validationErrors) {
+                validationErrors.classList.remove('show');
+            }
         }
 
-        function editItem(itemId) {
-            console.log('Editing weekly report:', itemId);
-        }
-
-        function deleteItem(itemId) {
-            console.log('Deleting weekly report:', itemId);
-        }
 
         async function loadWeeklyReports() {
             try {
@@ -384,6 +487,15 @@
         let searchQuery = '';
         let fieldConfigs = [];
         let currentFilters = {};
+        
+        // VS Code search options
+        let searchOptions = {
+            caseSensitive: false,
+            wholeWord: false,
+            regex: false
+        };
+        let currentResultIndex = 0;
+        let searchResults = [];
 
         async function loadReportsWithFilters() {
             try {
@@ -449,66 +561,19 @@
         }
 
         function createFieldFilters() {
-            const fieldFiltersContainer = document.getElementById('fieldFilters');
-            fieldFiltersContainer.innerHTML = '';
-
-            if (!fieldConfigs || fieldConfigs.length === 0) {
-                fieldFiltersContainer.style.display = 'none';
-                return;
-            }
-
-            const filterableFields = fieldConfigs.filter(field => 
-                field.type === 'selector' && field.options && field.options.length > 0
-            );
-
-            if (filterableFields.length === 0) {
-                fieldFiltersContainer.style.display = 'none';
-                return;
-            }
-
-            fieldFiltersContainer.innerHTML = '<span class="filter-label">필터:</span>';
-            
-            filterableFields.forEach(field => {
-                const filterDiv = document.createElement('div');
-                filterDiv.className = 'filter-item';
-                
-                const select = document.createElement('select');
-                select.id = `filter-${field.referenceId}`;
-                select.className = 'filter-select';
-                select.onchange = () => applyFieldFilter(field.referenceId, select.value);
-                
-                const allOption = document.createElement('option');
-                allOption.value = '';
-                allOption.textContent = `전체 ${field.name}`;
-                select.appendChild(allOption);
-                
-                field.options.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option;
-                    optionElement.textContent = option;
-                    select.appendChild(optionElement);
-                });
-                
-                filterDiv.appendChild(select);
-                fieldFiltersContainer.appendChild(filterDiv);
-            });
-
-            fieldFiltersContainer.style.display = 'flex';
+            // Field filters are now handled by the VS Code search bar
+            // This function is kept for compatibility but does nothing
+            console.log('Field filters are now handled by VS Code search bar');
         }
 
         function applySearch() {
             const searchInput = document.getElementById('searchFilter');
-            searchQuery = searchInput.value.toLowerCase().trim();
+            searchQuery = searchInput.value.trim();
             
-            const clearBtn = document.querySelector('.clear-search-btn');
-            if (searchQuery) {
-                clearBtn.style.display = 'block';
-            } else {
-                clearBtn.style.display = 'none';
-            }
-            
-            currentPage = 1; // Reset to first page when searching
+            currentPage = 1;
+            currentResultIndex = 0;
             applyAllFilters();
+            updateSearchResultsInfo();
         }
 
         function clearSearch() {
@@ -516,38 +581,84 @@
             searchInput.value = '';
             searchQuery = '';
             
-            const clearBtn = document.querySelector('.clear-search-btn');
-            clearBtn.style.display = 'none';
-            
             currentPage = 1;
+            currentResultIndex = 0;
             applyAllFilters();
+            updateSearchResultsInfo();
         }
 
         function applyAllFilters() {
-            // Apply search filter
+            // Apply search filter with VS Code-style options
             filteredReports = allReports.filter(report => {
                 if (searchQuery) {
-                    const reportId = String(report.id).toLowerCase();
-                    const reportName = String(report.name || '').toLowerCase();
+                    const searchText = searchOptions.caseSensitive ? searchQuery : searchQuery.toLowerCase();
                     
-                    if (!reportId.includes(searchQuery) && !reportName.includes(searchQuery)) {
+                    // Get all searchable text from the report
+                    const searchableTexts = [];
+                    
+                    // Add ID and name
+                    searchableTexts.push(String(report.id));
+                    searchableTexts.push(String(report.name || ''));
+                    
+                    // Add all custom field values
+                    if (report.customFields && Array.isArray(report.customFields)) {
+                        report.customFields.forEach(customField => {
+                            if (customField.value) {
+                                if (typeof customField.value === 'string') {
+                                    searchableTexts.push(customField.value);
+                                } else if (customField.value.name) {
+                                    searchableTexts.push(customField.value.name);
+                                } else if (Array.isArray(customField.values)) {
+                                    customField.values.forEach(val => {
+                                        if (val.name) searchableTexts.push(val.name);
+                                        else searchableTexts.push(String(val));
+                                    });
+                                } else {
+                                    searchableTexts.push(String(customField.value));
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Convert all texts to search format
+                    const searchableText = searchOptions.caseSensitive ? 
+                        searchableTexts.join(' ') : 
+                        searchableTexts.join(' ').toLowerCase();
+                    
+                    let found = false;
+                    
+                    if (searchOptions.wholeWord) {
+                        // Whole word matching
+                        const words = searchableText.split(/\s+/);
+                        found = words.includes(searchText);
+                    } else if (searchOptions.regex) {
+                        // Regex matching
+                        try {
+                            const regex = new RegExp(searchText, searchOptions.caseSensitive ? 'g' : 'gi');
+                            found = regex.test(searchableText);
+                        } catch (e) {
+                            // Invalid regex, fall back to simple search
+                            found = searchableText.includes(searchText);
+                        }
+                    } else {
+                        // Simple contains search
+                        found = searchableText.includes(searchText);
+                    }
+                    
+                    if (!found) {
                         return false;
                     }
                 }
 
-                // Apply field filters
-                for (const [referenceId, filterValue] of Object.entries(currentFilters)) {
-                    const field = fieldConfigs.find(f => f.referenceId == referenceId);
-                    if (!field) continue;
-
-                    const reportValue = getReportFieldValue(report, field);
-                    if (reportValue !== filterValue) {
-                        return false;
-                    }
-                }
+                // Field filters are now handled by VS Code search bar
+                // No additional filtering needed
                 
                 return true;
             });
+
+            // Store search results for navigation
+            searchResults = filteredReports;
+            currentResultIndex = 0;
 
             // Update pagination
             totalPages = Math.ceil(filteredReports.length / pageSize);
@@ -555,17 +666,13 @@
             
             displayReports();
             updatePaginationControls();
+            updateSearchResultsInfo();
             
             // Update status message
-            const filterCount = Object.keys(currentFilters).length;
             let statusMsg = '';
             
-            if (searchQuery && filterCount > 0) {
-                statusMsg = `검색 및 필터 적용: ${filteredReports.length}개의 주간보고`;
-            } else if (searchQuery) {
+            if (searchQuery) {
                 statusMsg = `검색 결과: ${filteredReports.length}개의 주간보고`;
-            } else if (filterCount > 0) {
-                statusMsg = `필터 적용: ${filteredReports.length}개의 주간보고`;
             } else {
                 statusMsg = `전체: ${filteredReports.length}개의 주간보고`;
             }
@@ -574,15 +681,9 @@
         }
 
         function applyFieldFilter(fieldId, value) {
-            // Store the filter value
-            if (value) {
-                currentFilters[fieldId] = value;
-            } else {
-                delete currentFilters[fieldId];
-            }
-            
-            currentPage = 1;
-            applyAllFilters();
+            // Field filters are now handled by the VS Code search bar
+            // This function is kept for compatibility but does nothing
+            console.log('Field filters are now handled by VS Code search bar');
         }
 
         function getReportFieldValue(report, field) {
@@ -631,24 +732,80 @@
                 searchInput.value = '';
             }
             
-            const clearBtn = document.querySelector('.clear-search-btn');
-            if (clearBtn) {
-                clearBtn.style.display = 'none';
-            }
-            
             searchQuery = '';
-            
-            fieldConfigs.forEach(field => {
-                const filterSelect = document.getElementById(`filter-${field.referenceId}`);
-                if (filterSelect) {
-                    filterSelect.value = '';
-                }
-            });
-            
             currentFilters = {};
             currentPage = 1;
+            currentResultIndex = 0;
             applyAllFilters();
         }
+
+        // VS Code-style search functions
+
+        function toggleCaseSensitive() {
+            searchOptions.caseSensitive = !searchOptions.caseSensitive;
+            const btn = document.getElementById('caseSensitiveBtn');
+            btn.classList.toggle('active', searchOptions.caseSensitive);
+            applyAllFilters();
+        }
+
+        function toggleWholeWord() {
+            searchOptions.wholeWord = !searchOptions.wholeWord;
+            const btn = document.getElementById('wholeWordBtn');
+            btn.classList.toggle('active', searchOptions.wholeWord);
+            applyAllFilters();
+        }
+
+        function toggleRegex() {
+            searchOptions.regex = !searchOptions.regex;
+            const btn = document.getElementById('regexBtn');
+            btn.classList.toggle('active', searchOptions.regex);
+            applyAllFilters();
+        }
+
+        function updateSearchResultsInfo() {
+            const info = document.getElementById('searchResultsInfo');
+            if (searchResults.length > 0) {
+                info.textContent = `${currentResultIndex + 1} of ${searchResults.length}`;
+            } else {
+                info.textContent = '0 of 0';
+            }
+        }
+
+        function previousResult() {
+            if (searchResults.length > 0) {
+                currentResultIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
+                updateSearchResultsInfo();
+                highlightCurrentResult();
+            }
+        }
+
+        function nextResult() {
+            if (searchResults.length > 0) {
+                currentResultIndex = (currentResultIndex + 1) % searchResults.length;
+                updateSearchResultsInfo();
+                highlightCurrentResult();
+            }
+        }
+
+        function highlightCurrentResult() {
+            // Remove previous highlights
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            // Highlight current result
+            if (searchResults.length > 0 && currentResultIndex < searchResults.length) {
+                const currentResult = searchResults[currentResultIndex];
+                const tableRows = document.querySelectorAll('tr[data-item-id]');
+                tableRows.forEach(row => {
+                    if (row.dataset.itemId == currentResult.id) {
+                        row.classList.add('search-highlight');
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+        }
+
 
         function displayReports() {
             const reportsList = document.getElementById('reportsList');
@@ -754,15 +911,140 @@
             applyAllFilters();
         }
 
-        function editReport(id) {
-            console.log('Editing report:', id);
-            // Find the report in the current data
-            const report = allReports.find(r => r.id == id);
-            if (report) {
-                // Pre-populate form with existing data
-                showCreateForm();
-                // TODO: Implement form pre-population with report data
+        // Generic functions called by the table buttons
+        function editItem(id) {
+            editReport(id);
+        }
+
+        function deleteItem(id) {
+            deleteReport(id);
+        }
+
+        async function editReport(id) {
+            try {
+                showLoadingIndicator();
+                showStatus(`주간보고 ${id}번을 불러오는 중...`, true);
+                
+                // First, fetch the full item details
+                const response = await fetch(`/api/codebeamer/items/${id}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch item: ${response.status}`);
+                }
+                
+                const itemData = await response.json();
+                
+                // Show the form modal for editing
+                await showEditForm(itemData);
+                
+                hideLoadingIndicator();
                 showStatus(`주간보고 ${id}번을 수정합니다`, true);
+                
+            } catch (error) {
+                console.error('Error loading item for edit:', error);
+                hideLoadingIndicator();
+                showStatus(`주간보고 ${id}번을 불러오는데 실패했습니다`, false);
+            }
+        }
+
+        async function showEditForm(itemData) {
+            // Store editing state
+            window.editingItemId = itemData.id;
+            window.editingItemData = itemData;
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'reportFormModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>주간보고 수정 #${itemData.id}</h3>
+                        <button class="modal-close" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="dynamicForm" class="loading">
+                            <i>⏳</i>
+                            <p>필드 구성을 불러오는 중...</p>
+                        </div>
+                        
+                        <div id="validationErrors" class="validation-errors">
+                            <h5>입력 오류:</h5>
+                            <ul id="errorList"></ul>
+                        </div>
+                        
+                        <!-- Attachment Field -->
+                        <div class="field-group">
+                            <h4>첨부 파일</h4>
+                            <div class="field-item">
+                                <span class="field-label">파일 업로드</span>
+                                <div class="field-input-container">
+                                    <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                    <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" onclick="submitWeeklyReportForm()">저장</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal()">취소</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            await loadDynamicForm();
+            await populateEditForm(itemData);
+            
+            // Close modal on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        async function populateEditForm(itemData) {
+            try {
+                // Wait for the form to be rendered
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Get field configurations for this section (sets global fieldConfigs)
+                await loadFieldConfigsForSection('weekly-reports');
+                
+                console.log('Field configs loaded:', fieldConfigs);
+                console.log('Item data:', itemData);
+                
+                // Populate each field based on the item data
+                if (fieldConfigs && Array.isArray(fieldConfigs)) {
+                    fieldConfigs.forEach(field => {
+                        const fieldValue = getReportFieldValue(itemData, field);
+                        console.log(`Field ${field.name} (${field.codebeamerId}):`, fieldValue);
+                        
+                        if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+                            // Find the form input for this field
+                            const input = document.querySelector(`[name="${field.codebeamerId}"]`);
+                            if (input) {
+                                if (input.type === 'checkbox') {
+                                    input.checked = fieldValue === 'true' || fieldValue === true;
+                                } else {
+                                    input.value = fieldValue;
+                                }
+                                console.log(`Set input ${field.codebeamerId} to:`, fieldValue);
+                            } else {
+                                console.warn(`No input found for field: ${field.codebeamerId}`);
+                            }
+                        }
+                    });
+                } else {
+                    console.error('Field configs is not an array:', fieldConfigs);
+                }
+                
+                // Store the item ID for the update
+                window.editingItemId = itemData.id;
+                window.editingItemData = itemData;
+                
+            } catch (error) {
+                console.error('Error populating edit form:', error);
             }
         }
 

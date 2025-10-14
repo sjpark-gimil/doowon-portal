@@ -1819,6 +1819,122 @@ select.report-select option {
     color: white;
 }
 
+/* VS Code Style Search Bar */
+.vscode-search-bar {
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 10px 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    width: 60%;
+}
+
+.search-bar-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 3px;
+    padding: 2px;
+    gap: 2px;
+}
+
+
+.search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 4px 8px;
+    font-size: 16px;
+    background: transparent;
+    color: #333;
+    min-width: 200px;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.search-options {
+    display: flex;
+    gap: 1px;
+    margin: 0 4px;
+}
+
+.search-option-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 2px;
+    transition: all 0.2s;
+    font-weight: normal;
+    text-decoration: none;
+}
+
+.search-option-btn:hover {
+    background: #e0e0e0;
+}
+
+.search-option-btn.active {
+    background: #201B87;
+    color: white;
+}
+
+.search-option-btn.active:hover {
+    background: #201B87;
+}
+
+.search-results-info {
+    color: #666;
+    font-size: 11px;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+.search-navigation {
+    display: flex;
+    gap: 1px;
+    margin: 0 4px;
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 2px;
+    transition: background-color 0.2s;
+}
+
+.nav-btn:hover {
+    background: #e0e0e0;
+}
+
+.nav-btn:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.nav-btn:disabled:hover {
+    background: none;
+}
+
+
+.search-highlight {
+    background-color: #fff3cd !important;
+    border: 1px solid #ffeaa7 !important;
+    animation: searchHighlight 0.3s ease-in-out;
+}
+
+@keyframes searchHighlight {
+    0% { background-color: #ffeb3b; }
+    100% { background-color: #fff3cd; }
+}
+
 .field-filters {
     display: flex;
     flex-wrap: wrap;
@@ -2389,13 +2505,17 @@ select.report-select option {
     padding: 30px;
     margin: 30px 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .page-header h2 {
-    margin: 0 0 10px 0;
+    margin: 0;
     color: #333;
     font-size: 1.8em;
     font-weight: 600;
+    flex: 1;
 }
 
 .page-header p {
@@ -3052,8 +3172,6 @@ select.report-select option {
     padding: 15px;
     background: #f8f9fa;
     border-radius: 0 0 6px 6px;
-    border-top: 1px solid #e0e0e0;
-    margin-top: 20px;
 }
 
 .pagination-controls label {

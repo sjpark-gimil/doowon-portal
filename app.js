@@ -693,6 +693,61 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
     }
 });
 
+app.get('/api/codebeamer/items/:itemId', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { itemId } = req.params;
+        const itemUrl = `${defaults.cbApiUrl}/api/v3/items/${itemId}`;
+        
+        console.log(`Fetching item ${itemId} from: ${itemUrl}`);
+        
+        const response = await axios.get(itemUrl, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        console.log(`Successfully fetched item ${itemId}`);
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching item:', error.message);
+        res.status(500).json({ error: 'Failed to fetch item' });
+    }
+});
+
+app.put('/api/codebeamer/items/:itemId/fields', requireAuth, async (req, res) => {
+    if (!req.session || !req.session.auth) {
+        return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
+    }
+
+    try {
+        const { itemId } = req.params;
+        const { fieldValues } = req.body;
+        const updateUrl = `${defaults.cbApiUrl}/api/v3/items/${itemId}/fields`;
+        
+        console.log(`Updating item ${itemId} fields:`, fieldValues);
+        
+        const response = await axios.put(updateUrl, { fieldValues }, {
+            headers: {
+                'Authorization': `Basic ${req.session.auth}`,
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+
+        console.log(`Successfully updated item ${itemId} fields`);
+        res.json({ success: true, message: 'Item fields updated successfully', data: response.data });
+    } catch (error) {
+        console.error('Error updating item fields:', error.message);
+        res.status(500).json({ error: 'Failed to update item fields' });
+    }
+});
+
 app.delete('/api/codebeamer/items/:itemId', requireAuth, async (req, res) => {
     if (!req.session || !req.session.auth) {
         return res.status(401).json({ error: '인가되지 않은 사용자입니다' });
