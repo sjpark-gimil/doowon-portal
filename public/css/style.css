@@ -3729,8 +3729,6 @@ select.report-select option {
         color: #495057;
         border: 2px solid #e9ecef !important;
         box-sizing: border-box !important;
-        width: 125% !important; /* Take full width like other inputs */
-
     }
     
     .form-group input[type="date"]:focus,
@@ -3784,20 +3782,8 @@ select.report-select option {
         outline: none !important;
     }
     
-    /* Fix select dropdowns - remove duplicate arrows */
-    .dynamic-form-container select.field-input {
-        -webkit-appearance: none !important;
-        -moz-appearance: none !important;
-        appearance: none !important;
-        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: right 12px center !important;
-        background-size: 16px 12px !important;
-        padding-right: 40px !important;
-        width: 170% !important;
-    }
     
-    
+   
     /* Hide desktop tables on mobile, show mobile cards */
     .data-table,
     .hardware-table {
@@ -3999,8 +3985,6 @@ select.report-select option {
         min-height: 48px !important;
         border-radius: 6px !important;
         border: 2px solid #e9ecef !important;
-        width: 100% !important;
-        max-width: 100% !important;
         box-sizing: border-box !important;
     }
     
@@ -4253,6 +4237,10 @@ body.admin-login-body .admin-login-container {
     padding: 1rem;
     border-radius: 6px;
     border: 1px solid #e9ecef;
+}
+
+.field-group h5 {
+    padding-left: 1rem;
 }
 
 .field-item {
@@ -4736,6 +4724,7 @@ body.admin-login-body .admin-login-container {
 
 .dynamic-form-container .field-input-container {
     flex: 1;
+    width: 100% !important;
 }
 
 .dynamic-form-container .field-input {
@@ -4952,15 +4941,6 @@ body.admin-login-body .admin-login-container {
     align-items: flex-start;
 }
 
-.modal-body .field-label {
-    font-weight: 600;
-    color: #2c3e50;
-    font-size: 15px;
-    margin-bottom: 8px;
-    display: block;
-    text-align: left;
-    width: 100%;
-}
 
 .modal-body .field-config-row input,
 .modal-body .field-config-row select {

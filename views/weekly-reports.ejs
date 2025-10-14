@@ -186,24 +186,26 @@
                         <button class="modal-close" onclick="closeModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <div id="dynamicForm" class="loading">
-                            <i>⏳</i>
-                            <p>필드 구성을 불러오는 중...</p>
-                        </div>
-                        
-                        <div id="validationErrors" class="validation-errors">
-                            <h5>입력 오류:</h5>
-                            <ul id="errorList"></ul>
-                        </div>
-                        
-                        <!-- Attachment Field -->
-                        <div class="field-group">
-                            <h4>첨부 파일</h4>
-                            <div class="field-item">
-                                <span class="field-label">파일 업로드</span>
-                                <div class="field-input-container">
-                                    <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
-                                    <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                        <div class="dynamic-form-container">
+                            <div id="dynamicForm" class="loading">
+                                <i>⏳</i>
+                                <p>필드 구성을 불러오는 중...</p>
+                            </div>
+                            
+                            <div id="validationErrors" class="validation-errors">
+                                <h5>입력 오류:</h5>
+                                <ul id="errorList"></ul>
+                            </div>
+                            
+                            <!-- Attachment Field -->
+                            <div class="field-group">
+                                <h4>첨부 파일</h4>
+                                <div class="field-item">
+                                    <span class="field-label">파일 업로드</span>
+                                    <div class="field-input-container">
+                                        <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                        <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -282,6 +284,12 @@
                 // Check if we're editing an existing item
                 if (window.editingItemId) {
                     await updateExistingItem(window.editingItemId, formData);
+                    
+                    // Handle file attachments for edit mode
+                    const fileInput = document.getElementById('weeklyAttachments');
+                    if (fileInput && fileInput.files.length > 0) {
+                        await uploadAttachments(window.editingItemId, fileInput.files);
+                    }
                 } else {
                     await createNewItem(formData);
                 }
@@ -290,10 +298,15 @@
                 window.editingItemId = null;
                 window.editingItemData = null;
                 
-                // Close modal and reload data
+                // Close modal and show loading
                 closeModal();
-                loadReportsWithFilters();
+                showLoadingIndicator();
+                showStatus('주간보고가 저장되었습니다. 목록을 새로고침하는 중...', true);
                 
+                // Reload data with loading state
+                await loadReportsWithFilters();
+                
+                hideLoadingIndicator();
                 showStatus('주간보고가 성공적으로 저장되었습니다', true);
                 
             } catch (error) {
@@ -305,35 +318,35 @@
         }
 
         async function createNewItem(formData) {
-            const trackerId = await getTrackerIdForSection('weekly-reports');
-            if (!trackerId) {
+                const trackerId = await getTrackerIdForSection('weekly-reports');
+                if (!trackerId) {
                 throw new Error('주간보고 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
-            }
-
-            const codebeamerData = await transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
-            console.log('Transformed data for CodeBeamer:', codebeamerData);
-
-            const response = await fetch(`/api/v3/trackers/${trackerId}/items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(codebeamerData)
-            });
-                
-            const data = await response.json();
-            
-            if (data.success) {
-                const itemId = data.item?.id;
-                
-                // Handle file attachments
-                const fileInput = document.getElementById('weeklyAttachments');
-                if (fileInput && fileInput.files.length > 0 && itemId) {
-                    await uploadAttachments(itemId, fileInput.files);
                 }
-            } else {
-                throw new Error(data.error || 'Failed to create item');
-            }
+
+                const codebeamerData = await transformFormDataForCodeBeamer(formData, 'weekly-reports', trackerId);
+                console.log('Transformed data for CodeBeamer:', codebeamerData);
+
+                const response = await fetch(`/api/v3/trackers/${trackerId}/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(codebeamerData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const itemId = data.item?.id;
+                    
+                    // Handle file attachments
+                    const fileInput = document.getElementById('weeklyAttachments');
+                    if (fileInput && fileInput.files.length > 0 && itemId) {
+                        await uploadAttachments(itemId, fileInput.files);
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to create item');
+                }
         }
 
         async function updateExistingItem(itemId, formData) {
@@ -346,9 +359,15 @@
                 fieldConfigs.forEach(field => {
                     const value = formData[field.codebeamerId];
                     if (value !== undefined && value !== null && value !== '') {
+                        const fieldType = getFieldValueType(field.type);
+                        
+                        // For selector/choice fields, use TextFieldValue instead of ChoiceFieldValue
+                        // Codebeamer's PUT API for fields works better with TextFieldValue for dropdowns
+                        const actualType = fieldType === 'ChoiceFieldValue' ? 'TextFieldValue' : fieldType;
+                        
                         fieldValues.push({
                             fieldId: field.referenceId,
-                            type: getFieldValueType(field.type),
+                            type: actualType,
                             name: field.name,
                             value: value
                         });
@@ -397,21 +416,21 @@
 
         async function uploadAttachments(itemId, files) {
             console.log(`Uploading ${files.length} attachments to item ${itemId}`);
-            
-            const attachmentFormData = new FormData();
+                        
+                        const attachmentFormData = new FormData();
             for (let i = 0; i < files.length; i++) {
                 attachmentFormData.append('attachments', files[i]);
-            }
-            
-            try {
-                const attachResponse = await fetch(`/api/v3/items/${itemId}/attachments`, {
-                    method: 'POST',
-                    body: attachmentFormData
-                });
-                
-                const attachData = await attachResponse.json();
-                
-                if (attachData.success) {
+                        }
+                        
+                        try {
+                            const attachResponse = await fetch(`/api/v3/items/${itemId}/attachments`, {
+                                method: 'POST',
+                                body: attachmentFormData
+                            });
+                            
+                            const attachData = await attachResponse.json();
+                            
+                            if (attachData.success) {
                     console.log(`Successfully uploaded ${attachData.attachments.length} attachments`);
                 } else {
                     console.warn(`Attachment upload failed: ${attachData.message}`);
@@ -457,7 +476,7 @@
             const validationErrors = document.getElementById('validationErrors');
             if (validationErrors) {
                 validationErrors.classList.remove('show');
-            }
+        }
         }
 
 
@@ -509,13 +528,41 @@
                 }
 
                 // Load all items first (server-side pagination only for initial load)
-                const response = await fetch(`/api/codebeamer/trackers/${trackerId}/items?includeFields=true&pageSize=1000`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch items: ${response.status}`);
+                let response;
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(`/api/codebeamer/trackers/${trackerId}/items?includeFields=true&pageSize=1000`);
+                        if (response.ok) {
+                            break; // Success, exit retry loop
+                        }
+                        
+                        if (response.status === 500 && retryCount < maxRetries - 1) {
+                            console.log(`Server error (500), retrying in ${(retryCount + 1) * 1000}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+                            retryCount++;
+                            continue;
+                        }
+                        
+                        throw new Error(`Failed to fetch items: ${response.status}`);
+                    } catch (error) {
+                        if (retryCount < maxRetries - 1) {
+                            console.log(`Network error, retrying in ${(retryCount + 1) * 1000}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+                            retryCount++;
+                            continue;
+                        }
+                        throw error;
+                    }
                 }
 
                 const data = await response.json();
                 allReports = data.items || [];
+                
+                console.log('Loaded reports:', allReports.length, 'items');
+                console.log('Sample report:', allReports[0]);
                 
                 await loadFieldConfigsForSection('weekly-reports');
                 createFieldFilters();
@@ -526,7 +573,19 @@
             } catch (error) {
                 console.error('Error loading reports:', error);
                 hideLoadingIndicator();
-                showStatus('주간보고 목록을 불러오는데 실패했습니다', false);
+                
+                if (error.message.includes('500')) {
+                    showStatus('서버가 일시적으로 과부하 상태입니다. 잠시 후 새로고침 버튼을 클릭해주세요.', false);
+                    // Add a refresh button
+                    setTimeout(() => {
+                        const statusElement = document.querySelector('.status');
+                        if (statusElement) {
+                            statusElement.innerHTML += ' <button onclick="loadReportsWithFilters()" style="margin-left: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">새로고침</button>';
+                        }
+                    }, 100);
+                } else {
+                    showStatus('주간보고 목록을 불러오는데 실패했습니다', false);
+                }
             }
         }
 
@@ -809,9 +868,16 @@
 
         function displayReports() {
             const reportsList = document.getElementById('reportsList');
-            if (!reportsList) return;
+            if (!reportsList) {
+                console.error('reportsList element not found');
+                return;
+            }
+
+            console.log('displayReports called with:', filteredReports.length, 'filtered reports');
+            console.log('Current page:', currentPage, 'Page size:', pageSize);
 
             if (filteredReports.length === 0) {
+                console.log('No filtered reports, showing empty state');
                 reportsList.innerHTML = `
                     <div class="empty-state">
                         <p>검색 조건에 맞는 주간보고가 없습니다.</p>
@@ -824,6 +890,9 @@
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
             const pageItems = filteredReports.slice(startIndex, endIndex);
+
+            console.log('Rendering table with', pageItems.length, 'items');
+            console.log('Sample item for table:', pageItems[0]);
 
             formHandler.renderTable('reportsList', pageItems, 'weekly-reports', { pagination: false });
         }
@@ -962,24 +1031,30 @@
                         <button class="modal-close" onclick="closeModal()">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <div id="dynamicForm" class="loading">
-                            <i>⏳</i>
-                            <p>필드 구성을 불러오는 중...</p>
-                        </div>
-                        
-                        <div id="validationErrors" class="validation-errors">
-                            <h5>입력 오류:</h5>
-                            <ul id="errorList"></ul>
-                        </div>
-                        
-                        <!-- Attachment Field -->
-                        <div class="field-group">
-                            <h4>첨부 파일</h4>
-                            <div class="field-item">
-                                <span class="field-label">파일 업로드</span>
-                                <div class="field-input-container">
-                                    <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
-                                    <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                        <div class="dynamic-form-container">
+                            <div id="dynamicForm" class="loading">
+                                <i>⏳</i>
+                                <p>필드 구성을 불러오는 중...</p>
+                            </div>
+                            
+                            <div id="validationErrors" class="validation-errors">
+                                <h5>입력 오류:</h5>
+                                <ul id="errorList"></ul>
+                            </div>
+                            
+                            <!-- Attachment Field -->
+                            <div class="field-group">
+                                <h4>첨부 파일</h4>
+                                <div id="existingAttachments" class="existing-attachments" style="display: none;">
+                                    <h5>기존 첨부 파일:</h5>
+                                    <ul id="existingFilesList"></ul>
+                                </div>
+                                <div class="field-item">
+                                    <span class="field-label">새 파일 추가</span>
+                                    <div class="field-input-container">
+                                        <input type="file" id="weeklyAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                        <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1043,8 +1118,62 @@
                 window.editingItemId = itemData.id;
                 window.editingItemData = itemData;
                 
+                // Show existing attachments if any
+                displayExistingAttachments(itemData);
+                
+                // Clear validation errors after populating the form
+                // This ensures the form doesn't show validation errors for programmatically filled fields
+                hideValidationErrors();
+                
+                // Trigger input events to update validation state
+                if (fieldConfigs && Array.isArray(fieldConfigs)) {
+                    fieldConfigs.forEach(field => {
+                        const input = document.querySelector(`[name="${field.codebeamerId}"]`);
+                        if (input) {
+                            // Trigger input event to update validation state
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    });
+                }
+                
             } catch (error) {
                 console.error('Error populating edit form:', error);
+            }
+        }
+
+        function displayExistingAttachments(itemData) {
+            try {
+                const existingAttachmentsDiv = document.getElementById('existingAttachments');
+                const existingFilesList = document.getElementById('existingFilesList');
+                
+                if (!existingAttachmentsDiv || !existingFilesList) {
+                    console.log('Existing attachments elements not found');
+                    return;
+                }
+                
+                // Check if item has comments (attachments)
+                if (itemData.comments && Array.isArray(itemData.comments) && itemData.comments.length > 0) {
+                    existingAttachmentsDiv.style.display = 'block';
+                    existingFilesList.innerHTML = '';
+                    
+                    itemData.comments.forEach(comment => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span class="attachment-item">
+                                📎 ${comment.name || 'Attachment'}
+                                <small style="color: #666; margin-left: 10px;">(${comment.type || 'File'})</small>
+                            </span>
+                        `;
+                        existingFilesList.appendChild(li);
+                    });
+                    
+                    console.log(`Displaying ${itemData.comments.length} existing attachments`);
+                } else {
+                    existingAttachmentsDiv.style.display = 'none';
+                    console.log('No existing attachments found');
+                }
+            } catch (error) {
+                console.error('Error displaying existing attachments:', error);
             }
         }
 
@@ -1066,9 +1195,10 @@
                 });
 
                 if (response.ok) {
-                    showStatus(`주간보고 ${id}번이 삭제되었습니다`, true);
+                    showStatus(`주간보고 ${id}번이 삭제되었습니다. 목록을 새로고침하는 중...`, true);
                     // Reload the current page
-                    loadReportsWithFilters();
+                    await loadReportsWithFilters();
+                    showStatus(`주간보고 ${id}번이 성공적으로 삭제되었습니다`, true);
                 } else {
                     const errorData = await response.json();
                     showStatus(`삭제 실패: ${errorData.error || 'Unknown error'}`, false);
@@ -1104,11 +1234,6 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             loadReportsWithFilters();
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('action') === 'create') {
-                showCreateForm();
-            }
         });
     </script>
 </body>

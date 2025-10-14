@@ -661,6 +661,10 @@ class DynamicFormHandler {
         if (field.codebeamerId === 'name') return item.name || '';
         if (field.codebeamerId === 'status') return item.status?.name || item.status || '';
         
+        // Debug logging
+        console.log(`Getting field value for ${field.name} (${field.codebeamerId}), referenceId: ${field.referenceId}`);
+        console.log('Item customFields:', item.customFields);
+        
         // Handle custom fields from CBQL response
         if (item.customFields && Array.isArray(item.customFields)) {
             const customField = item.customFields.find(cf => 
@@ -669,21 +673,32 @@ class DynamicFormHandler {
                 cf.referenceId == field.referenceId
             );
             
+            console.log(`Found custom field for ${field.name}:`, customField);
+            
             if (customField) {
                 if (typeof customField.value === 'string') {
+                    console.log(`Returning string value: ${customField.value}`);
                     return customField.value;
                 }
                 if (customField.value && customField.value.name) {
+                    console.log(`Returning name value: ${customField.value.name}`);
                     return customField.value.name;
                 }
                 if (Array.isArray(customField.values) && customField.values.length > 0) {
+                    console.log(`Returning array value: ${customField.values[0].name || customField.values[0]}`);
                     return customField.values[0].name || customField.values[0];
                 }
                 if (customField.value && typeof customField.value === 'object') {
+                    console.log(`Returning object value: ${JSON.stringify(customField.value)}`);
                     return JSON.stringify(customField.value);
                 }
+                console.log(`Returning fallback value: ${customField.value || ''}`);
                 return customField.value || '';
+            } else {
+                console.log(`No custom field found for ${field.name} with referenceId ${field.referenceId}`);
             }
+        } else {
+            console.log('No customFields array found in item');
         }
         
         // Fallback: try direct property access
