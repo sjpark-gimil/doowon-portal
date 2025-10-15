@@ -119,6 +119,12 @@
                 inputType: 'date',
                 validation: 'date'
             },
+            textarea: {
+                name: '텍스트 영역',
+                icon: '📄',
+                inputType: 'textarea',
+                validation: 'text'
+            },
             selector: {
                 name: '선택',
                 icon: '📋',
@@ -682,6 +688,7 @@
                                                         <option value="string" ${field.type === 'string' ? 'selected' : ''}>📝 문자열</option>
                                                         <option value="number" ${field.type === 'number' ? 'selected' : ''}>🔢 숫자</option>
                                                         <option value="calendar" ${field.type === 'calendar' ? 'selected' : ''}>📅 날짜</option>
+                                                        <option value="textarea" ${field.type === 'textarea' ? 'selected' : ''}>📄 텍스트 영역</option>
                                                         <option value="selector" ${field.type === 'selector' ? 'selected' : ''}>📋 선택</option>
                                                     </select>
                                                 </div>
@@ -975,6 +982,7 @@
                             <button class="field-type-btn active" data-type="string">📝 문자열</button>
                             <button class="field-type-btn" data-type="number">🔢 숫자</button>
                             <button class="field-type-btn" data-type="calendar">📅 날짜</button>
+                            <button class="field-type-btn" data-type="textarea">📄 텍스트 영역</button>
                             <button class="field-type-btn" data-type="selector">📋 선택</button>
                         </div>
                         
@@ -1078,6 +1086,8 @@
                     html += `<option value="${option}">${option}</option>`;
                 });
                 html += '</select>';
+            } else if (type === 'textarea') {
+                html += `<textarea placeholder="${fieldTypes[type].name} 입력" rows="4"></textarea>`;
             } else {
                 const inputType = fieldTypes[type].inputType;
                 html += `<input type="${inputType}" placeholder="${fieldTypes[type].name} 입력">`;

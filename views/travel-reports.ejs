@@ -1152,6 +1152,19 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             loadReportsWithFilters();
+            
+            // Check for action=create parameter to auto-open create form
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'create') {
+                // Small delay to ensure page is fully loaded
+                setTimeout(() => {
+                    showCreateForm();
+                }, 500);
+                
+                // Clean up URL without reloading
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
         });
     </script>
 </body>

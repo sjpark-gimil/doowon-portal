@@ -85,7 +85,6 @@ class DynamicFormHandler {
             }
         });
 
-        // Remove empty groups
         Object.keys(groups).forEach(key => {
             if (groups[key].length === 0) {
                 delete groups[key];
@@ -160,6 +159,12 @@ class DynamicFormHandler {
             case 'calendar':
                 inputElement = document.createElement('input');
                 inputElement.type = 'date';
+                break;
+
+            case 'textarea':
+                inputElement = document.createElement('textarea');
+                inputElement.placeholder = `${field.name}을(를) 입력하세요`;
+                inputElement.rows = 4;
                 break;
 
             case 'selector':
@@ -444,9 +449,7 @@ class DynamicFormHandler {
         container.appendChild(tableWrapper);
     }
 
-    /**
-     * Create the actual table element
-     */
+
     createTable(fieldConfigs, options) {
         const table = document.createElement('table');
         table.className = 'dynamic-table';
@@ -470,7 +473,6 @@ class DynamicFormHandler {
         thead.appendChild(headerRow);
         table.appendChild(thead);
 
-        // Create body with pagination
         const tbody = document.createElement('tbody');
         
         if (this.filteredItems.length === 0) {
@@ -497,7 +499,22 @@ class DynamicFormHandler {
                 fieldConfigs.forEach(field => {
                     const cell = document.createElement('td');
                     const value = this.getFieldValue(item, field);
-                    cell.textContent = value;
+                    
+                    // Handle different field types in table display
+                    if (field.type === 'string' || field.type === 'textarea') {
+                        // For string and textarea fields, use controlled display
+                        if (value && value.length > 50) {
+                            // Show truncated text with tooltip for long content
+                            cell.innerHTML = `<span title="${value.replace(/"/g, '&quot;')}">${value.substring(0, 50)}...</span>`;
+                        } else {
+                            cell.textContent = value;
+                        }
+                        cell.className = 'text-field-cell';
+                    } else {
+                        // For other field types, use normal display
+                        cell.textContent = value;
+                    }
+                    
                     row.appendChild(cell);
                 });
 
@@ -516,9 +533,6 @@ class DynamicFormHandler {
         return table;
     }
 
-    /**
-     * Create pagination controls
-     */
     createPaginationControls(position, fieldConfigs) {
         const paginationDiv = document.createElement('div');
         paginationDiv.className = `pagination pagination-${position}`;
@@ -536,15 +550,13 @@ class DynamicFormHandler {
                 <option value="100" ${this.pagination.itemsPerPage === 100 ? 'selected' : ''}>100</option>
             </select>
         `;
-        
-        // Add event listener after creating the element
+
         const selectElement = itemsPerPageDiv.querySelector(`#itemsPerPage-${position}`);
         selectElement.addEventListener('change', (e) => {
             console.log('Items per page changed to:', e.target.value);
             this.changeItemsPerPage(e.target.value);
         });
 
-        // Navigation buttons
         const navDiv = document.createElement('div');
         navDiv.className = 'pagination-nav';
         
@@ -564,7 +576,7 @@ class DynamicFormHandler {
             this.changePage(1);
         });
 
-        // Page numbers
+
         const pageNumbersDiv = document.createElement('div');
         pageNumbersDiv.className = 'page-numbers';
         
@@ -582,7 +594,6 @@ class DynamicFormHandler {
             pageNumbersDiv.appendChild(pageButton);
         }
 
-        // Page info
         const pageInfo = document.createElement('div');
         pageInfo.className = 'pagination-info';
         const startItem = (this.pagination.currentPage - 1) * this.pagination.itemsPerPage + 1;
@@ -600,9 +611,7 @@ class DynamicFormHandler {
         return paginationDiv;
     }
 
-    /**
-     * Change page
-     */
+
     changePage(direction) {
         const newPage = this.pagination.currentPage + direction;
         if (newPage >= 1 && newPage <= this.pagination.totalPages) {
@@ -611,9 +620,6 @@ class DynamicFormHandler {
         }
     }
 
-    /**
-     * Go to specific page
-     */
     goToPage(page) {
         if (page >= 1 && page <= this.pagination.totalPages) {
             this.pagination.currentPage = page;
@@ -676,47 +682,78 @@ class DynamicFormHandler {
             console.log(`Found custom field for ${field.name}:`, customField);
             
             if (customField) {
+                let value = '';
                 if (typeof customField.value === 'string') {
-                    console.log(`Returning string value: ${customField.value}`);
-                    return customField.value;
+                    value = customField.value;
+                } else if (customField.value && customField.value.name) {
+                    value = customField.value.name;
+                } else if (Array.isArray(customField.values) && customField.values.length > 0) {
+                    value = customField.values[0].name || customField.values[0];
+                } else if (customField.value && typeof customField.value === 'object') {
+                    value = JSON.stringify(customField.value);
+                } else {
+                    value = customField.value || '';
                 }
-                if (customField.value && customField.value.name) {
-                    console.log(`Returning name value: ${customField.value.name}`);
-                    return customField.value.name;
+                
+                // Format date fields to show only date (no time)
+                if (field.type === 'calendar' && value) {
+                    try {
+                        const date = new Date(value);
+                        if (!isNaN(date.getTime())) {
+                            return date.toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            });
+                        }
+                    } catch (e) {
+                        console.log('Date parsing error:', e);
+                    }
                 }
-                if (Array.isArray(customField.values) && customField.values.length > 0) {
-                    console.log(`Returning array value: ${customField.values[0].name || customField.values[0]}`);
-                    return customField.values[0].name || customField.values[0];
-                }
-                if (customField.value && typeof customField.value === 'object') {
-                    console.log(`Returning object value: ${JSON.stringify(customField.value)}`);
-                    return JSON.stringify(customField.value);
-                }
-                console.log(`Returning fallback value: ${customField.value || ''}`);
-                return customField.value || '';
+                
+                console.log(`Returning value: ${value}`);
+                return value;
             } else {
                 console.log(`No custom field found for ${field.name} with referenceId ${field.referenceId}`);
             }
         } else {
             console.log('No customFields array found in item');
         }
-        
-        // Fallback: try direct property access
+
         const fieldKey = `custom_field_${field.referenceId}`;
         if (item[fieldKey]) {
-            if (typeof item[fieldKey] === 'string') return item[fieldKey];
-            if (item[fieldKey].name) return item[fieldKey].name;
-            if (Array.isArray(item[fieldKey])) {
-                return item[fieldKey][0]?.name || item[fieldKey][0];
+            let value = '';
+            if (typeof item[fieldKey] === 'string') {
+                value = item[fieldKey];
+            } else if (item[fieldKey].name) {
+                value = item[fieldKey].name;
+            } else if (Array.isArray(item[fieldKey])) {
+                value = item[fieldKey][0]?.name || item[fieldKey][0];
             }
+            
+            // Format date fields to show only date (no time)
+            if (field.type === 'calendar' && value) {
+                try {
+                    const date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                        return date.toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                        });
+                    }
+                } catch (e) {
+                    console.log('Date parsing error:', e);
+                }
+            }
+            
+            return value;
         }
         
         return '';
     }
 
-    /**
-     * Filter items based on search criteria
-     */
+
     filterItems(searchTerm, fieldConfigs) {
         if (!searchTerm || searchTerm.trim() === '') {
             this.filteredItems = [...this.allItems];

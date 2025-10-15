@@ -44,6 +44,15 @@
         "required": true,
         "readonly": false,
         "referenceId": 10004
+      },
+      {
+        "id": 9,
+        "name": "상세설명",
+        "codebeamerId": "custom_field_9",
+        "type": "textarea",
+        "required": false,
+        "readonly": false,
+        "referenceId": 10006
       }
     ],
     "travel-reports": [
@@ -226,12 +235,34 @@
       }
     ]
   },
-  "lastUpdated": "2025-10-15T02:08:46.729Z",
+  "lastUpdated": "2025-10-15T03:55:15.134Z",
   "trackerIds": {
     "weekly-reports": "7036",
     "travel-reports": "7107",
     "hardware-management": "7178",
     "equipment-management": "7249",
     "external-training": "7320"
+  },
+  "sectionTitles": {
+    "weekly-reports": {
+      "name": "주간보고관리",
+      "icon": "📊"
+    },
+    "travel-reports": {
+      "name": "출장보고관리",
+      "icon": "✈️"
+    },
+    "hardware-management": {
+      "name": "HW/SW 버전관리",
+      "icon": "💻"
+    },
+    "equipment-management": {
+      "name": "장비관리",
+      "icon": "🔧"
+    },
+    "external-training": {
+      "name": "교육관리",
+      "icon": "🎓"
+    }
   }
 }

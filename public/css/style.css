@@ -4746,10 +4746,42 @@ body.admin-login-body .admin-login-container {
     color: #6c757d;
 }
 
+.dynamic-form-container textarea.field-input {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
 .dynamic-table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
+}
+
+.dynamic-table td {
+    vertical-align: top;
+    padding: 8px 12px;
+    border-bottom: 1px solid #dee2e6;
+    word-wrap: break-word;
+    max-width: 200px;
+}
+
+.dynamic-table td.text-field-cell {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+}
+
+.dynamic-table td.text-field-cell:hover {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: visible;
+    background-color: #f8f9fa;
+    z-index: 10;
+    position: relative;
 }
 
 .dynamic-table th,
