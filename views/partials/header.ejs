@@ -51,39 +51,15 @@
                 <span>관리자 설정</span>
             </a>
         </nav>
-        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
-        <div class="mobile-nav" id="mobileNav">
-            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
-                <img src="images/home.svg" alt="Home" />
-                <span>대시보드</span>
-            </a>
-            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
-                <img src="images/settings.svg" alt="Weekly Reports" />
-                <span><%= sectionTitles['weekly-reports'].name %></span>
-            </a>
-            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
-                <img src="images/settings.svg" alt="Travel Reports" />
-                <span><%= sectionTitles['travel-reports'].name %></span>
-            </a>
-            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
-                <img src="images/settings.svg" alt="Hardware Management" />
-                <span><%= sectionTitles['hardware-management'].name %></span>
-            </a>
-            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
-                <img src="images/settings.svg" alt="Equipment Management" />
-                <span><%= sectionTitles['equipment-management'].name %></span>
-            </a>
-            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
-                <img src="images/settings.svg" alt="External Training" />
-                <span><%= sectionTitles['external-training'].name %></span>
-            </a>
-        </div>
+        <button class="mobile-back-button" onclick="goBackOrHome()">
+            <span id="mobileBackIcon">←</span>
+        </button>
         <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
         <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
     </header>
 
 <script>
-            function openFileUploader() {
+        function openFileUploader() {
             const fileUploaderUrl = 'http://codebeamer.mdsit.co.kr:3001';
             window.open(fileUploaderUrl, '_blank');
         }
@@ -91,6 +67,44 @@
         function openGanttChart() {
             const ganttUrl = 'http://codebeamer.mdsit.co.kr:3002';
             window.open(ganttUrl, '_blank');
+        }
+
+        function goBackOrHome() {
+            // Check if there's history to go back to
+            if (window.history.length > 1 && document.referrer) {
+                // If we came from another page in our app, go back
+                const referrer = new URL(document.referrer);
+                const currentHost = window.location.host;
+                
+                if (referrer.host === currentHost && referrer.pathname !== window.location.pathname) {
+                    window.history.back();
+                    return;
+                }
+            }
+            
+            // Otherwise, go to home page
+            window.location.href = '/';
+        }
+
+        // Update back button icon based on current page
+        document.addEventListener('DOMContentLoaded', function() {
+            const backIcon = document.getElementById('mobileBackIcon');
+            const currentPath = window.location.pathname;
+            
+            if (backIcon) {
+                // If we're on home page, show home icon
+                if (currentPath === '/') {
+                    backIcon.textContent = '🏠';
+                } else {
+                    backIcon.textContent = '←';
+                }
+            }
+        });
+
+        function handleLogout() {
+            fetch('/logout', { method: 'GET' })
+                .then(() => window.location.href = '/login')
+                .catch(error => console.error('Logout error:', error));
         }
 </script>
 </body>
