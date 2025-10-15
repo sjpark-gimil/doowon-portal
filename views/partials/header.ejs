@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/images/favicon.ico">
+    <title>Doowon Portal - <%= pageTitle %></title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/darkmode.css" />
+    <link rel="stylesheet" type="text/css" href="css/table.css" />
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/codebeamer.png" alt="Logo" /></a></div>
+        <nav class="header-nav">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>홈</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/weekly-reports.svg" alt="Weekly Reports" />
+                <span><%= sectionTitles['weekly-reports'].name %></span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/travel-reports.svg" alt="Travel Reports" />
+                <span><%= sectionTitles['travel-reports'].name %></span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/hardware-management.svg" alt="Hardware Management" />
+                <span><%= sectionTitles['hardware-management'].name %></span>
+            </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/equipment-management.svg" alt="Equipment Management" />
+                <span><%= sectionTitles['equipment-management'].name %></span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/external-training.svg" alt="External Training" />
+                <span><%= sectionTitles['external-training'].name %></span>
+            </a>
+            <a href="<%= fileUploaderUrl %>" class="nav-item" target="_blank">
+                <img src="images/upload.svg" alt="upload" />
+                <span>파일업로더</span>
+            </a>
+            <a href="<%= ganttChartUrl %>" class="nav-item" target="_blank">
+                <img src="images/gantt.svg" alt="gantt" />
+                <span>간트차트</span>
+            </a>
+            <a href="/admin" class="nav-item <%= currentPath === '/admin' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Admin" />
+                <span>관리자 설정</span>
+            </a>
+        </nav>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
+                <img src="images/home.svg" alt="Home" />
+                <span>대시보드</span>
+            </a>
+            <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Weekly Reports" />
+                <span><%= sectionTitles['weekly-reports'].name %></span>
+            </a>
+            <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Travel Reports" />
+                <span><%= sectionTitles['travel-reports'].name %></span>
+            </a>
+            <a href="/hardware-management" class="nav-item <%= currentPath === '/hardware-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Hardware Management" />
+                <span><%= sectionTitles['hardware-management'].name %></span>
+            </a>
+            <a href="/equipment-management" class="nav-item <%= currentPath === '/equipment-management' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="Equipment Management" />
+                <span><%= sectionTitles['equipment-management'].name %></span>
+            </a>
+            <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
+                <img src="images/settings.svg" alt="External Training" />
+                <span><%= sectionTitles['external-training'].name %></span>
+            </a>
+        </div>
+        <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+        <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+    </header>
+
+<script>
+            function openFileUploader() {
+            const fileUploaderUrl = 'http://codebeamer.mdsit.co.kr:3001';
+            window.open(fileUploaderUrl, '_blank');
+        }
+
+        function openGanttChart() {
+            const ganttUrl = 'http://codebeamer.mdsit.co.kr:3002';
+            window.open(ganttUrl, '_blank');
+        }
+</script>
+</body>

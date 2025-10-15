@@ -272,13 +272,16 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
 });
 
 app.get('/', requireAuth, (req, res) => {
+    const data = loadFieldConfigs();
+    const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
     res.render('dashboard', {
         currentPath: '/',
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || '',
         fileUploaderUrl: defaults.fileUploaderUrl,
-        ganttChartUrl: defaults.ganttChartUrl
+        ganttChartUrl: defaults.ganttChartUrl,
+        sectionTitles: sectionTitles
     });
 });
 
@@ -290,7 +293,9 @@ app.get('/weekly-reports', requireAuth, (req, res) => {
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || '',
-        sectionTitles: sectionTitles
+        sectionTitles: sectionTitles,
+        fileUploaderUrl: defaults.fileUploaderUrl,
+        ganttChartUrl: defaults.ganttChartUrl
     });
 });
 
@@ -311,7 +316,9 @@ app.get('/travel-reports', requireAuth, (req, res) => {
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || '',
-        sectionTitles: sectionTitles
+        sectionTitles: sectionTitles,
+        fileUploaderUrl: defaults.fileUploaderUrl,
+        ganttChartUrl: defaults.ganttChartUrl
     });
 });
 
@@ -323,7 +330,9 @@ app.get('/hardware-management', requireAuth, (req, res) => {
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || '',
-        sectionTitles: sectionTitles
+        sectionTitles: sectionTitles,
+        fileUploaderUrl: defaults.fileUploaderUrl,
+        ganttChartUrl: defaults.ganttChartUrl
     });
 });
 
@@ -335,7 +344,9 @@ app.get('/equipment-management', requireAuth, (req, res) => {
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || '',
-        sectionTitles: sectionTitles
+        sectionTitles: sectionTitles,
+        fileUploaderUrl: defaults.fileUploaderUrl,
+        ganttChartUrl: defaults.ganttChartUrl
     });
 });
 
@@ -347,7 +358,9 @@ app.get('/external-training', requireAuth, (req, res) => {
         username: req.session.username || '',
         serverUrl: defaults.cbApiUrl,
         cbBaseUrl: process.env.CB_BASE_URL || '',
-        sectionTitles: sectionTitles
+        sectionTitles: sectionTitles,
+        fileUploaderUrl: defaults.fileUploaderUrl,
+        ganttChartUrl: defaults.ganttChartUrl
     });
 });
 
