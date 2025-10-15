@@ -20,7 +20,7 @@
             </a>
             <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Weekly Reports" />
-                <span><%= sectionTitles['weekly-reports'].name %></span>
+                <span><%= sectionTitles['hardware-management'].name %></span>
             </a>
             <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Travel Reports" />
@@ -37,6 +37,10 @@
             <a href="/external-training" class="nav-item <%= currentPath === '/external-training' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="External Training" />
                 <span><%= sectionTitles['external-training'].name %></span>
+            </a>
+            <a href="/list" class="nav-item <%= currentPath === '/list' ? 'active' : '' %>">
+                <img src="images/add-list.png" alt="List" />
+                <span>리포트 첨부</span>
             </a>
             <a href="/admin" class="nav-item <%= currentPath === '/admin' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Admin" />
@@ -51,7 +55,7 @@
             </a>
             <a href="/weekly-reports" class="nav-item <%= currentPath === '/weekly-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Weekly Reports" />
-                <span><%= sectionTitles['weekly-reports'].name %></span>
+                <span><%= sectionTitles['hardware-management'].name %></span>
             </a>
             <a href="/travel-reports" class="nav-item <%= currentPath === '/travel-reports' ? 'active' : '' %>">
                 <img src="images/settings.svg" alt="Travel Reports" />
@@ -69,6 +73,10 @@
                 <img src="images/settings.svg" alt="External Training" />
                 <span><%= sectionTitles['external-training'].name %></span>
             </a>
+            <a href="/list" class="nav-item <%= currentPath === '/list' ? 'active' : '' %>">
+                <img src="images/add-list.png" alt="List" />
+                <span>리포트 첨부</span>
+            </a>
         </div>
         <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
         <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
@@ -77,60 +85,57 @@
     <div class="main-container">
         <div class="page-header">
             <h2><%= sectionTitles['hardware-management'].icon %> <%= sectionTitles['hardware-management'].name %></h2>
-        </div>
-
-        <div class="content-section">
-            <div class="section-header">
-                <h3>버전관리</h3>
-                <button class="btn-primary" onclick="showCreateForm()">+ New</button>
-            </div>
-
-            <div class="create-form" id="createForm" style="display: none;">
-                <div class="dynamic-form-container">
-                    <div id="dynamicForm" class="loading">
-                        <i>⏳</i>
-                        <p>필드 구성을 불러오는 중...</p>
-                    </div>
-                    
-                    <div id="validationErrors" class="validation-errors">
-                        <h5>입력 오류:</h5>
-                        <ul id="errorList"></ul>
-                    </div>
-                    
-                    <!-- Attachment Field -->
-                    <div class="field-group">
-                        <h4>첨부 파일</h4>
-                        <div class="field-item">
-                            <span class="field-label">파일 업로드</span>
-                            <div class="field-input-container">
-                                <input type="file" id="hardwareAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
-                                <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="hideCreateForm()">취소</button>
-                        <button type="button" class="btn-primary" onclick="submitHardwareForm()">저장</button>
-                    </div>
-                </div>
-            </div>
+            <button class="btn-add-field" onclick="showCreateForm()" title="새 하드웨어관리 추가">
+                <img src="/images/plus-sign.png" alt="새 하드웨어관리 추가" style="width: 24px; height: 24px;">
+            </button>
         </div>
 
         <div class="content-section mobile-hide">
             <div class="section-header">
-                <h3>SW/HW 목록</h3>
-                <div class="filter-controls">
-                    <input type="text" id="searchFilter" onkeyup="filterHardware()" placeholder="검색...">
+                <h3>하드웨어관리 목록</h3>
+                <div class="vscode-search-bar">
+                    <div class="search-bar-container">
+                        <input type="text" id="searchFilter" class="search-input" placeholder="검색..." oninput="applySearch()">
+                        <div class="search-options">
+                            <button class="search-option-btn" id="caseSensitiveBtn" onclick="toggleCaseSensitive()" title="대소문자 구분">Aa</button>
+                            <button class="search-option-btn" id="wholeWordBtn" onclick="toggleWholeWord()" title="전체 단어 일치">ab</button>
+                            <button class="search-option-btn" id="regexBtn" onclick="toggleRegex()" title="정규식">*</button>
+                        </div>
+                        <div class="search-results-info" id="searchResultsInfo">0 of 0</div>
+                        <div class="search-navigation">
+                            <button class="nav-btn" id="prevResultBtn" onclick="previousResult()" title="이전 결과">↑</button>
+                            <button class="nav-btn" id="nextResultBtn" onclick="nextResult()" title="다음 결과">↓</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="hardware-list" id="hardwareList">
+            <div class="reports-list" id="reportsList">
                 <div class="loading" id="loadingIndicator" style="display: none;">
-                    <p>SW/HW 목록을 불러오는 중...</p>
+                    <p>하드웨어관리 목록을 불러오는 중...</p>
                 </div>
                 <div class="empty-state" id="emptyState" style="display: none;">
-                    <p>등록된 SW/HW가 없습니다.</p>
+                    <p>등록된 하드웨어관리가 없습니다.</p>
+                </div>
+            </div>
+            
+            <div class="pagination-controls" id="paginationControls" style="display: none;">
+                <div class="pagination-info">
+                    <span>페이지 당 아이템:</span>
+                    <select onchange="changePageSize(this.value)" id="pageSizeSelect">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="pagination-buttons">
+                    <button onclick="prevPage()" id="prevBtn" disabled>이전</button>
+                    <button onclick="nextPage()" id="nextBtn" disabled>다음</button>
+                </div>
+                <div class="pagination-status">
+                    <span id="pageInfo">페이지 1</span>
+                    <span id="itemCount">총 0개</span>
                 </div>
             </div>
         </div>
@@ -141,32 +146,6 @@
     
     <script>
         let formHandler = new DynamicFormHandler();
-        
-        formHandler.getTableContainerId = function() {
-            return 'hardwareList';
-        };
-
-        formHandler.changePage = function(direction) {
-            const newPage = this.pagination.currentPage + direction;
-            if (newPage >= 1 && newPage <= this.pagination.totalPages) {
-                this.pagination.currentPage = newPage;
-                this.refreshTable();
-            }
-        };
-
-        formHandler.goToPage = function(page) {
-            if (page >= 1 && page <= this.pagination.totalPages) {
-                this.pagination.currentPage = page;
-                this.refreshTable();
-            }
-        };
-
-        formHandler.changeItemsPerPage = function(newItemsPerPage) {
-            this.pagination.itemsPerPage = parseInt(newItemsPerPage);
-            this.pagination.currentPage = 1;
-            this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
-            this.refreshTable();
-        };
 
         function handleLogout() {
             fetch('/logout', { method: 'GET' })
@@ -191,35 +170,84 @@
             }
         });
 
-        async function loadHardwareItems() {
-            try {
-                const response = await fetch('/api/hardware');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const hardwareList = document.getElementById('hardwareList');
-                    if (hardwareList) {
-                        await formHandler.renderTable('hardwareList', data.items, 'hardware-management');
-                    }
-                } else {
-                    console.error('Failed to load hardware items:', data.error);
+        async function showCreateForm() {
+            // Clear editing state when creating new item
+            window.editingItemId = null;
+            window.editingItemData = null;
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'reportFormModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>새 하드웨어관리 추가</h3>
+                        <button class="modal-close" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="dynamic-form-container">
+                            <div id="dynamicForm" class="loading">
+                                <i>⏳</i>
+                                <p>필드 구성을 불러오는 중...</p>
+                            </div>
+                            
+                            <div id="validationErrors" class="validation-errors">
+                                <h5>입력 오류:</h5>
+                                <ul id="errorList"></ul>
+                            </div>
+                            
+                            <!-- Attachment Field -->
+                            <div class="field-group">
+                                <h4>첨부 파일</h4>
+                                <div class="field-item">
+                                    <span class="field-label">파일 업로드</span>
+                                    <div class="field-input-container">
+                                        <input type="file" id="hardwareAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                        <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" onclick="submitHardwareForm()">저장</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal()">취소</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            await loadDynamicForm();
+            
+            // Close modal on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
                 }
-            } catch (error) {
-                console.error('Error loading hardware items:', error);
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('reportFormModal');
+            if (modal) {
+                // Clear form and hide errors before removing modal
+                try {
+                    hideValidationErrors();
+                    formHandler.clearForm();
+                } catch (e) {
+                    console.log('Error during cleanup:', e);
+                }
+                // Remove modal from DOM
+                modal.remove();
             }
         }
 
-        async function showCreateForm() {
-            document.getElementById('createForm').style.display = 'block';
-            await loadDynamicForm();
-        }
-
         function hideCreateForm() {
-            document.getElementById('createForm').style.display = 'none';
-            formHandler.clearForm();
-            hideValidationErrors();
+            closeModal();
         }
 
+        // Load dynamic form
         async function loadDynamicForm() {
             try {
                 await formHandler.renderForm('dynamicForm', 'hardware-management');
@@ -231,6 +259,7 @@
             }
         }
 
+        // Submit weekly report form
         let isSubmitting = false;
         
         async function submitHardwareForm() {
@@ -239,24 +268,59 @@
                 return;
             }
             
-            isSubmitting = true;
             const validation = formHandler.validateForm();
             
             if (!validation.isValid) {
                 showValidationErrors(validation.errors);
-                isSubmitting = false;
                 return;
             }
 
             const formData = formHandler.getFormData();
-            console.log('Submitting hardware form data:', formData);
+            console.log('Submitting weekly report form data:', formData);
+            
+            isSubmitting = true;
             
             try {
+                // Check if we're editing an existing item
+                if (window.editingItemId) {
+                    await updateExistingItem(window.editingItemId, formData);
+                    
+                    // Handle file attachments for edit mode
+                    const fileInput = document.getElementById('hardwareAttachments');
+                    if (fileInput && fileInput.files.length > 0) {
+                        await uploadAttachments(window.editingItemId, fileInput.files);
+                    }
+                } else {
+                    await createNewItem(formData);
+                }
+                
+                // Clear editing state
+                window.editingItemId = null;
+                window.editingItemData = null;
+                
+                // Close modal and show loading
+                closeModal();
+                showLoadingIndicator();
+                showStatus('하드웨어관리가 저장되었습니다. 목록을 새로고침하는 중...', true);
+                
+                // Reload data with loading state
+                await loadReportsWithFilters();
+                
+                hideLoadingIndicator();
+                showStatus('하드웨어관리가 성공적으로 저장되었습니다', true);
+                
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                showStatus('하드웨어관리 저장에 실패했습니다: ' + error.message, false);
+            } finally {
+                isSubmitting = false;
+            }
+        }
+
+        async function createNewItem(formData) {
                 const trackerId = await getTrackerIdForSection('hardware-management');
                 if (!trackerId) {
-                    alert('SW/HW 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
-                    isSubmitting = false;
-                    return;
+                throw new Error('하드웨어관리 관리용 트래커가 설정되지 않았습니다. 관리자에게 문의하세요.');
                 }
 
                 const codebeamerData = await transformFormDataForCodeBeamer(formData, 'hardware-management', trackerId);
@@ -275,13 +339,87 @@
                 if (data.success) {
                     const itemId = data.item?.id;
                     
+                    // Handle file attachments
                     const fileInput = document.getElementById('hardwareAttachments');
                     if (fileInput && fileInput.files.length > 0 && itemId) {
-                        console.log(`Uploading ${fileInput.files.length} attachments to item ${itemId}`);
+                        await uploadAttachments(itemId, fileInput.files);
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to create item');
+                }
+        }
+
+        async function updateExistingItem(itemId, formData) {
+            // Get field configurations to map form data to field IDs (sets global fieldConfigs)
+            await loadFieldConfigsForSection('hardware-management');
+            const fieldValues = [];
+            
+            // Map form data to field values with proper field IDs
+            if (fieldConfigs && Array.isArray(fieldConfigs)) {
+                fieldConfigs.forEach(field => {
+                    const value = formData[field.codebeamerId];
+                    if (value !== undefined && value !== null && value !== '') {
+                        const fieldType = getFieldValueType(field.type);
+                        
+                        // For selector/choice fields, use TextFieldValue instead of ChoiceFieldValue
+                        // Codebeamer's PUT API for fields works better with TextFieldValue for dropdowns
+                        const actualType = fieldType === 'ChoiceFieldValue' ? 'TextFieldValue' : fieldType;
+                        
+                        fieldValues.push({
+                            fieldId: field.referenceId,
+                            type: actualType,
+                            name: field.name,
+                            value: value
+                        });
+                    }
+                });
+            } else {
+                throw new Error('Field configurations not loaded properly');
+            }
+            
+            if (fieldValues.length === 0) {
+                throw new Error('No fields to update');
+            }
+            
+            console.log('Updating item fields:', fieldValues);
+            
+            const response = await fetch(`/api/codebeamer/items/${itemId}/fields`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ fieldValues })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update item');
+            }
+        }
+
+        function getFieldValueType(fieldType) {
+            switch (fieldType) {
+                case 'string':
+                case 'text':
+                    return 'TextFieldValue';
+                case 'number':
+                    return 'IntegerFieldValue';
+                case 'date':
+                    return 'DateFieldValue';
+                case 'selector':
+                    return 'ChoiceFieldValue';
+                default:
+                    return 'TextFieldValue';
+            }
+        }
+
+        async function uploadAttachments(itemId, files) {
+            console.log(`Uploading ${files.length} attachments to item ${itemId}`);
                         
                         const attachmentFormData = new FormData();
-                        for (let i = 0; i < fileInput.files.length; i++) {
-                            attachmentFormData.append('attachments', fileInput.files[i]);
+            for (let i = 0; i < files.length; i++) {
+                attachmentFormData.append('attachments', files[i]);
                         }
                         
                         try {
@@ -293,28 +431,12 @@
                             const attachData = await attachResponse.json();
                             
                             if (attachData.success) {
-                                alert(`SW/HW가 등록되었습니다! (첨부 파일 ${attachData.attachments.length}개 업로드 완료)`);
-                            } else {
-                                alert(`SW/HW는 등록되었으나 첨부 파일 업로드 실패: ${attachData.message}`);
-                            }
-                        } catch (attachError) {
-                            console.error('Attachment upload error:', attachError);
-                            alert('SW/HW는 등록되었으나 첨부 파일 업로드 중 오류가 발생했습니다.');
-                        }
-                    } else {
-                        alert('SW/HW가 등록되었습니다!');
-                    }
-                    
-                    hideCreateForm();
-                    loadHardwareItems();
+                    console.log(`Successfully uploaded ${attachData.attachments.length} attachments`);
                 } else {
-                    alert('SW/HW 등록에 실패했습니다: ' + data.error);
+                    console.warn(`Attachment upload failed: ${attachData.message}`);
                 }
-            } catch (error) {
-                console.error('Error submitting hardware form:', error);
-                alert('SW/HW 등록 중 오류가 발생했습니다.');
-            } finally {
-                isSubmitting = false;
+            } catch (attachError) {
+                console.error('Attachment upload error:', attachError);
             }
         }
 
@@ -336,7 +458,6 @@
             }
         }
 
-        // Show validation errors
         function showValidationErrors(errors) {
             const errorContainer = document.getElementById('validationErrors');
             const errorList = document.getElementById('errorList');
@@ -351,37 +472,768 @@
             errorContainer.classList.add('show');
         }
 
-        // Hide validation errors
         function hideValidationErrors() {
-            document.getElementById('validationErrors').classList.remove('show');
+            const validationErrors = document.getElementById('validationErrors');
+            if (validationErrors) {
+                validationErrors.classList.remove('show');
+        }
         }
 
-        function editItem(itemId) {
-            console.log('Editing hardware:', itemId);
-            showCreateForm();
+
+        async function loadWeeklyReports() {
+            try {
+                const response = await fetch('/api/weekly-reports');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const reportsList = document.getElementById('reportsList');
+                    if (reportsList) {
+                        await formHandler.renderTable('reportsList', data.items, 'hardware-management');
+                    }
+                } else {
+                    console.error('Failed to load weekly reports:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading weekly reports:', error);
+            }
         }
 
-        function deleteItem(itemId) {
-            console.log('Deleting hardware:', itemId);
+        let allReports = [];
+        let filteredReports = [];
+        let currentPage = 1;
+        let pageSize = 25;
+        let totalPages = 1;
+        let searchQuery = '';
+        let fieldConfigs = [];
+        let currentFilters = {};
+        
+        // VS Code search options
+        let searchOptions = {
+            caseSensitive: false,
+            wholeWord: false,
+            regex: false
+        };
+        let currentResultIndex = 0;
+        let searchResults = [];
+
+        async function loadReportsWithFilters() {
+            try {
+                showLoadingIndicator();
+                
+                const trackerId = await getTrackerIdForSection('hardware-management');
+                if (!trackerId) {
+                    console.log('No tracker ID configured for weekly-reports');
+                    hideLoadingIndicator();
+                    return;
+                }
+
+                // Load all items first (server-side pagination only for initial load)
+                let response;
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                while (retryCount < maxRetries) {
+                    try {
+                        response = await fetch(`/api/codebeamer/trackers/${trackerId}/items?includeFields=true&pageSize=1000`);
+                        if (response.ok) {
+                            break; // Success, exit retry loop
+                        }
+                        
+                        if (response.status === 500 && retryCount < maxRetries - 1) {
+                            console.log(`Server error (500), retrying in ${(retryCount + 1) * 1000}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+                            retryCount++;
+                            continue;
+                        }
+                        
+                        throw new Error(`Failed to fetch items: ${response.status}`);
+                    } catch (error) {
+                        if (retryCount < maxRetries - 1) {
+                            console.log(`Network error, retrying in ${(retryCount + 1) * 1000}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+                            retryCount++;
+                            continue;
+                        }
+                        throw error;
+                    }
+                }
+
+                const data = await response.json();
+                allReports = data.items || [];
+                
+                console.log('Loaded reports:', allReports.length, 'items');
+                console.log('Sample report:', allReports[0]);
+                
+                await loadFieldConfigsForSection('hardware-management');
+                createFieldFilters();
+                applyAllFilters(); // Apply browser-side filtering
+                hideLoadingIndicator();
+
+                showStatus(`총 ${allReports.length}개의 아이템을 가져왔습니다`, true);
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                hideLoadingIndicator();
+                
+                if (error.message.includes('500')) {
+                    showStatus('서버가 일시적으로 과부하 상태입니다. 잠시 후 새로고침 버튼을 클릭해주세요.', false);
+                    // Add a refresh button
+                    setTimeout(() => {
+                        const statusElement = document.querySelector('.status');
+                        if (statusElement) {
+                            statusElement.innerHTML += ' <button onclick="loadReportsWithFilters()" style="margin-left: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">새로고침</button>';
+                        }
+                    }, 100);
+                } else {
+                    showStatus('하드웨어관리 목록을 불러오는데 실패했습니다', false);
+                }
+            }
         }
 
-        function filterHardware() {
-            const searchFilter = document.getElementById('searchFilter');
-            if (searchFilter) {
-                window.filterTable(searchFilter.value);
+        async function getTrackerIdForSection(section) {
+            try {
+                const response = await fetch(`/api/tracker-id/${section}`);
+                const data = await response.json();
+                return data.success ? data.trackerId : null;
+            } catch (error) {
+                console.error('Error getting tracker ID:', error);
+                return null;
+            }
+        }
+
+        async function loadFieldConfigsForSection(section) {
+            try {
+                const response = await fetch(`/api/field-configs/${section}`);
+                if (!response.ok) {
+                    fieldConfigs = [];
+                    return;
+                }
+                const data = await response.json();
+                if (data.success) {
+                    fieldConfigs = data.fieldConfigs || [];
+                } else {
+                    fieldConfigs = [];
+                }
+            } catch (error) {
+                console.error('Error loading field configs:', error);
+                fieldConfigs = [];
+            }
+        }
+
+        function createFieldFilters() {
+            // Field filters are now handled by the VS Code search bar
+            // This function is kept for compatibility but does nothing
+            console.log('Field filters are now handled by VS Code search bar');
+        }
+
+        function applySearch() {
+            const searchInput = document.getElementById('searchFilter');
+            searchQuery = searchInput.value.trim();
+            
+            currentPage = 1;
+            currentResultIndex = 0;
+            applyAllFilters();
+            updateSearchResultsInfo();
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('searchFilter');
+            searchInput.value = '';
+            searchQuery = '';
+            
+            currentPage = 1;
+            currentResultIndex = 0;
+            applyAllFilters();
+            updateSearchResultsInfo();
+        }
+
+        function applyAllFilters() {
+            // Apply search filter with VS Code-style options
+            filteredReports = allReports.filter(report => {
+                if (searchQuery) {
+                    const searchText = searchOptions.caseSensitive ? searchQuery : searchQuery.toLowerCase();
+                    
+                    // Get all searchable text from the report
+                    const searchableTexts = [];
+                    
+                    // Add ID and name
+                    searchableTexts.push(String(report.id));
+                    searchableTexts.push(String(report.name || ''));
+                    
+                    // Add all custom field values
+                    if (report.customFields && Array.isArray(report.customFields)) {
+                        report.customFields.forEach(customField => {
+                            if (customField.value) {
+                                if (typeof customField.value === 'string') {
+                                    searchableTexts.push(customField.value);
+                                } else if (customField.value.name) {
+                                    searchableTexts.push(customField.value.name);
+                                } else if (Array.isArray(customField.values)) {
+                                    customField.values.forEach(val => {
+                                        if (val.name) searchableTexts.push(val.name);
+                                        else searchableTexts.push(String(val));
+                                    });
+                                } else {
+                                    searchableTexts.push(String(customField.value));
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Convert all texts to search format
+                    const searchableText = searchOptions.caseSensitive ? 
+                        searchableTexts.join(' ') : 
+                        searchableTexts.join(' ').toLowerCase();
+                    
+                    let found = false;
+                    
+                    if (searchOptions.wholeWord) {
+                        // Whole word matching
+                        const words = searchableText.split(/\s+/);
+                        found = words.includes(searchText);
+                    } else if (searchOptions.regex) {
+                        // Regex matching
+                        try {
+                            const regex = new RegExp(searchText, searchOptions.caseSensitive ? 'g' : 'gi');
+                            found = regex.test(searchableText);
+                        } catch (e) {
+                            // Invalid regex, fall back to simple search
+                            found = searchableText.includes(searchText);
+                        }
+                    } else {
+                        // Simple contains search
+                        found = searchableText.includes(searchText);
+                    }
+                    
+                    if (!found) {
+                        return false;
+                    }
+                }
+
+                // Field filters are now handled by VS Code search bar
+                // No additional filtering needed
+                
+                return true;
+            });
+
+            // Store search results for navigation
+            searchResults = filteredReports;
+            currentResultIndex = 0;
+
+            // Update pagination
+            totalPages = Math.ceil(filteredReports.length / pageSize);
+            currentPage = Math.min(currentPage, totalPages || 1);
+            
+            displayReports();
+            updatePaginationControls();
+            updateSearchResultsInfo();
+            
+            // Update status message
+            let statusMsg = '';
+            
+            if (searchQuery) {
+                statusMsg = `검색 결과: ${filteredReports.length}개의 하드웨어관리`;
+            } else {
+                statusMsg = `전체: ${filteredReports.length}개의 하드웨어관리`;
+            }
+            
+            showStatus(statusMsg, true);
+        }
+
+        function applyFieldFilter(fieldId, value) {
+            // Field filters are now handled by the VS Code search bar
+            // This function is kept for compatibility but does nothing
+            console.log('Field filters are now handled by VS Code search bar');
+        }
+
+        function getReportFieldValue(report, field) {
+            if (field.codebeamerId === 'name') return report.name;
+            if (field.codebeamerId === 'status') return report.status?.name || report.status;
+            
+            if (report.customFields && Array.isArray(report.customFields)) {
+                const customField = report.customFields.find(cf => 
+                    cf.fieldId == field.referenceId || 
+                    cf.id == field.referenceId ||
+                    cf.referenceId == field.referenceId
+                );
+                
+                if (customField) {
+                    if (typeof customField.value === 'string') {
+                        return customField.value;
+                    }
+                    if (customField.value && customField.value.name) {
+                        return customField.value.name;
+                    }
+                    if (Array.isArray(customField.values) && customField.values.length > 0) {
+                        return customField.values[0].name || customField.values[0];
+                    }
+                    if (customField.value && typeof customField.value === 'object') {
+                        return JSON.stringify(customField.value);
+                    }
+                    return customField.value;
+                }
+            }
+            
+            const fieldKey = `custom_field_${field.referenceId}`;
+            if (report[fieldKey]) {
+                if (typeof report[fieldKey] === 'string') return report[fieldKey];
+                if (report[fieldKey].name) return report[fieldKey].name;
+                if (Array.isArray(report[fieldKey])) {
+                    return report[fieldKey][0]?.name || report[fieldKey][0];
+                }
+            }
+            
+            return null;
+        }
+
+        function clearAllFilters() {
+            const searchInput = document.getElementById('searchFilter');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            searchQuery = '';
+            currentFilters = {};
+            currentPage = 1;
+            currentResultIndex = 0;
+            applyAllFilters();
+        }
+
+        // VS Code-style search functions
+
+        function toggleCaseSensitive() {
+            searchOptions.caseSensitive = !searchOptions.caseSensitive;
+            const btn = document.getElementById('caseSensitiveBtn');
+            btn.classList.toggle('active', searchOptions.caseSensitive);
+            applyAllFilters();
+        }
+
+        function toggleWholeWord() {
+            searchOptions.wholeWord = !searchOptions.wholeWord;
+            const btn = document.getElementById('wholeWordBtn');
+            btn.classList.toggle('active', searchOptions.wholeWord);
+            applyAllFilters();
+        }
+
+        function toggleRegex() {
+            searchOptions.regex = !searchOptions.regex;
+            const btn = document.getElementById('regexBtn');
+            btn.classList.toggle('active', searchOptions.regex);
+            applyAllFilters();
+        }
+
+        function updateSearchResultsInfo() {
+            const info = document.getElementById('searchResultsInfo');
+            if (searchResults.length > 0) {
+                info.textContent = `${currentResultIndex + 1} of ${searchResults.length}`;
+            } else {
+                info.textContent = '0 of 0';
+            }
+        }
+
+        function previousResult() {
+            if (searchResults.length > 0) {
+                currentResultIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
+                updateSearchResultsInfo();
+                highlightCurrentResult();
+            }
+        }
+
+        function nextResult() {
+            if (searchResults.length > 0) {
+                currentResultIndex = (currentResultIndex + 1) % searchResults.length;
+                updateSearchResultsInfo();
+                highlightCurrentResult();
+            }
+        }
+
+        function highlightCurrentResult() {
+            // Remove previous highlights
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            // Highlight current result
+            if (searchResults.length > 0 && currentResultIndex < searchResults.length) {
+                const currentResult = searchResults[currentResultIndex];
+                const tableRows = document.querySelectorAll('tr[data-item-id]');
+                tableRows.forEach(row => {
+                    if (row.dataset.itemId == currentResult.id) {
+                        row.classList.add('search-highlight');
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
             }
         }
 
 
+        function displayReports() {
+            const reportsList = document.getElementById('reportsList');
+            if (!reportsList) {
+                console.error('reportsList element not found');
+                return;
+            }
+
+            console.log('displayReports called with:', filteredReports.length, 'filtered reports');
+            console.log('Current page:', currentPage, 'Page size:', pageSize);
+
+            if (filteredReports.length === 0) {
+                console.log('No filtered reports, showing empty state');
+                reportsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>검색 조건에 맞는 하드웨어관리가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show only items for current page
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageItems = filteredReports.slice(startIndex, endIndex);
+
+            console.log('Rendering table with', pageItems.length, 'items');
+            console.log('Sample item for table:', pageItems[0]);
+
+            formHandler.renderTable('reportsList', pageItems, 'hardware-management', { pagination: false });
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayReports();
+                updatePaginationControls();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayReports();
+                updatePaginationControls();
+            }
+        }
+
+        function changePageSize(newPageSize) {
+            pageSize = parseInt(newPageSize);
+            currentPage = 1;
+            totalPages = Math.ceil(filteredReports.length / pageSize);
+            displayReports();
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            const paginationControls = document.getElementById('paginationControls');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            const itemCount = document.getElementById('itemCount');
+
+            if (filteredReports.length > pageSize) {
+                paginationControls.style.display = 'flex';
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+                
+                const startIndex = (currentPage - 1) * pageSize + 1;
+                const endIndex = Math.min(currentPage * pageSize, filteredReports.length);
+                
+                pageInfo.textContent = `페이지 ${currentPage}`;
+                itemCount.textContent = `${startIndex}-${endIndex} / 총 ${filteredReports.length}개`;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+
+        function showLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+        }
+
+        function hideLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function showStatus(message, isSuccess) {
+            const statusElement = document.getElementById('status') || createStatusElement();
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            statusElement.className = 'status ' + (isSuccess ? 'success' : 'error');
+
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function createStatusElement() {
+            const statusElement = document.createElement('div');
+            statusElement.id = 'status';
+            statusElement.className = 'status';
+            document.querySelector('.main-container').appendChild(statusElement);
+            return statusElement;
+        }
+
+        function filterReports() {
+            applyAllFilters();
+        }
+
+        // Generic functions called by the table buttons
+        function editItem(id) {
+            editReport(id);
+        }
+
+        function deleteItem(id) {
+            deleteReport(id);
+        }
+
+        async function editReport(id) {
+            try {
+                showLoadingIndicator();
+                showStatus(`하드웨어관리 ${id}번을 불러오는 중...`, true);
+                
+                // First, fetch the full item details
+                const response = await fetch(`/api/codebeamer/items/${id}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch item: ${response.status}`);
+                }
+                
+                const itemData = await response.json();
+                
+                // Show the form modal for editing
+                await showEditForm(itemData);
+                
+                hideLoadingIndicator();
+                showStatus(`하드웨어관리 ${id}번을 수정합니다`, true);
+                
+            } catch (error) {
+                console.error('Error loading item for edit:', error);
+                hideLoadingIndicator();
+                showStatus(`하드웨어관리 ${id}번을 불러오는데 실패했습니다`, false);
+            }
+        }
+
+        async function showEditForm(itemData) {
+            // Store editing state
+            window.editingItemId = itemData.id;
+            window.editingItemData = itemData;
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'reportFormModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>하드웨어관리 수정 #${itemData.id}</h3>
+                        <button class="modal-close" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="dynamic-form-container">
+                            <div id="dynamicForm" class="loading">
+                                <i>⏳</i>
+                                <p>필드 구성을 불러오는 중...</p>
+                            </div>
+                            
+                            <div id="validationErrors" class="validation-errors">
+                                <h5>입력 오류:</h5>
+                                <ul id="errorList"></ul>
+                            </div>
+                            
+                            <!-- Attachment Field -->
+                            <div class="field-group">
+                                <h4>첨부 파일</h4>
+                                <div id="existingAttachments" class="existing-attachments" style="display: none;">
+                                    <h5>기존 첨부 파일:</h5>
+                                    <ul id="existingFilesList"></ul>
+                                </div>
+                                <div class="field-item">
+                                    <span class="field-label">새 파일 추가</span>
+                                    <div class="field-input-container">
+                                        <input type="file" id="hardwareAttachments" name="attachments" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" class="field-input">
+                                        <small class="field-help">PDF, DOC, XLS, 이미지 파일을 업로드할 수 있습니다.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" onclick="submitHardwareForm()">저장</button>
+                        <button type="button" class="btn-secondary" onclick="closeModal()">취소</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            await loadDynamicForm();
+            await populateEditForm(itemData);
+            
+            // Close modal on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        async function populateEditForm(itemData) {
+            try {
+                // Wait for the form to be rendered
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Get field configurations for this section (sets global fieldConfigs)
+                await loadFieldConfigsForSection('hardware-management');
+                
+                console.log('Field configs loaded:', fieldConfigs);
+                console.log('Item data:', itemData);
+                
+                // Populate each field based on the item data
+                if (fieldConfigs && Array.isArray(fieldConfigs)) {
+                    fieldConfigs.forEach(field => {
+                        const fieldValue = getReportFieldValue(itemData, field);
+                        console.log(`Field ${field.name} (${field.codebeamerId}):`, fieldValue);
+                        
+                        if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+                            // Find the form input for this field
+                            const input = document.querySelector(`[name="${field.codebeamerId}"]`);
+                            if (input) {
+                                if (input.type === 'checkbox') {
+                                    input.checked = fieldValue === 'true' || fieldValue === true;
+                                } else {
+                                    input.value = fieldValue;
+                                }
+                                console.log(`Set input ${field.codebeamerId} to:`, fieldValue);
+                            } else {
+                                console.warn(`No input found for field: ${field.codebeamerId}`);
+                            }
+                        }
+                    });
+                } else {
+                    console.error('Field configs is not an array:', fieldConfigs);
+                }
+                
+                // Store the item ID for the update
+                window.editingItemId = itemData.id;
+                window.editingItemData = itemData;
+                
+                // Show existing attachments if any
+                displayExistingAttachments(itemData);
+                
+                // Clear validation errors after populating the form
+                // This ensures the form doesn't show validation errors for programmatically filled fields
+                hideValidationErrors();
+                
+                // Trigger input events to update validation state
+                if (fieldConfigs && Array.isArray(fieldConfigs)) {
+                    fieldConfigs.forEach(field => {
+                        const input = document.querySelector(`[name="${field.codebeamerId}"]`);
+                        if (input) {
+                            // Trigger input event to update validation state
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error populating edit form:', error);
+            }
+        }
+
+        function displayExistingAttachments(itemData) {
+            try {
+                const existingAttachmentsDiv = document.getElementById('existingAttachments');
+                const existingFilesList = document.getElementById('existingFilesList');
+                
+                if (!existingAttachmentsDiv || !existingFilesList) {
+                    console.log('Existing attachments elements not found');
+                    return;
+                }
+                
+                // Check if item has comments (attachments)
+                if (itemData.comments && Array.isArray(itemData.comments) && itemData.comments.length > 0) {
+                    existingAttachmentsDiv.style.display = 'block';
+                    existingFilesList.innerHTML = '';
+                    
+                    itemData.comments.forEach(comment => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span class="attachment-item">
+                                📎 ${comment.name || 'Attachment'}
+                                <small style="color: #666; margin-left: 10px;">(${comment.type || 'File'})</small>
+                            </span>
+                        `;
+                        existingFilesList.appendChild(li);
+                    });
+                    
+                    console.log(`Displaying ${itemData.comments.length} existing attachments`);
+                } else {
+                    existingAttachmentsDiv.style.display = 'none';
+                    console.log('No existing attachments found');
+                }
+            } catch (error) {
+                console.error('Error displaying existing attachments:', error);
+            }
+        }
+
+        function deleteReport(id) {
+            if (confirm(`정말로 하드웨어관리 ${id}번을 삭제하시겠습니까?`)) {
+                deleteReportFromServer(id);
+            }
+        }
+
+        async function deleteReportFromServer(id) {
+            try {
+                showLoadingIndicator();
+                
+                const response = await fetch(`/api/codebeamer/items/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    showStatus(`하드웨어관리 ${id}번이 삭제되었습니다. 목록을 새로고침하는 중...`, true);
+                    // Reload the current page
+                    await loadReportsWithFilters();
+                    showStatus(`하드웨어관리 ${id}번이 성공적으로 삭제되었습니다`, true);
+                } else {
+                    const errorData = await response.json();
+                    showStatus(`삭제 실패: ${errorData.error || 'Unknown error'}`, false);
+                }
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                showStatus(`삭제 중 오류가 발생했습니다: ${error.message}`, false);
+            } finally {
+                hideLoadingIndicator();
+            }
+        }
+
+        function viewReport(id) {
+            console.log('Viewing report:', id);
+            // TODO: Implement view functionality
+            showStatus(`하드웨어관리 ${id}번을 조회합니다`, true);
+        }
+
+        function downloadReport(id) {
+            console.log('Downloading report:', id);
+            // TODO: Implement download functionality
+            showStatus(`하드웨어관리 ${id}번을 다운로드합니다`, true);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
 
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadHardwareItems();
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('action') === 'create') {
-                showCreateForm();
-            }
+            loadReportsWithFilters();
         });
     </script>
 </body>

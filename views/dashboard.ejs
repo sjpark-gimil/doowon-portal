@@ -93,19 +93,19 @@
                         <span>새 주간보고 작성</span>
                     </button>
                     <button class="action-btn" onclick="createTravelReport()">
-                        <span class="btn-icon">📋</span>
+                        <span class="btn-icon">✈️</span>
                         <span>새 출장보고 작성</span>
                     </button>
                     <button class="action-btn" onclick="createHardware()">
-                        <span class="btn-icon">🔧</span>
+                        <span class="btn-icon">💻</span>
                         <span>새 버전관리 등록</span>
                     </button>
                     <button class="action-btn" onclick="createEquipment()">
-                        <span class="btn-icon">⚙️</span>
+                        <span class="btn-icon">🔧</span>
                         <span>새 장비 등록</span>
                     </button>
                     <button class="action-btn" onclick="createTraining()">
-                        <span class="btn-icon">📚</span>
+                        <span class="btn-icon">🎓</span>
                         <span>새 교육 등록</span>
                     </button>
                 </div>
@@ -440,12 +440,10 @@
             const button = document.getElementById('viewAllBtn');
             
             if (showingAllItems) {
-                // Switch back to showing only 5 items
                 loadAssignedItems(1, 5);
                 button.textContent = '더보기';
                 showingAllItems = false;
             } else {
-                // Show all items (25 per page)
                 loadAssignedItems(1, 25);
                 button.textContent = '간략보기';
                 showingAllItems = true;
