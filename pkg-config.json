@@ -12,6 +12,7 @@
       "uploads/**/*",
       "views/**/*",
       "public/**/*",
+      "data/**/*",
       "package.json",
       "settings.json"
     ],

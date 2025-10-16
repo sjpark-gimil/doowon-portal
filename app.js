@@ -160,14 +160,11 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
     try {
         const username = req.session.username;
         const page = parseInt(req.query.page) || 1;
-        const pageSize = parseInt(req.query.pageSize) || 25;
-        
+        const pageSize = parseInt(req.query.pageSize) || 25;     
         console.log('Fetching assigned items for user:', username, 'page:', page, 'pageSize:', pageSize);
         
-        // Use the correct Codebeamer API endpoint for assigned items
         const queryString = `assignedTo IN ('${username}')`;
-        const apiUrl = `${defaults.cbApiUrl}/api/v3/items/query?page=${page}&pageSize=${pageSize}&queryString=${encodeURIComponent(queryString)}`;
-        
+        const apiUrl = `${defaults.cbApiUrl}/api/v3/items/query?page=${page}&pageSize=${pageSize}&queryString=${encodeURIComponent(queryString)}`;       
         console.log('API URL:', apiUrl);
         
         const response = await axios.get(apiUrl, {
@@ -210,51 +207,14 @@ app.get('/api/assigned-to-me', requireAuth, async (req, res) => {
                 source: 'codebeamer'
             });
         } else {
-            console.log('No assigned items found, returning mock data');
-            const mockAssignedItems = [
-                {
-                    id: 1,
-                    name: "2024년 1월 1주차 주간보고 검토",
-                    status: "Pending",
-                    submittedAt: "2024-01-08T09:00:00.000Z",
-                    submittedBy: "김과장",
-                    modifiedAt: "2024-01-08T09:00:00.000Z",
-                    modifiedBy: "김과장",
-                    tracker: "Weekly Reports",
-                    typeName: "Report"
-                },
-                {
-                    id: 2,
-                    name: "서울 고객사 방문 출장보고 승인",
-                    status: "In Progress",
-                    submittedAt: "2024-01-10T14:30:00.000Z",
-                    submittedBy: "이부장",
-                    modifiedAt: "2024-01-10T14:30:00.000Z",
-                    modifiedBy: "이부장",
-                    tracker: "Travel Reports",
-                    typeName: "Report"
-                },
-                {
-                    id: 3,
-                    name: "신규 노트북 배정 처리",
-                    status: "Pending",
-                    submittedAt: "2024-01-12T11:15:00.000Z",
-                    submittedBy: "박팀장",
-                    modifiedAt: "2024-01-12T11:15:00.000Z",
-                    modifiedBy: "박팀장",
-                    tracker: "Hardware Management",
-                    typeName: "Task"
-                }
-            ];
-
             res.json({
                 success: true,
-                items: mockAssignedItems,
+                items: [],
                 page: 1,
                 pageSize: 25,
-                total: mockAssignedItems.length,
+                total: 0,
                 hasMore: false,
-                source: 'mock'
+                source: 'codebeamer'
             });
         }
 
@@ -883,21 +843,9 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
     try {
-        const mockHardware = [
-            {
-                id: 1,
-                name: "SW 버전 1.0",
-                category: "SW",
-                version: "1.0.0",
-                changeItem: "UI 개선",
-                changeReason: "사용자 편의성 향상",
-                swVersion: "1.0.0"
-            }
-        ];
-        
         res.json({
             success: true,
-            items: mockHardware
+            items: []
         });
     } catch (error) {
         console.error('Error fetching hardware items:', error);
@@ -1692,26 +1640,9 @@ function getCodebeamerTypeId(fieldType) {
 
 app.get('/api/equipment', requireAuth, async (req, res) => {
     try {
-        const mockEquipment = [
-            {
-                id: 1,
-                name: "생산라인 장비 A",
-                category: "생산장비",
-                manufacturer: "삼성전자",
-                model: "SM-2000",
-                serialNumber: "SN123456",
-                purchaseDate: "2023-01-15",
-                warrantyExpiry: "2025-01-15",
-                location: "1층 생산라인",
-                responsible: "김철수",
-                specifications: "고성능 생산 장비",
-                notes: "정기 점검 필요"
-            }
-        ];
-        
         res.json({
             success: true,
-            items: mockEquipment
+            items: []
         });
     } catch (error) {
         console.error('Error fetching equipment:', error);
@@ -1743,27 +1674,9 @@ app.post('/api/equipment', requireAuth, async (req, res) => {
 
 app.get('/api/travel-reports', requireAuth, async (req, res) => {
     try {
-        const mockReports = [
-            {
-                id: 1,
-                title: "서울 출장 보고서",
-                destination: "서울",
-                purpose: "회의",
-                startDate: "2024-01-15",
-                endDate: "2024-01-17",
-                participants: "김영희, 박민수",
-                transportation: 50000,
-                accommodation: 200000,
-                meals: 100000,
-                other: 30000,
-                content: "고객사와의 중요한 회의 진행",
-                status: "submitted"
-            }
-        ];
-        
         res.json({
             success: true,
-            items: mockReports
+            items: []
         });
     } catch (error) {
         console.error('Error fetching travel reports:', error);
@@ -1795,29 +1708,9 @@ app.post('/api/travel-reports', requireAuth, async (req, res) => {
 
 app.get('/api/external-training', requireAuth, async (req, res) => {
     try {
-        const mockTrainings = [
-            {
-                id: 1,
-                title: "AI 기술 교육",
-                provider: "한국AI연구원",
-                type: "기술교육",
-                startDate: "2024-02-01",
-                endDate: "2024-02-03",
-                location: "서울 강남구",
-                participants: "김개발, 이연구",
-                tuition: 500000,
-                accommodation: 200000,
-                transportation: 100000,
-                meals: 150000,
-                content: "머신러닝 기초 및 실무 적용",
-                outcome: "AI 기술 역량 향상",
-                status: "approved"
-            }
-        ];
-        
         res.json({
             success: true,
-            items: mockTrainings
+            items: []
         });
     } catch (error) {
         console.error('Error fetching external training:', error);
@@ -1850,22 +1743,9 @@ app.post('/api/external-training', requireAuth, async (req, res) => {
 
 app.get('/api/weekly-reports', requireAuth, async (req, res) => {
     try {
-        const mockReports = [
-            {
-                id: 1,
-                title: "2024년 1월 1주차 주간보고",
-                week: "2024-W01",
-                date: "2024-01-05",
-                businessDivision: "기술개발부",
-                thisWeekContent: "프로젝트 A 개발 진행",
-                nextWeekContent: "프로젝트 A 테스트 및 배포",
-                status: "submitted"
-            }
-        ];
-        
         res.json({
             success: true,
-            items: mockReports
+            items: []
         });
     } catch (error) {
         console.error('Error fetching weekly reports:', error);

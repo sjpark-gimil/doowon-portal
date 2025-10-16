@@ -32,11 +32,12 @@
             <div class="assigned-section">
                 <div class="section-header">
                     <div class="assigned-title-container">
-                        <h3>📋 나에게 할당된 업무</h3>
+                        <h3><button class="btn-icon-toggle" id="viewAllBtn" onclick="viewAllAssigned()" style="display: none;" title="더보기">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M5.5 7.5l4.5 4.5 4.5-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            </svg>
+                        </button> 나에게 할당된 업무</h3>
                         <span class="assigned-count" id="assignedCount">로딩 중...</span>
-                    </div>
-                    <div class="assigned-header-right">
-                        <button class="btn-small btn-secondary" id="viewAllBtn" onclick="viewAllAssigned()" style="display: none;">더보기</button>
                     </div>
                 </div>
                 <div class="assigned-items-container">
@@ -296,14 +297,17 @@
         
         function viewAllAssigned() {
             const button = document.getElementById('viewAllBtn');
+            const svg = button.querySelector('svg');
             
             if (showingAllItems) {
                 loadAssignedItems(1, 5);
-                button.textContent = '더보기';
+                svg.innerHTML = '<path d="M5.5 7.5l4.5 4.5 4.5-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+                button.title = '더보기';
                 showingAllItems = false;
             } else {
                 loadAssignedItems(1, 25);
-                button.textContent = '간략보기';
+                svg.innerHTML = '<path d="M14.5 12.5l-4.5-4.5-4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+                button.title = '간략보기';
                 showingAllItems = true;
             }
         }

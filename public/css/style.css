@@ -2659,6 +2659,45 @@ select.report-select option {
     overflow: hidden;
 }
 
+.btn-icon-toggle {
+    padding: 4px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #667eea;
+    margin-right: 8px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.btn-icon-toggle:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #5a67d8;
+    transform: scale(1.1);
+}
+
+.btn-icon-toggle:active {
+    transform: scale(0.95);
+}
+
+.btn-icon-toggle:focus {
+    outline: none;
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.btn-icon-toggle svg {
+    transition: transform 0.3s ease;
+}
+
 .btn-success {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     color: white;
@@ -3059,6 +3098,8 @@ select.report-select option {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    overflow: visible;
+    position: relative;
 }
 
 .assigned-section .section-header h3 {
@@ -3073,6 +3114,8 @@ select.report-select option {
     display: flex;
     align-items: center;
     gap: 15px;
+    padding: 4px 0;
+    min-height: 44px;
 }
 
 .assigned-header-right {
@@ -3228,12 +3271,13 @@ select.report-select option {
     box-shadow: 0 0 0 2px rgba(32, 27, 135, 0.25);
 }
 
+/*
 .pagination-controls button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background-color: #6c757d;
 }
-
+*/
 .pagination-controls button:disabled:hover {
     transform: none;
 }
@@ -3293,14 +3337,8 @@ select.report-select option {
 @media (max-width: 768px) {
     .pagination-controls {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: 10px;
-        padding: 15px;
-    }
-    
-    .pagination-controls button {
-        min-height: 44px;
-        padding: 10px 16px;
     }
     
     .pagination-nav {
@@ -3657,13 +3695,17 @@ select.report-select option {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
+        overflow: visible;
+        position: relative;
     }
     
     .assigned-title-container {
         display: flex;
         align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow: visible;
+        padding: 8px 0;
     }
     
     .assigned-title-container h3 {
@@ -3893,6 +3935,14 @@ select.report-select option {
         flex-shrink: 0;
     }
     
+    .btn-icon-toggle {
+        flex-shrink: 0;
+        margin-right: 4px;
+        margin-left: 0;
+        position: relative;
+        z-index: 10;
+    }
+    
     .assigned-item {
         padding: 12px;
     }
@@ -3941,11 +3991,6 @@ select.report-select option {
         background: transparent;
     }
     
-    .header .logo img {
-        max-width: 80px;
-        filter: brightness(0) invert(1);
-    }
-    
     .header .title-container h1 {
         font-size: 1.3em;
     }
@@ -3957,6 +4002,13 @@ select.report-select option {
     .page-header {
         padding: 15px;
         margin: 15px 0;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
     }
     
     .content-section,
