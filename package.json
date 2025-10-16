@@ -2,6 +2,7 @@
   "name": "doowon-portal",
   "version": "1.0.0",
   "main": "app.js",
+  "bin": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js"

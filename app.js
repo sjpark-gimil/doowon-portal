@@ -11,7 +11,7 @@ const FormData = require('form-data');
 const defaults = {
     cbApiUrl: process.env.CB_BASE_URL || 'http://codebeamer.mdsit.co.kr:3008',
     sessionSecret: process.env.SESSION_SECRET || 'default-secret',
-    fileUploaderUrl: process.env.FILE_UPLOADER_URL || 'http://codebeamer.mdsit.co.kr:3001',
+    fileUploaderUrl: process.env.FILE_UPLOADER_URL || 'http://codebeamer.mdsit.co.kr:3007',
     ganttChartUrl: process.env.GANTT_CHART_URL || 'http://codebeamer.mdsit.co.kr:3002',
 };
 
@@ -21,7 +21,7 @@ const upload = multer({
 });
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 const HOST = '0.0.0.0';
 const corsOptions = { 
     origin: '*', 

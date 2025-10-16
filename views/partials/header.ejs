@@ -12,7 +12,7 @@
 
 <body>
     <header class="header">
-        <div class="logo"><a href="http://211.238.111.33:8080/cb/"><img src="images/codebeamer.png" alt="Logo" /></a></div>
+        <div class="logo"><a href="http://codebeamer.mdsit.co.kr:3008"><img src="images/codebeamer.png" alt="Logo" /></a></div>
         <nav class="header-nav">
             <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
                 <img src="images/home.svg" alt="Home" />
@@ -60,7 +60,7 @@
 
 <script>
         function openFileUploader() {
-            const fileUploaderUrl = 'http://codebeamer.mdsit.co.kr:3001';
+            const fileUploaderUrl = 'http://codebeamer.mdsit.co.kr:3007';
             window.open(fileUploaderUrl, '_blank');
         }
 
@@ -86,17 +86,17 @@
             window.location.href = '/';
         }
 
-        // Update back button icon based on current page
+        // Update back button visibility based on current page
         document.addEventListener('DOMContentLoaded', function() {
-            const backIcon = document.getElementById('mobileBackIcon');
+            const mobileBackButton = document.querySelector('.mobile-back-button');
             const currentPath = window.location.pathname;
             
-            if (backIcon) {
-                // If we're on home page, show home icon
+            if (mobileBackButton) {
+                // If we're on home page, hide the back button since home is already in navigation
                 if (currentPath === '/') {
-                    backIcon.textContent = '🏠';
+                    mobileBackButton.style.display = 'none';
                 } else {
-                    backIcon.textContent = '←';
+                    mobileBackButton.style.display = 'flex';
                 }
             }
         });

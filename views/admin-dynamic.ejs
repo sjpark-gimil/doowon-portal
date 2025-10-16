@@ -371,7 +371,9 @@
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 3000);
+            }, 
+            
+            
         }
 
         async function refreshTrackers(section) {
@@ -1087,7 +1089,15 @@
                 });
                 html += '</select>';
             } else if (type === 'textarea') {
-                html += `<textarea placeholder="${fieldTypes[type].name} 입력" rows="4"></textarea>`;
+                html += `<textarea placeholder="${fieldTypes[type].name} 입력" rows="4" style="width: 474px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 15px;
+    background: white;
+    transition: all 0.3s 
+ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;"></textarea>`;
             } else {
                 const inputType = fieldTypes[type].inputType;
                 html += `<input type="${inputType}" placeholder="${fieldTypes[type].name} 입력">`;
