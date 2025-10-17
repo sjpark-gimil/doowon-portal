@@ -47,7 +47,6 @@
                 <button class="btn-admin btn-info" onclick="loadProjects()">프로젝트 목록 새로고침</button>
             </div>
             
-
             <h4>📊 필드 매핑 현황</h4>
             <div class="mapping-stats">
                 <div class="stat-item">
@@ -66,13 +65,10 @@
        
         </div>
 
-        <!-- 관리 섹션별 필드 설정 -->
         <div id="managementSections">
-            <!-- 동적으로 생성될 섹션들 -->
-        </div>
-
     </div>
 
+    </div>
     <script>
         let fieldConfigs = {
             'weekly-reports': [],
@@ -99,7 +95,6 @@
             'external-training': { name: '외부교육관리', icon: '🎓' }
         };
 
-        // Field type configurations
         const fieldTypes = {
             string: {
                 name: '문자열',
@@ -173,7 +168,6 @@
             }
         });
 
-        // Load available projects from Codebeamer
         async function loadProjects() {
             try {
                 const response = await fetch('/api/codebeamer/projects');
@@ -203,7 +197,6 @@
             }
         }
 
-        // Handle project selection change
         async function onProjectChange() {
             const projectId = document.getElementById('projectId').value;
             if (projectId) {
@@ -216,7 +209,6 @@
             }
         }
 
-        // Load available trackers from Codebeamer
         async function loadTrackers() {
             const projectId = document.getElementById('projectId').value;
             if (!projectId) {
@@ -231,7 +223,6 @@
                 if (data.success) {
                     availableTrackers = data.trackers;
                     populateTrackerSelectors();
-                    // Load saved tracker IDs after populating selectors
                     await loadTrackerIds();
                     alert(`트래커 ${data.trackers.length}개를 불러왔습니다.`);
                 } else {
@@ -243,7 +234,6 @@
             }
         }
 
-        // Populate tracker selectors for all sections
         function populateTrackerSelectors() {
             const sections = ['weekly-reports', 'travel-reports', 'hardware-management', 'equipment-management', 'external-training'];
             
@@ -262,7 +252,6 @@
                         selector.appendChild(option);
                     });
 
-                    // Restore previously selected tracker
                     if (selectedTrackers[section]) {
                         selector.value = selectedTrackers[section];
                         console.log(`Restored tracker for ${section}: ${selectedTrackers[section]}`);
@@ -284,7 +273,6 @@
             }
         }
 
-        // Save tracker ID for a section
         async function saveTrackerIdForSection(section, trackerId) {
             try {
                 const response = await fetch(`/api/admin/tracker-id/${section}`, {
@@ -299,7 +287,6 @@
                 
                 if (data.success) {
                     console.log(`Tracker ID saved for ${section}: ${trackerId}`);
-                    // Show success message
                     showNotification(`트래커 ID가 저장되었습니다: ${section} -> ${trackerId}`, 'success');
                 } else {
                     console.error('Failed to save tracker ID:', data.error);
@@ -311,7 +298,6 @@
             }
         }
 
-        // Load tracker IDs for all sections
         async function loadTrackerIds() {
             const sections = ['weekly-reports', 'travel-reports', 'hardware-management', 'equipment-management', 'external-training'];
             
@@ -333,14 +319,10 @@
             }
         }
 
-        // Show notification
         function showNotification(message, type = 'info') {
-            // Create notification element
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
             notification.textContent = message;
-            
-            // Style the notification
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -353,8 +335,7 @@
                 max-width: 400px;
                 word-wrap: break-word;
             `;
-            
-            // Set background color based on type
+
             if (type === 'success') {
                 notification.style.backgroundColor = '#28a745';
             } else if (type === 'error') {
@@ -362,11 +343,9 @@
             } else {
                 notification.style.backgroundColor = '#17a2b8';
             }
-            
-            // Add to page
+
             document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
+
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -536,7 +515,6 @@
             draggedSection = null;
         }
 
-        // View current tracker configuration
         async function viewTrackerConfig(section) {
             const trackerId = selectedTrackers[section];
             if (!trackerId) {
@@ -721,7 +699,6 @@
             });
         }
 
-        // Update statistics
         function updateStats() {
             const totalSections = Object.keys(fieldConfigs).length;
             const totalFields = Object.values(fieldConfigs).reduce((sum, fields) => {
@@ -828,7 +805,6 @@
             }
         }
 
-        // Save field configurations
         async function saveFieldConfigs() {
             try {
                 console.log('💾 Saving field configs to server...');
@@ -865,7 +841,6 @@
             }
         }
 
-        // Save section mapping
         async function saveSectionMapping(section) {
             console.log(`Saving mapping for ${section}:`, fieldConfigs[section]);
             const saved = await saveFieldConfigs();
@@ -882,7 +857,6 @@
             }
         }
 
-        // Update Codebeamer configuration
         async function updateCodebeamerConfiguration(section) {
             try {
                 let trackerId = selectedTrackers[section];
@@ -924,7 +898,6 @@
             }
         }
 
-        // Test section mapping
         async function testSectionMapping(section) {
             console.log(`Testing mapping for ${section}:`, fieldConfigs[section]);
             
@@ -967,7 +940,6 @@
             }
         }
 
-        // Show add field form for specific section
         function showAddFieldForm(section) {
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
@@ -1004,9 +976,7 @@
                                     <option value="required">필수</option>
                                 </select>
                             </div>
-                            
-                            
-                            
+                           
                             <div class="field-preview">
                                 <h5>미리보기</h5>
                                 <div id="newFieldPreview"></div>
@@ -1025,7 +995,6 @@
             previewNewField();
         }
 
-        // Get section name by key
         function getSectionName(sectionKey) {
             const names = {
                 'weekly-reports': '주간보고관리',
@@ -1037,7 +1006,6 @@
             return names[sectionKey] || sectionKey;
         }
 
-        // Close modal
         function closeModal() {
             const modal = document.querySelector('.modal-overlay');
             if (modal) {
@@ -1045,7 +1013,6 @@
             }
         }
 
-        // Initialize modal field type selector
         function initializeModalFieldTypeSelector() {
             const typeButtons = document.querySelectorAll('.modal-overlay .field-type-btn');
             typeButtons.forEach(btn => {
@@ -1057,7 +1024,6 @@
             });
         }
 
-        // Update modal field configuration form
         function updateModalFieldConfigForm(type) {
             const selectorOptionsRow = document.getElementById('newSelectorOptionsRow');
             if (type === 'selector') {
@@ -1068,13 +1034,11 @@
             previewNewField();
         }
 
-        // Preview new field
         function previewNewField() {
             const type = document.querySelector('.modal-overlay .field-type-btn.active').dataset.type;
             const name = document.getElementById('newFieldName').value || '샘플 필드';
             const required = document.getElementById('newFieldRequired').value === 'required';
-            const options = document.getElementById('newFieldOptions').value;
-            
+            const options = document.getElementById('newFieldOptions').value;            
             const preview = document.getElementById('newFieldPreview');
             let html = `<label>${name}${required ? ' *' : ''}</label>`;
             
@@ -1088,14 +1052,7 @@
                 html += '</select>';
             } else if (type === 'textarea') {
                 html += `<textarea placeholder="${fieldTypes[type].name} 입력" rows="4" style="width: 474px;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    font-size: 15px;
-    background: white;
-    transition: all 0.3s 
-ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    box-sizing: border-box;"></textarea>`;
+    border: 2px solid #e9ecef; border-radius: 8px; font-size: 15px; background: white; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); box-sizing: border-box;"></textarea>`;
             } else {
                 const inputType = fieldTypes[type].inputType;
                 html += `<input type="${inputType}" placeholder="${fieldTypes[type].name} 입력">`;
@@ -1104,7 +1061,6 @@ ease;
             preview.innerHTML = html;
         }
 
-        // Add field to specific section
         async function addFieldToSection(section) {
             const name = document.getElementById('newFieldName').value;
             const type = document.querySelector('.modal-overlay .field-type-btn.active').dataset.type;
@@ -1122,11 +1078,9 @@ ease;
             }
             
             const maxId = Math.max(0, ...fieldConfigs[section].map(f => f.id));
-            const newId = maxId + 1;
-            
+            const newId = maxId + 1;            
             const maxReferenceId = Math.max(10000, ...fieldConfigs[section].filter(f => f.referenceId).map(f => f.referenceId));
-            const newReferenceId = maxReferenceId + 1;
-            
+            const newReferenceId = maxReferenceId + 1;         
             const fieldConfig = {
                 id: newId,
                 name: name,
@@ -1157,7 +1111,6 @@ ease;
             }
         }
 
-        // Update field property
         async function updateFieldProperty(section, fieldId, property, value) {
             const field = fieldConfigs[section].find(f => f.id === fieldId);
             if (field) {
@@ -1188,7 +1141,6 @@ ease;
             }
         }
 
-        // Save all mappings at once
         async function saveAllMappings() {
             try {
                 const saved = await saveFieldConfigs();
@@ -1210,7 +1162,6 @@ ease;
             }
         }
 
-        // Update all Codebeamer configurations
         async function updateAllCodebeamerConfigurations() {
             const sections = Object.keys(fieldConfigs);
             let successCount = 0;

@@ -2,6 +2,15 @@
   "fieldConfigs": {
     "weekly-reports": [
       {
+        "id": 4,
+        "name": "사업부",
+        "codebeamerId": "custom_field_2",
+        "type": "string",
+        "required": true,
+        "readonly": false,
+        "referenceId": 10001
+      },
+      {
         "id": 11,
         "name": "작성자",
         "codebeamerId": "custom_field_11",
@@ -11,13 +20,13 @@
         "referenceId": 10008
       },
       {
-        "id": 4,
-        "name": "사업부",
-        "codebeamerId": "custom_field_2",
-        "type": "string",
+        "id": 9,
+        "name": "금주 주간보고",
+        "codebeamerId": "custom_field_9",
+        "type": "textarea",
         "required": true,
         "readonly": false,
-        "referenceId": 10001
+        "referenceId": 10006
       },
       {
         "id": 8,
@@ -35,15 +44,6 @@
           "NQ6",
           "LT2"
         ]
-      },
-      {
-        "id": 9,
-        "name": "금주 주간보고",
-        "codebeamerId": "custom_field_9",
-        "type": "textarea",
-        "required": true,
-        "readonly": false,
-        "referenceId": 10006
       },
       {
         "id": 10,
@@ -287,7 +287,29 @@
       }
     ]
   },
-  "lastUpdated": "2025-10-16T02:17:31.198Z",
+  "sectionTitles": {
+    "weekly-reports": {
+      "name": "주간보고관리",
+      "icon": "📊"
+    },
+    "travel-reports": {
+      "name": "출장보고관리",
+      "icon": "✈️"
+    },
+    "hardware-management": {
+      "name": "HW/SW 버전관리",
+      "icon": "💻"
+    },
+    "equipment-management": {
+      "name": "장비관리",
+      "icon": "🔧"
+    },
+    "external-training": {
+      "name": "교육관리",
+      "icon": "🎓"
+    }
+  },
+  "lastUpdated": "2025-10-17T00:27:04.689Z",
   "trackerIds": {
     "weekly-reports": "7036",
     "travel-reports": "7107",

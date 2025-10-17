@@ -259,15 +259,6 @@ app.get('/weekly-reports', requireAuth, (req, res) => {
     });
 });
 
-app.get('/weekly-reports/dynamic', requireAuth, (req, res) => {
-    res.render('weekly-reports-dynamic', {
-        currentPath: '/weekly-reports/dynamic',
-        username: req.session.username || '',
-        serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
-    });
-});
-
 app.get('/travel-reports', requireAuth, (req, res) => {
     const data = loadFieldConfigs();
     const sectionTitles = data.sectionTitles || getDefaultSectionTitles();
@@ -321,15 +312,6 @@ app.get('/external-training', requireAuth, (req, res) => {
         sectionTitles: sectionTitles,
         fileUploaderUrl: defaults.fileUploaderUrl,
         ganttChartUrl: defaults.ganttChartUrl
-    });
-});
-
-app.get('/list', requireAuth, (req, res) => {
-    res.render('list', {
-        currentPath: '/list',
-        username: req.session.username || '',
-        serverUrl: defaults.cbApiUrl,
-        cbBaseUrl: process.env.CB_BASE_URL || ''
     });
 });
 
@@ -586,8 +568,7 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
             });
         }
 
-        // First, try to get available tracker types
-        let trackerTypeId = 1; // Default fallback
+        let trackerTypeId = 1;
         try {
             const trackerTypesUrl = `${defaults.cbApiUrl}/api/v3/trackerTypes`;
             const typesResponse = await axios.get(trackerTypesUrl, {
@@ -600,7 +581,6 @@ app.post('/api/admin/create-tracker', requireAdminAuth, async (req, res) => {
             });
             
             if (typesResponse.data && typesResponse.data.length > 0) {
-                // Use the first available tracker type
                 trackerTypeId = typesResponse.data[0].id;
                 console.log('Using tracker type ID:', trackerTypeId);
             }
@@ -792,18 +772,14 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
             items = responseData.data;
         }
 
-        // If we need detailed item data, use CBQL query to get all details in one call
         if (includeFields === 'true' && items.length > 0) {
             console.log(`Fetching detailed data for ${items.length} items using CBQL query...`);
             
             try {
-                // Build CBQL query for specific item IDs
                 const itemIds = items.map(item => item.id);
                 const itemIdConditions = itemIds.map(id => `item.id = ${id}`).join(' OR ');
-                const queryString = `tracker.id = ${trackerId} AND (${itemIdConditions})`;
-                
-                const queryUrl = `${defaults.cbApiUrl}/api/v3/items/query?page=1&pageSize=${items.length}&queryString=${encodeURIComponent(queryString)}`;
-                
+                const queryString = `tracker.id = ${trackerId} AND (${itemIdConditions})`;              
+                const queryUrl = `${defaults.cbApiUrl}/api/v3/items/query?page=1&pageSize=${items.length}&queryString=${encodeURIComponent(queryString)}`;              
                 console.log(`CBQL Query URL: ${queryUrl}`);
                 
                 const queryResponse = await axios.get(queryUrl, {
@@ -822,7 +798,6 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
                 }
             } catch (error) {
                 console.warn(`CBQL query failed: ${error.message}, using basic item data`);
-                // Keep the original items if CBQL query fails
             }
         }
 
@@ -839,7 +814,6 @@ app.get('/api/codebeamer/trackers/:trackerId/items', requireAuth, async (req, re
         res.status(500).json({ error: 'Failed to fetch items' });
     }
 });
-
 
 app.get('/api/hardware', requireAuth, async (req, res) => {
     try {
@@ -875,7 +849,6 @@ app.post('/api/hardware', requireAuth, async (req, res) => {
     }
 });
 
-
 app.delete('/api/hardware/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
@@ -900,76 +873,46 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const FIELD_CONFIGS_FILE = path.join(__dirname, 'data', 'field-configs.json');
-
-
 const DEFAULT_FIELD_CONFIGS = {
     'weekly-reports': [
-        { id: 1, name: '보고서 제목', codebeamerId: 'name', type: 'string', required: true, readonly: true },
-        { id: 2, name: '보고 주차', codebeamerId: 'custom_field_1', type: 'string', required: true, readonly: false },
-        { id: 3, name: '작성일', codebeamerId: 'submittedAt', type: 'calendar', required: true, readonly: true },
-        { id: 4, name: '사업부', codebeamerId: 'custom_field_2', type: 'string', required: false, readonly: false },
-        { id: 5, name: '금주 주간보고', codebeamerId: 'custom_field_3', type: 'string', required: true, readonly: false },
-        { id: 6, name: '차주 주간보고', codebeamerId: 'custom_field_4', type: 'string', required: false, readonly: false },
-        { id: 7, name: '첨부파일', codebeamerId: 'attachments', type: 'string', required: false, readonly: true },
-        { id: 8, name: '상태', codebeamerId: 'status', type: 'string', required: true, readonly: true },
-        { id: 9, name: '우선순위', codebeamerId: 'custom_field_50', type: 'selector', required: false, readonly: false, options: ['높음', '보통', '낮음'] },
-        { id: 10, name: '진행률', codebeamerId: 'custom_field_51', type: 'number', required: false, readonly: false }
+        { id: 11, name: '작성자', codebeamerId: 'custom_field_11', type: 'string', required: true, readonly: false, referenceId: 10008 },
+        { id: 4, name: '사업부', codebeamerId: 'custom_field_2', type: 'string', required: true, readonly: false, referenceId: 10001 },
+        { id: 8, name: '담당 차종', codebeamerId: 'custom_field_8', type: 'selector', required: true, readonly: false, referenceId: 10005, options: ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'] },
+        { id: 9, name: '금주 주간보고', codebeamerId: 'custom_field_9', type: 'textarea', required: true, readonly: false, referenceId: 10006 },
+        { id: 10, name: '차주 주간보고', codebeamerId: 'custom_field_10', type: 'textarea', required: true, readonly: false, referenceId: 10007 }
     ],
     'travel-reports': [
-        { id: 1, name: '보고서 제목', codebeamerId: 'name', type: 'string', required: true, readonly: true },
-        { id: 2, name: '출장지', codebeamerId: 'custom_field_5', type: 'string', required: true, readonly: false },
-        { id: 3, name: '출장 목적', codebeamerId: 'custom_field_6', type: 'string', required: true, readonly: false },
-        { id: 4, name: '출발일', codebeamerId: 'custom_field_7', type: 'calendar', required: true, readonly: false },
-        { id: 5, name: '귀환일', codebeamerId: 'custom_field_8', type: 'calendar', required: true, readonly: false },
-        { id: 6, name: '동행자', codebeamerId: 'custom_field_9', type: 'string', required: false, readonly: false },
-        { id: 7, name: '교통비', codebeamerId: 'custom_field_10', type: 'number', required: false, readonly: false },
-        { id: 8, name: '숙박비', codebeamerId: 'custom_field_11', type: 'number', required: false, readonly: false },
-        { id: 9, name: '식비', codebeamerId: 'custom_field_12', type: 'number', required: false, readonly: false },
-        { id: 10, name: '기타 경비', codebeamerId: 'custom_field_13', type: 'number', required: false, readonly: false },
-        { id: 11, name: '출장 내용', codebeamerId: 'description', type: 'string', required: true, readonly: false }
+        { id: 9, name: '작성자', codebeamerId: 'custom_field_9', type: 'string', required: true, readonly: false, referenceId: 10008 },
+        { id: 2, name: '출장 지역', codebeamerId: 'custom_field_5', type: 'string', required: true, readonly: false, referenceId: 10001 },
+        { id: 3, name: '출장 목적', codebeamerId: 'custom_field_6', type: 'string', required: true, readonly: false, referenceId: 10002 },
+        { id: 4, name: '출발일', codebeamerId: 'custom_field_7', type: 'calendar', required: true, readonly: false, referenceId: 10003 },
+        { id: 5, name: '도착일', codebeamerId: 'custom_field_8', type: 'calendar', required: true, readonly: false, referenceId: 10004 },
+        { id: 8, name: '총 경비', codebeamerId: 'custom_field_11', type: 'number', required: false, readonly: false, referenceId: 10007 },
+        { id: 10, name: '동행자', codebeamerId: 'custom_field_10', type: 'string', required: false, readonly: false, referenceId: 10009 }
     ],
     'hardware-management': [
-        { id: 1, name: '하드웨어명', codebeamerId: 'name', type: 'string', required: true, readonly: true },
-        { id: 2, name: 'HW 버전', codebeamerId: 'custom_field_3', type: 'string', required: true, readonly: true },
-        { id: 3, name: 'SW 버전', codebeamerId: 'custom_field_10002', type: 'string', required: false, readonly: true },
-        { id: 4, name: '차종', codebeamerId: 'custom_field_1000', type: 'selector', required: true, readonly: true, options: ['SW', 'OV1', 'HE1i', 'SX3', 'NQ6', 'LT2'] },
-        { id: 5, name: '변경사항', codebeamerId: 'custom_field_1001', type: 'selector', required: true, readonly: true, options: ['H/W', 'S/W'] },
-        { id: 6, name: '변경 사유', codebeamerId: 'custom_field_10005', type: 'string', required: true, readonly: true },
-        { id: 7, name: 'Release 일자', codebeamerId: 'custom_field_10006', type: 'calendar', required: false, readonly: true },
-        { id: 8, name: '설명', codebeamerId: 'description', type: 'string', required: false, readonly: true },
-        { id: 9, name: '상태', codebeamerId: 'status', type: 'string', required: true, readonly: true },
-        { id: 10, name: '등록자', codebeamerId: 'submittedBy', type: 'string', required: true, readonly: true }
+        { id: 4, name: '변경 항목', codebeamerId: 'custom_field_4', type: 'selector', required: true, readonly: false, referenceId: 10004, options: ['HW', 'SW'] },
+        { id: 1, name: '변경 사유', codebeamerId: 'custom_field_1', type: 'string', required: true, readonly: false, referenceId: 10001 },
+        { id: 3, name: '버전', codebeamerId: 'custom_field_3', type: 'string', required: true, readonly: false, referenceId: 10003 },
+        { id: 5, name: 'SW 버전', codebeamerId: 'custom_field_5', type: 'string', required: false, readonly: false, referenceId: 10005 }
     ],
     'equipment-management': [
-        { id: 1, name: '장비명', codebeamerId: 'name', type: 'string', required: true, readonly: true },
-        { id: 2, name: '카테고리', codebeamerId: 'custom_field_14', type: 'string', required: true, readonly: false },
-        { id: 3, name: '제조사', codebeamerId: 'custom_field_15', type: 'string', required: true, readonly: false },
-        { id: 4, name: '모델명', codebeamerId: 'custom_field_16', type: 'string', required: true, readonly: false },
-        { id: 5, name: '시리얼 번호', codebeamerId: 'custom_field_17', type: 'string', required: true, readonly: false },
-        { id: 6, name: '구매일', codebeamerId: 'custom_field_18', type: 'calendar', required: false, readonly: false },
-        { id: 7, name: '보증만료일', codebeamerId: 'custom_field_19', type: 'calendar', required: false, readonly: false },
-        { id: 8, name: '설치위치', codebeamerId: 'custom_field_20', type: 'string', required: false, readonly: false },
-        { id: 9, name: '담당자', codebeamerId: 'custom_field_21', type: 'string', required: false, readonly: false },
-        { id: 10, name: '사양', codebeamerId: 'description', type: 'string', required: false, readonly: false },
-        { id: 11, name: '비고', codebeamerId: 'custom_field_22', type: 'string', required: false, readonly: false }
+        { id: 4, name: '장비명', codebeamerId: 'custom_field_4', type: 'string', required: true, readonly: false, referenceId: 10004 },
+        { id: 1, name: '모델명', codebeamerId: 'custom_field_1', type: 'string', required: true, readonly: false, referenceId: 10001 },
+        { id: 2, name: '시리얼번호', codebeamerId: 'custom_field_2', type: 'string', required: true, readonly: false, referenceId: 10002 },
+        { id: 3, name: '담당자', codebeamerId: 'custom_field_3', type: 'string', required: false, readonly: false, referenceId: 10003 },
+        { id: 7, name: '상태', codebeamerId: 'custom_field_7', type: 'selector', required: false, readonly: false, referenceId: 10007, options: ['입고', '재고', '출고', '입고 예정', '출고 예정'] },
+        { id: 5, name: '장비 입고일', codebeamerId: 'custom_field_5', type: 'calendar', required: false, readonly: false, referenceId: 10005 },
+        { id: 6, name: '장비 출고일', codebeamerId: 'custom_field_6', type: 'calendar', required: false, readonly: false, referenceId: 10006 }
     ],
     'external-training': [
-        { id: 1, name: '교육명', codebeamerId: 'name', type: 'string', required: true, readonly: true },
-        { id: 2, name: '교육기관', codebeamerId: 'custom_field_23', type: 'string', required: true, readonly: false },
-        { id: 3, name: '교육유형', codebeamerId: 'custom_field_24', type: 'string', required: true, readonly: false },
-        { id: 4, name: '교육시작일', codebeamerId: 'custom_field_25', type: 'calendar', required: true, readonly: false },
-        { id: 5, name: '교육종료일', codebeamerId: 'custom_field_26', type: 'calendar', required: true, readonly: false },
-        { id: 6, name: '교육장소', codebeamerId: 'custom_field_27', type: 'string', required: false, readonly: false },
-        { id: 7, name: '참석자', codebeamerId: 'custom_field_28', type: 'string', required: true, readonly: false },
-        { id: 8, name: '수강료', codebeamerId: 'custom_field_29', type: 'number', required: false, readonly: false },
-        { id: 9, name: '숙박비', codebeamerId: 'custom_field_30', type: 'number', required: false, readonly: false },
-        { id: 10, name: '교통비', codebeamerId: 'custom_field_31', type: 'number', required: false, readonly: false },
-        { id: 11, name: '식비', codebeamerId: 'custom_field_32', type: 'number', required: false, readonly: false },
-        { id: 12, name: '교육내용', codebeamerId: 'description', type: 'string', required: true, readonly: false },
-        { id: 13, name: '기대효과', codebeamerId: 'custom_field_33', type: 'string', required: false, readonly: false }
+        { id: 1, name: '교육명', codebeamerId: 'custom_field_1', type: 'string', required: false, readonly: false, referenceId: 10001 },
+        { id: 2, name: '교육기관', codebeamerId: 'custom_field_2', type: 'string', required: true, readonly: false, referenceId: 10002 },
+        { id: 3, name: '교육시작일', codebeamerId: 'custom_field_3', type: 'calendar', required: false, readonly: false, referenceId: 10003 },
+        { id: 4, name: '교육종료일', codebeamerId: 'custom_field_4', type: 'calendar', required: false, readonly: false, referenceId: 10004 },
+        { id: 5, name: '수료여부', codebeamerId: 'custom_field_5', type: 'selector', required: true, readonly: false, referenceId: 10005, options: ['수료', '중단', '필요 없음'] }
     ]
 };
-
 
 function getDefaultSectionTitles() {
     return {
@@ -977,7 +920,7 @@ function getDefaultSectionTitles() {
         'travel-reports': { name: '출장보고관리', icon: '✈️' },
         'hardware-management': { name: 'HW/SW 버전관리', icon: '💻' },
         'equipment-management': { name: '장비관리', icon: '🔧' },
-        'external-training': { name: '외부교육관리', icon: '🎓' }
+        'external-training': { name: '교육관리', icon: '🎓' }
     };
 }
 
@@ -1000,16 +943,20 @@ function loadFieldConfigs() {
     };
 }
 
-
 function saveFieldConfigs(fieldConfigs, trackerIds = null) {
     try {
+        const existingData = loadFieldConfigs();
+        
         const data = { 
             fieldConfigs, 
+            sectionTitles: existingData.sectionTitles || getDefaultSectionTitles(),
             lastUpdated: new Date().toISOString() 
         };
         
         if (trackerIds) {
             data.trackerIds = trackerIds;
+        } else if (existingData.trackerIds) {
+            data.trackerIds = existingData.trackerIds;
         }
         
         fs.writeFileSync(FIELD_CONFIGS_FILE, JSON.stringify(data, null, 2));
@@ -1079,13 +1026,7 @@ app.get('/api/admin/section-titles', requireAdminAuth, (req, res) => {
         const data = loadFieldConfigs();
         res.json({
             success: true,
-            sectionTitles: data.sectionTitles || {
-                'weekly-reports': { name: '주간보고관리', icon: '📊' },
-                'travel-reports': { name: '출장보고관리', icon: '✈️' },
-                'hardware-management': { name: 'HW/SW 버전관리', icon: '💻' },
-                'equipment-management': { name: '장비관리', icon: '🔧' },
-                'external-training': { name: '외부교육관리', icon: '🎓' }
-            }
+            sectionTitles: data.sectionTitles || getDefaultSectionTitles()
         });
     } catch (error) {
         console.error('Error getting section titles:', error);
@@ -1485,8 +1426,7 @@ app.post('/api/admin/sync-field-ids', requireAdminAuth, async (req, res) => {
 async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
     const issueTypeId = 1;
     const position = 100;
-    
-    // First, try to get existing tracker configuration to preserve existing fields
+
     let existingConfig = null;
     try {
         const configUrl = `${defaults.cbApiUrl}/api/v3/tracker/${trackerId}/configuration`;
@@ -1504,17 +1444,13 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
         console.log('Could not retrieve existing configuration, creating new one');
     }
 
-    // Start with existing fields or empty array
     const existingFields = existingConfig?.fields || [];
     const newFields = [];
-    
-    // Keep ONLY system fields from existing configuration (ID, Tracker, Summary, Attachments)
-    // DO NOT keep custom fields even if they are mandatory - we'll add fresh ones from admin settings
     const systemFields = existingFields.filter(field => 
-        field.referenceId === 0 ||  // ID field
-        field.referenceId === 1 ||  // Tracker field
-        field.referenceId === 3 ||  // Summary field
-        field.referenceId === 88    // Attachment field
+        field.referenceId === 0 ||  // ID
+        field.referenceId === 1 ||  // Tracker
+        field.referenceId === 3 ||  // Summary
+        field.referenceId === 88    // Attachment
     );
     
     console.log(`Keeping ${systemFields.length} system fields, removing ALL custom fields (will be replaced with admin settings)`);
@@ -1565,7 +1501,6 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
         console.log(`  → Adding custom field: ${fieldConfig.label} (referenceId: ${useReferenceId}, typeId: ${finalTypeId}, mandatory: ${fieldConfig.mandatory})`);
     });
 
-    // Ensure field 80 (Description) exists - this is required by field 84 (Description Format)
     const field80Exists = systemFields.some(f => f.referenceId === 80) || newFields.some(f => f.referenceId === 80);
     const descriptionField = {
         referenceId: 80,
@@ -1590,7 +1525,6 @@ async function buildCodebeamerConfig(fieldConfigs, trackerId, projectId, auth) {
         computedFieldReferences: []
     };
     
-    // Combine fields: system + field 80 (if not exists) + new custom fields ONLY
     const allFields = [...systemFields];
     if (!field80Exists) {
         console.log('Adding field 80 (Description) to satisfy field 84 (Description Format) dependency');
@@ -1775,13 +1709,10 @@ app.post('/api/weekly-reports', requireAuth, async (req, res) => {
     }
 });
 
-// Get tracker ID for a section
 app.get('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) => {
     try {
         const { section } = req.params;
         const data = loadFieldConfigs();
-        
-        // Check if tracker ID is stored in field configs
         const trackerId = data.trackerIds && data.trackerIds[section];
         
         res.json({
@@ -1798,7 +1729,6 @@ app.get('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) => 
     }
 });
 
-// Set tracker ID for a section
 app.post('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) => {
     try {
         const { section } = req.params;
@@ -1817,8 +1747,7 @@ app.post('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) =>
         }
         
         data.trackerIds[section] = trackerId;
-        
-        // Save the updated data
+
         const updatedData = {
             fieldConfigs: data.fieldConfigs,
             trackerIds: data.trackerIds,
@@ -1849,7 +1778,6 @@ app.post('/api/admin/tracker-id/:section', requireAdminAuth, async (req, res) =>
     }
 });
 
-// Get tracker ID for a section (user endpoint)
 app.get('/api/tracker-id/:section', requireAuth, async (req, res) => {
     try {
         const { section } = req.params;
@@ -1862,7 +1790,6 @@ app.get('/api/tracker-id/:section', requireAuth, async (req, res) => {
             trackerIdsKeys: data.trackerIds ? Object.keys(data.trackerIds) : 'None'
         });
         
-        // Check if tracker ID is stored in field configs
         const trackerId = data.trackerIds && data.trackerIds[section];
         console.log(`Tracker ID for ${section}: ${trackerId || 'Not found'}`);
         
@@ -1880,7 +1807,6 @@ app.get('/api/tracker-id/:section', requireAuth, async (req, res) => {
     }
 });
 
-// Create tracker item endpoint
 app.post('/api/v3/trackers/:trackerId/items', requireAuth, async (req, res) => {
     console.log('=== CREATE TRACKER ITEM REQUEST ===');
     console.log('Tracker ID:', req.params.trackerId);
@@ -1943,7 +1869,7 @@ app.post('/api/v3/trackers/:trackerId/items', requireAuth, async (req, res) => {
             },
             timeout: 30000,
             validateStatus: function (status) {
-                return status < 500; // Accept any status less than 500
+                return status < 500; 
             }
         });
 

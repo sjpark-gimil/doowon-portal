@@ -52,10 +52,6 @@
                 </div>
             </div>
 
-
-
-            
-
         </div>
     </div>
 
@@ -84,16 +80,10 @@
         });
 
         function createWeeklyReport() { window.location.href = '/weekly-reports?action=create'; }
-
         function createTravelReport() { window.location.href = '/travel-reports?action=create'; }
-
         function createHardware() { window.location.href = '/hardware-management?action=create'; }
-
         function createEquipment() {  window.location.href = '/equipment-management?action=create'; }
-
         function createTraining() { window.location.href = '/external-training?action=create'; }
-
-
 
         let currentPage = 1;
         let totalPages = 1;
@@ -233,59 +223,6 @@
             `;
 
             container.innerHTML = itemsHTML;
-        }
-
-        function getTypeLabel(type) {
-            const labels = {
-                'weekly-report': '주간보고',
-                'travel-report': '출장보고',
-                'hardware': 'SW/HW',
-                'equipment': '장비',
-                'training': '외부교육'
-            };
-            return labels[type] || type;
-        }
-
-        function getStatusLabel(status) {
-            const labels = {
-                'pending': '대기',
-                'in-progress': '진행중',
-                'completed': '완료',
-                'cancelled': '취소'
-            };
-            return labels[status] || status;
-        }
-
-        function getPriorityLabel(priority) {
-            const labels = {
-                'high': '높음',
-                'medium': '보통',
-                'low': '낮음'
-            };
-            return labels[priority] || priority;
-        }
-
-        function viewItem(id, type) {
-            console.log('Viewing item:', id, type);
-            switch(type) {
-                case 'weekly-report':
-                    window.location.href = '/weekly-reports';
-                    break;
-                case 'travel-report':
-                    window.location.href = '/travel-reports';
-                    break;
-                case 'hardware':
-                    window.location.href = '/hardware-management';
-                    break;
-                case 'equipment':
-                    window.location.href = '/equipment-management';
-                    break;
-                case 'training':
-                    window.location.href = '/external-training';
-                    break;
-                default:
-                    console.log('Unknown item type:', type);
-            }
         }
 
         function processItem(id, type) {

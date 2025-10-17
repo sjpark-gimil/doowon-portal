@@ -57,8 +57,6 @@ class DynamicFormHandler {
 
         this.formData = { ...initialData };
         container.innerHTML = '';
-
-        // Group fields by category
         const fieldGroups = this.groupFieldsByCategory(fieldConfigs);
 
         Object.keys(fieldGroups).forEach(groupName => {
@@ -197,7 +195,6 @@ class DynamicFormHandler {
                 break;
         }
 
-        // Set common attributes
         inputElement.name = field.codebeamerId;
         inputElement.id = `field_${field.id}`;
         inputElement.className = 'field-input';
@@ -419,28 +416,20 @@ class DynamicFormHandler {
             return;
         }
 
-        // Store items for pagination
         this.allItems = items;
         this.filteredItems = [...items];
         this.currentSection = section;
-
-        // Update pagination info
         this.pagination.totalItems = this.filteredItems.length;
         this.pagination.totalPages = Math.ceil(this.filteredItems.length / this.pagination.itemsPerPage);
         this.pagination.currentPage = Math.min(this.pagination.currentPage, this.pagination.totalPages || 1);
 
-        // Clear container
         container.innerHTML = '';
-
-        // Create table wrapper
         const tableWrapper = document.createElement('div');
         tableWrapper.className = 'table-wrapper';
 
-        // Create table
         const table = this.createTable(fieldConfigs, options);
         tableWrapper.appendChild(table);
 
-        // Create pagination controls (bottom only)
         if (options.pagination !== false && this.filteredItems.length > 0) {
             const bottomPagination = this.createPaginationControls('bottom', fieldConfigs);
             tableWrapper.appendChild(bottomPagination);
@@ -454,7 +443,6 @@ class DynamicFormHandler {
         const table = document.createElement('table');
         table.className = 'dynamic-table';
 
-        // Create header
         const thead = document.createElement('thead');
         const headerRow = document.createElement('tr');
         const idHeader = document.createElement('th');
@@ -500,18 +488,14 @@ class DynamicFormHandler {
                     const cell = document.createElement('td');
                     const value = this.getFieldValue(item, field);
                     
-                    // Handle different field types in table display
                     if (field.type === 'string' || field.type === 'textarea') {
-                        // For string and textarea fields, use controlled display
                         if (value && value.length > 50) {
-                            // Show truncated text with tooltip for long content
                             cell.innerHTML = `<span title="${value.replace(/"/g, '&quot;')}">${value.substring(0, 50)}...</span>`;
                         } else {
                             cell.textContent = value;
                         }
                         cell.className = 'text-field-cell';
                     } else {
-                        // For other field types, use normal display
                         cell.textContent = value;
                     }
                     
@@ -538,7 +522,6 @@ class DynamicFormHandler {
         paginationDiv.className = `pagination pagination-${position}`;
         paginationDiv.id = `pagination-${position}`;
 
-        // Items per page selector
         const itemsPerPageDiv = document.createElement('div');
         itemsPerPageDiv.className = 'pagination-controls';
         itemsPerPageDiv.innerHTML = `
@@ -627,9 +610,7 @@ class DynamicFormHandler {
         }
     }
 
-    /**
-     * Change items per page
-     */
+
     changeItemsPerPage(newItemsPerPage) {
         this.pagination.itemsPerPage = parseInt(newItemsPerPage);
         this.pagination.currentPage = 1;
@@ -637,9 +618,6 @@ class DynamicFormHandler {
         this.refreshTable();
     }
 
-    /**
-     * Refresh table display
-     */
     async refreshTable() {
         if (this.currentSection) {
             const containerId = this.getTableContainerId();
@@ -649,11 +627,8 @@ class DynamicFormHandler {
         }
     }
 
-    /**
-     * Get table container ID (this is a placeholder - should be overridden by the calling page)
-     */
+
     getTableContainerId() {
-        // This should be overridden by the calling page
         return null;
     }
 
@@ -663,15 +638,12 @@ class DynamicFormHandler {
      * @param {Object} field - The field configuration
      */
     getFieldValue(item, field) {
-        // Handle basic fields
         if (field.codebeamerId === 'name') return item.name || '';
         if (field.codebeamerId === 'status') return item.status?.name || item.status || '';
-        
-        // Debug logging
+
         console.log(`Getting field value for ${field.name} (${field.codebeamerId}), referenceId: ${field.referenceId}`);
         console.log('Item customFields:', item.customFields);
         
-        // Handle custom fields from CBQL response
         if (item.customFields && Array.isArray(item.customFields)) {
             const customField = item.customFields.find(cf => 
                 cf.fieldId == field.referenceId || 
@@ -695,7 +667,6 @@ class DynamicFormHandler {
                     value = customField.value || '';
                 }
                 
-                // Format date fields to show only date (no time)
                 if (field.type === 'calendar' && value) {
                     try {
                         const date = new Date(value);
@@ -731,7 +702,6 @@ class DynamicFormHandler {
                 value = item[fieldKey][0]?.name || item[fieldKey][0];
             }
             
-            // Format date fields to show only date (no time)
             if (field.type === 'calendar' && value) {
                 try {
                     const date = new Date(value);
@@ -798,7 +768,6 @@ window.setFormData = function(data) {
     window.dynamicFormHandler.setFormData(data);
 };
 
-// Global pagination functions
 window.changeItemsPerPage = function(newItemsPerPage, section) {
     window.dynamicFormHandler.changeItemsPerPage(newItemsPerPage);
 };

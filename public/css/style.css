@@ -8,7 +8,7 @@ html, body {
 }
 
 .header {
-    overflow: hidden;
+    overflow: visible;
     background: linear-gradient(135deg, #201B87 0%, #2A2F8A 100%);
     padding: 0;
     display: flex;
@@ -17,13 +17,22 @@ html, body {
     position: relative;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     min-height: 70px;
+    width: 100%;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 10px;
 }
 
 .header .logo {
     display: flex;
     align-items: center;
-    padding: 10px 30px 5px 30px;
+    padding: 10px 20px;
     z-index: 1;
+    flex-shrink: 0;
 }
 
 .header .logo img {
@@ -36,9 +45,12 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0;
+    gap: 5px;
     flex: 1;
     background: #201B87;
+    min-width: 0;
+    overflow: visible;
+    padding: 0 20px;
 }
 
 .header .title-container {
@@ -67,14 +79,15 @@ html, body {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 12px 16px;
+    padding: 8px 12px;
     text-decoration: none;
     color: rgba(255,255,255,0.9);
     font-weight: 500;
     transition: all 0.3s ease;
     border-radius: 8px;
     position: relative;
-    min-width: 80px;
+    min-width: 70px;
+    flex-shrink: 0;
 }
 
 .header-nav .nav-item:hover {
@@ -112,19 +125,28 @@ html, body {
     line-height: 1.2;
 }
 
+.header-menu {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 0 20px;
+}
+
 .menu-item {
     display: flex;
     align-items: center;
     cursor: pointer;
-    padding: 12px 18px;
+    padding: 8px 12px;
     text-decoration: none;
     color: rgba(255,255,255,0.9);
-    font-size: 1em;
+    font-size: 0.9em;
     z-index: 2;
     background: transparent;
     border-radius: 8px;
     transition: all 0.3s ease;
-    margin-left: 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .menu-item:hover {
@@ -232,17 +254,6 @@ html, body {
 
 
 @media (max-width: 1268px) {
-    .header {
-        background: #201B87;
-    }
-
-    .header .logo {
-        background: transparent;
-    }
-    
-    .header .logo img {
-        filter: brightness(0) invert(1);
-    }
 
     .header .title-container {
         position: static;
@@ -260,20 +271,7 @@ html, body {
         padding-right: 20px;
     }
 
-    .menu-item {
-        font-size: 0.9em;
-        color: white;
-        background: #201B87;
-    }
     
-    .menu-item img {
-        filter: brightness(0) invert(1);
-    }
-    
-    .header-nav .nav-item {
-        font-size: 0.9em;
-        padding: 12px 15px;
-    }
 
     .time-filter {
         margin-top: 10px;
@@ -3490,36 +3488,31 @@ select.report-select option {
     background: rgba(255,255,255,0.1);
     border: none;
     color: white;
-    font-size: 1.8em;
+    font-size: 0.8em;
     cursor: pointer;
-    padding: 12px 18px;
     border-radius: 8px;
-    transition: all 0.3s ease;
-    margin-right: 15px;
-    min-width: 50px;
-    height: 50px;
-    display: flex;
+    min-width: 20px;
+    height: 20x;
     align-items: center;
     justify-content: center;
 }
 
 .mobile-back-button:hover {
     background: rgba(255,255,255,0.2);
-    transform: translateX(-2px);
+    transform: translateY(-2px);
 }
 
 .mobile-back-button:active {
-    transform: translateX(0);
+    transform: translateY(0);
     background: rgba(255,255,255,0.15);
 }
 
-#mobileBackIcon {
-    font-weight: bold;
+.mobile-back-button img {
     transition: transform 0.2s ease;
 }
 
-.mobile-back-button:hover #mobileBackIcon {
-    transform: translateX(-2px);
+.mobile-back-button:hover img {
+    transform: scale(1.1);
 }
 
 /* Mobile Table Styles */
@@ -3611,12 +3604,50 @@ select.report-select option {
         background: linear-gradient(135deg, #201B87 0%, #2A2F8A 100%);
         min-height: 60px;
         padding: 0 10px;
+        overflow: visible;
+        justify-content: space-between;
+    }
+    
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
     }
     
     .header .logo {
+        display: none;
+    }
+    
+    .mobile-back-button {
+        display: flex;
+        flex-shrink: 0;
+        margin: 0 0 0 20px;
         padding: 8px 15px;
         background: transparent;
-        flex-shrink: 0;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .mobile-back-button img {
+        width: 24px;
+        height: 24px;
+        filter: brightness(0) invert(1);
+        transition: transform 0.2s ease;
+    }
+    
+    .mobile-back-button:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+    }
+    
+    .mobile-back-button:hover img {
+        transform: scale(1.1);
     }
     
     .header .logo img {
@@ -3633,31 +3664,35 @@ select.report-select option {
         margin-top: -10px;
     }
     
-    .menu-item {
-        font-size: 0.9em;
-        padding: 15px;
-        color: white;
-        background: transparent;
-        margin-left: 0;
-        margin-right: 0;
-    }
-    
-    .menu-item img {
-        width: 18px;
-        height: 18px;
-        filter: brightness(0) invert(1);
-    }
-    
-    .mobile-back-button {
-        display: flex;
-        order: 2;
-    }
     
     .header-nav {
         display: none;
     }
     
+    .header-menu {
+        display: flex;
+        gap: 5px;
+        padding: 0 10px;
+    }
+    
     .header .menu-item {
+        display: flex;
+        flex-shrink: 0;
+        font-size: 0.8em;
+        padding: 6px 8px;
+        color: white;
+        background: transparent;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .header .menu-item img {
+        width: 20px;
+        height: 20px;
+        filter: brightness(0) invert(1);
+    }
+    
+    .header .menu-item:last-child span {
         display: none;
     }
     
@@ -3982,13 +4017,8 @@ select.report-select option {
 }
 
 @media (max-width: 480px) {
-    .header {
-        background: #201B87;
-    }
-    
     .header .logo {
         padding: 8px 10px;
-        background: transparent;
     }
     
     .header .title-container h1 {
@@ -5288,13 +5318,13 @@ body.admin-login-body .admin-login-container {
     }
     
     .modal-content {
-        width: 95%;
-        margin: 10px;
-        max-height: 90vh;
+        width: 100%;
+        max-height: 95vh;
     }
     
     .modal-header {
         padding: 20px;
+        border-radius: 0;
     }
     
     .modal-header h3 {

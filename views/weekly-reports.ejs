@@ -59,7 +59,6 @@
         </div>
     </div>
 
-    <!-- Dynamic Forms Script -->
     <script src="/js/dynamic-forms.js"></script>
     
     <script>
@@ -76,7 +75,6 @@
             mobileNav.classList.toggle('active');
         }
 
-        // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const mobileNav = document.getElementById('mobileNav');
             const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
@@ -89,11 +87,9 @@
         });
 
         async function showCreateForm() {
-            // Clear editing state when creating new item
             window.editingItemId = null;
             window.editingItemData = null;
             
-            // Create modal
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
             modal.id = 'reportFormModal';
@@ -115,7 +111,6 @@
                                 <ul id="errorList"></ul>
                             </div>
                             
-                            <!-- Attachment Field -->
                             <div class="field-group">
                                 <h4>첨부 파일</h4>
                                 <div class="field-item">
@@ -138,7 +133,6 @@
             document.body.appendChild(modal);
             await loadDynamicForm();
             
-            // Close modal on background click
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     closeModal();
@@ -149,14 +143,12 @@
         function closeModal() {
             const modal = document.getElementById('reportFormModal');
             if (modal) {
-                // Clear form and hide errors before removing modal
                 try {
                     hideValidationErrors();
                     formHandler.clearForm();
                 } catch (e) {
                     console.log('Error during cleanup:', e);
                 }
-                // Remove modal from DOM
                 modal.remove();
             }
         }
@@ -165,7 +157,6 @@
             closeModal();
         }
 
-        // Load dynamic form
         async function loadDynamicForm() {
             try {
                 await formHandler.renderForm('dynamicForm', 'weekly-reports');
@@ -177,7 +168,6 @@
             }
         }
 
-        // Submit weekly report form
         let isSubmitting = false;
         
         async function submitWeeklyReportForm() {
@@ -199,11 +189,9 @@
             isSubmitting = true;
             
             try {
-                // Check if we're editing an existing item
                 if (window.editingItemId) {
                     await updateExistingItem(window.editingItemId, formData);
                     
-                    // Handle file attachments for edit mode
                     const fileInput = document.getElementById('weeklyAttachments');
                     if (fileInput && fileInput.files.length > 0) {
                         await uploadAttachments(window.editingItemId, fileInput.files);
@@ -212,16 +200,13 @@
                     await createNewItem(formData);
                 }
                 
-                // Clear editing state
                 window.editingItemId = null;
                 window.editingItemData = null;
                 
-                // Close modal and show loading
                 closeModal();
                 showLoadingIndicator();
                 showStatus('주간보고가 저장되었습니다. 목록을 새로고침하는 중...', true);
                 
-                // Reload data with loading state
                 await loadReportsWithFilters();
                 
                 hideLoadingIndicator();
@@ -255,9 +240,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    const itemId = data.item?.id;
-                    
-                    // Handle file attachments
+                    const itemId = data.item?.id;               
                     const fileInput = document.getElementById('weeklyAttachments');
                     if (fileInput && fileInput.files.length > 0 && itemId) {
                         await uploadAttachments(itemId, fileInput.files);
@@ -268,19 +251,14 @@
         }
 
         async function updateExistingItem(itemId, formData) {
-            // Get field configurations to map form data to field IDs (sets global fieldConfigs)
             await loadFieldConfigsForSection('weekly-reports');
             const fieldValues = [];
             
-            // Map form data to field values with proper field IDs
             if (fieldConfigs && Array.isArray(fieldConfigs)) {
                 fieldConfigs.forEach(field => {
                     const value = formData[field.codebeamerId];
                     if (value !== undefined && value !== null && value !== '') {
-                        const fieldType = getFieldValueType(field.type);
-                        
-                        // For selector/choice fields, use TextFieldValue instead of ChoiceFieldValue
-                        // Codebeamer's PUT API for fields works better with TextFieldValue for dropdowns
+                        const fieldType = getFieldValueType(field.type);         
                         const actualType = fieldType === 'ChoiceFieldValue' ? 'TextFieldValue' : fieldType;
                         
                         fieldValues.push({
@@ -358,7 +336,6 @@
             }
         }
 
-        // Get tracker ID for a specific section
         async function getTrackerIdForSection(section) {
             try {
                 const response = await fetch(`/api/tracker-id/${section}`);
@@ -397,7 +374,6 @@
         }
         }
 
-
         async function loadWeeklyReports() {
             try {
                 const response = await fetch('/api/weekly-reports');
@@ -423,9 +399,7 @@
         let totalPages = 1;
         let searchQuery = '';
         let fieldConfigs = [];
-        let currentFilters = {};
-        
-        // VS Code search options
+        let currentFilters = {};     
         let searchOptions = {
             caseSensitive: false,
             wholeWord: false,
@@ -445,7 +419,6 @@
                     return;
                 }
 
-                // Load all items first (server-side pagination only for initial load)
                 let response;
                 let retryCount = 0;
                 const maxRetries = 3;
@@ -454,7 +427,7 @@
                     try {
                         response = await fetch(`/api/codebeamer/trackers/${trackerId}/items?includeFields=true&pageSize=1000`);
                         if (response.ok) {
-                            break; // Success, exit retry loop
+                            break;
                         }
                         
                         if (response.status === 500 && retryCount < maxRetries - 1) {
@@ -484,7 +457,7 @@
                 
                 await loadFieldConfigsForSection('weekly-reports');
                 createFieldFilters();
-                applyAllFilters(); // Apply browser-side filtering
+                applyAllFilters();
                 hideLoadingIndicator();
 
                 showStatus(`총 ${allReports.length}개의 아이템을 가져왔습니다`, true);
@@ -494,7 +467,6 @@
                 
                 if (error.message.includes('500')) {
                     showStatus('서버가 일시적으로 과부하 상태입니다. 잠시 후 새로고침 버튼을 클릭해주세요.', false);
-                    // Add a refresh button
                     setTimeout(() => {
                         const statusElement = document.querySelector('.status');
                         if (statusElement) {
@@ -538,8 +510,6 @@
         }
 
         function createFieldFilters() {
-            // Field filters are now handled by the VS Code search bar
-            // This function is kept for compatibility but does nothing
             console.log('Field filters are now handled by VS Code search bar');
         }
 
@@ -565,19 +535,14 @@
         }
 
         function applyAllFilters() {
-            // Apply search filter with VS Code-style options
             filteredReports = allReports.filter(report => {
                 if (searchQuery) {
-                    const searchText = searchOptions.caseSensitive ? searchQuery : searchQuery.toLowerCase();
-                    
-                    // Get all searchable text from the report
+                    const searchText = searchOptions.caseSensitive ? searchQuery : searchQuery.toLowerCase();     
                     const searchableTexts = [];
                     
-                    // Add ID and name
                     searchableTexts.push(String(report.id));
                     searchableTexts.push(String(report.name || ''));
                     
-                    // Add all custom field values
                     if (report.customFields && Array.isArray(report.customFields)) {
                         report.customFields.forEach(customField => {
                             if (customField.value) {
@@ -597,7 +562,6 @@
                         });
                     }
                     
-                    // Convert all texts to search format
                     const searchableText = searchOptions.caseSensitive ? 
                         searchableTexts.join(' ') : 
                         searchableTexts.join(' ').toLowerCase();
@@ -605,20 +569,16 @@
                     let found = false;
                     
                     if (searchOptions.wholeWord) {
-                        // Whole word matching
                         const words = searchableText.split(/\s+/);
                         found = words.includes(searchText);
                     } else if (searchOptions.regex) {
-                        // Regex matching
                         try {
                             const regex = new RegExp(searchText, searchOptions.caseSensitive ? 'g' : 'gi');
                             found = regex.test(searchableText);
                         } catch (e) {
-                            // Invalid regex, fall back to simple search
                             found = searchableText.includes(searchText);
                         }
                     } else {
-                        // Simple contains search
                         found = searchableText.includes(searchText);
                     }
                     
@@ -627,17 +587,11 @@
                     }
                 }
 
-                // Field filters are now handled by VS Code search bar
-                // No additional filtering needed
-                
                 return true;
             });
 
-            // Store search results for navigation
             searchResults = filteredReports;
             currentResultIndex = 0;
-
-            // Update pagination
             totalPages = Math.ceil(filteredReports.length / pageSize);
             currentPage = Math.min(currentPage, totalPages || 1);
             
@@ -645,7 +599,6 @@
             updatePaginationControls();
             updateSearchResultsInfo();
             
-            // Update status message
             let statusMsg = '';
             
             if (searchQuery) {
@@ -658,8 +611,6 @@
         }
 
         function applyFieldFilter(fieldId, value) {
-            // Field filters are now handled by the VS Code search bar
-            // This function is kept for compatibility but does nothing
             console.log('Field filters are now handled by VS Code search bar');
         }
 
@@ -716,8 +667,6 @@
             applyAllFilters();
         }
 
-        // VS Code-style search functions
-
         function toggleCaseSensitive() {
             searchOptions.caseSensitive = !searchOptions.caseSensitive;
             const btn = document.getElementById('caseSensitiveBtn');
@@ -765,12 +714,10 @@
         }
 
         function highlightCurrentResult() {
-            // Remove previous highlights
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
-            
-            // Highlight current result
+
             if (searchResults.length > 0 && currentResultIndex < searchResults.length) {
                 const currentResult = searchResults[currentResultIndex];
                 const tableRows = document.querySelectorAll('tr[data-item-id]');
@@ -782,7 +729,6 @@
                 });
             }
         }
-
 
         function displayReports() {
             const reportsList = document.getElementById('reportsList');
@@ -804,11 +750,9 @@
                 return;
             }
 
-            // Show only items for current page
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
             const pageItems = filteredReports.slice(startIndex, endIndex);
-
             console.log('Rendering table with', pageItems.length, 'items');
             console.log('Sample item for table:', pageItems[0]);
 
@@ -898,7 +842,6 @@
             applyAllFilters();
         }
 
-        // Generic functions called by the table buttons
         function editItem(id) {
             editReport(id);
         }
@@ -911,16 +854,13 @@
             try {
                 showLoadingIndicator();
                 showStatus(`주간보고 ${id}번을 불러오는 중...`, true);
-                
-                // First, fetch the full item details
+
                 const response = await fetch(`/api/codebeamer/items/${id}`);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch item: ${response.status}`);
                 }
                 
                 const itemData = await response.json();
-                
-                // Show the form modal for editing
                 await showEditForm(itemData);
                 
                 hideLoadingIndicator();
@@ -934,11 +874,9 @@
         }
 
         async function showEditForm(itemData) {
-            // Store editing state
             window.editingItemId = itemData.id;
             window.editingItemData = itemData;
             
-            // Create modal
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
             modal.id = 'reportFormModal';
@@ -960,7 +898,6 @@
                                 <ul id="errorList"></ul>
                             </div>
                             
-                            <!-- Attachment Field -->
                             <div class="field-group">
                                 <h4>첨부 파일</h4>
                                 <div id="existingAttachments" class="existing-attachments" style="display: none;">
@@ -988,7 +925,6 @@
             await loadDynamicForm();
             await populateEditForm(itemData);
             
-            // Close modal on background click
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     closeModal();
@@ -998,23 +934,18 @@
 
         async function populateEditForm(itemData) {
             try {
-                // Wait for the form to be rendered
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Get field configurations for this section (sets global fieldConfigs)
+                await new Promise(resolve => setTimeout(resolve, 500));           
                 await loadFieldConfigsForSection('weekly-reports');
                 
                 console.log('Field configs loaded:', fieldConfigs);
                 console.log('Item data:', itemData);
                 
-                // Populate each field based on the item data
                 if (fieldConfigs && Array.isArray(fieldConfigs)) {
                     fieldConfigs.forEach(field => {
                         const fieldValue = getReportFieldValue(itemData, field);
                         console.log(`Field ${field.name} (${field.codebeamerId}):`, fieldValue);
                         
                         if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
-                            // Find the form input for this field
                             const input = document.querySelector(`[name="${field.codebeamerId}"]`);
                             if (input) {
                                 if (input.type === 'checkbox') {
@@ -1032,23 +963,16 @@
                     console.error('Field configs is not an array:', fieldConfigs);
                 }
                 
-                // Store the item ID for the update
                 window.editingItemId = itemData.id;
                 window.editingItemData = itemData;
-                
-                // Show existing attachments if any
-                displayExistingAttachments(itemData);
-                
-                // Clear validation errors after populating the form
-                // This ensures the form doesn't show validation errors for programmatically filled fields
+
+                displayExistingAttachments(itemData);    
                 hideValidationErrors();
                 
-                // Trigger input events to update validation state
                 if (fieldConfigs && Array.isArray(fieldConfigs)) {
                     fieldConfigs.forEach(field => {
                         const input = document.querySelector(`[name="${field.codebeamerId}"]`);
-                        if (input) {
-                            // Trigger input event to update validation state
+                        if (input) { 
                             input.dispatchEvent(new Event('input', { bubbles: true }));
                         }
                     });
@@ -1069,7 +993,6 @@
                     return;
                 }
                 
-                // Check if item has comments (attachments)
                 if (itemData.comments && Array.isArray(itemData.comments) && itemData.comments.length > 0) {
                     existingAttachmentsDiv.style.display = 'block';
                     existingFilesList.innerHTML = '';
@@ -1114,7 +1037,6 @@
 
                 if (response.ok) {
                     showStatus(`주간보고 ${id}번이 삭제되었습니다. 목록을 새로고침하는 중...`, true);
-                    // Reload the current page
                     await loadReportsWithFilters();
                     showStatus(`주간보고 ${id}번이 성공적으로 삭제되었습니다`, true);
                 } else {
@@ -1131,13 +1053,11 @@
 
         function viewReport(id) {
             console.log('Viewing report:', id);
-            // TODO: Implement view functionality
             showStatus(`주간보고 ${id}번을 조회합니다`, true);
         }
 
         function downloadReport(id) {
             console.log('Downloading report:', id);
-            // TODO: Implement download functionality
             showStatus(`주간보고 ${id}번을 다운로드합니다`, true);
         }
 
@@ -1149,19 +1069,15 @@
             document.getElementById(`${tabName}Tab`).classList.add('active');
         }
 
-
         document.addEventListener('DOMContentLoaded', function() {
             loadReportsWithFilters();
             
-            // Check for action=create parameter to auto-open create form
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'create') {
-                // Small delay to ensure page is fully loaded
-                setTimeout(() => {
+                setTimeout( () => {
                     showCreateForm();
                 }, 500);
                 
-                // Clean up URL without reloading
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
             }

@@ -1,26 +1,8 @@
-/**
- * Common Reports Functionality
- * This file contains shared functionality for all report pages
- * (weekly-reports, travel-reports, hardware-management, equipment-management, external-training)
- * 
- * Usage:
- * 1. Include this file: <script src="/js/common-reports.js"></script>
- * 2. Set sectionConfig before initializing:
- *    const reportManager = new ReportManager({
- *        sectionName: 'weekly-reports',
- *        displayName: '주간보고',
- *        attachmentInputId: 'weeklyAttachments'
- *    });
- * 3. Initialize: reportManager.init();
- */
-
 class ReportManager {
     constructor(config) {
         this.sectionName = config.sectionName;
         this.displayName = config.displayName;
         this.attachmentInputId = config.attachmentInputId || 'reportAttachments';
-        
-        // State
         this.allReports = [];
         this.filteredReports = [];
         this.currentPage = 1;
@@ -30,8 +12,6 @@ class ReportManager {
         this.fieldConfigs = [];
         this.currentFilters = {};
         this.isSubmitting = false;
-        
-        // VS Code search options
         this.searchOptions = {
             caseSensitive: false,
             wholeWord: false,
@@ -39,8 +19,6 @@ class ReportManager {
         };
         this.currentResultIndex = 0;
         this.searchResults = [];
-        
-        // Form handler (will be set from outside)
         this.formHandler = null;
     }
     
@@ -52,13 +30,9 @@ class ReportManager {
         await this.loadReportsWithFilters();
     }
     
-    // Modal Functions
     async showCreateForm() {
-        // Clear editing state when creating new item
         window.editingItemId = null;
         window.editingItemData = null;
-        
-        // Create modal
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.id = 'reportFormModal';
@@ -102,8 +76,7 @@ class ReportManager {
         
         document.body.appendChild(modal);
         await this.loadDynamicForm();
-        
-        // Close modal on background click
+  
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 this.closeModal();
@@ -112,11 +85,8 @@ class ReportManager {
     }
     
     async showEditForm(itemData) {
-        // Store editing state
         window.editingItemId = itemData.id;
         window.editingItemData = itemData;
-        
-        // Create modal
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.id = 'reportFormModal';
@@ -166,7 +136,6 @@ class ReportManager {
         await this.loadDynamicForm();
         await this.populateEditForm(itemData);
         
-        // Close modal on background click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 this.closeModal();
@@ -177,7 +146,6 @@ class ReportManager {
     closeModal() {
         const modal = document.getElementById('reportFormModal');
         if (modal) {
-            // Clear form and hide errors before removing modal
             try {
                 this.hideValidationErrors();
                 if (this.formHandler) {
@@ -186,12 +154,10 @@ class ReportManager {
             } catch (e) {
                 console.log('Error during cleanup:', e);
             }
-            // Remove modal from DOM
             modal.remove();
         }
     }
     
-    // Form Functions
     async loadDynamicForm() {
         try {
             if (!this.formHandler) {
@@ -225,11 +191,9 @@ class ReportManager {
         this.isSubmitting = true;
         
         try {
-            // Check if we're editing an existing item
             if (window.editingItemId) {
                 await this.updateExistingItem(window.editingItemId, formData);
                 
-                // Handle file attachments for edit mode
                 const fileInput = document.getElementById(this.attachmentInputId);
                 if (fileInput && fileInput.files.length > 0) {
                     await this.uploadAttachments(window.editingItemId, fileInput.files);
@@ -238,16 +202,13 @@ class ReportManager {
                 await this.createNewItem(formData);
             }
             
-            // Clear editing state
             window.editingItemId = null;
             window.editingItemData = null;
             
-            // Close modal and show loading
             this.closeModal();
             this.showLoadingIndicator();
             this.showStatus(`${this.displayName}가 저장되었습니다. 목록을 새로고침하는 중...`, true);
             
-            // Reload data with loading state
             await this.loadReportsWithFilters();
             
             this.hideLoadingIndicator();
@@ -281,9 +242,7 @@ class ReportManager {
         const data = await response.json();
         
         if (data.success) {
-            const itemId = data.item?.id;
-            
-            // Handle file attachments
+            const itemId = data.item?.id;  
             const fileInput = document.getElementById(this.attachmentInputId);
             if (fileInput && fileInput.files.length > 0 && itemId) {
                 await this.uploadAttachments(itemId, fileInput.files);
@@ -294,18 +253,14 @@ class ReportManager {
     }
     
     async updateExistingItem(itemId, formData) {
-        // Get field configurations to map form data to field IDs
         await this.loadFieldConfigsForSection(this.sectionName);
         const fieldValues = [];
         
-        // Map form data to field values with proper field IDs
         if (this.fieldConfigs && Array.isArray(this.fieldConfigs)) {
             this.fieldConfigs.forEach(field => {
                 const value = formData[field.codebeamerId];
                 if (value !== undefined && value !== null && value !== '') {
                     const fieldType = this.getFieldValueType(field.type);
-                    
-                    // For selector/choice fields, use TextFieldValue instead of ChoiceFieldValue
                     const actualType = fieldType === 'ChoiceFieldValue' ? 'TextFieldValue' : fieldType;
                     
                     fieldValues.push({
@@ -385,16 +340,12 @@ class ReportManager {
     
     async populateEditForm(itemData) {
         try {
-            // Wait for the form to be rendered
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Get field configurations
+            await new Promise(resolve => setTimeout(resolve, 500));     
             await this.loadFieldConfigsForSection(this.sectionName);
             
             console.log('Field configs loaded:', this.fieldConfigs);
             console.log('Item data:', itemData);
             
-            // Populate each field based on the item data
             if (this.fieldConfigs && Array.isArray(this.fieldConfigs)) {
                 this.fieldConfigs.forEach(field => {
                     const fieldValue = this.getReportFieldValue(itemData, field);
@@ -418,14 +369,10 @@ class ReportManager {
                 console.error('Field configs is not an array:', this.fieldConfigs);
             }
             
-            // Store the item ID for the update
             window.editingItemId = itemData.id;
             window.editingItemData = itemData;
             
-            // Show existing attachments if any
-            this.displayExistingAttachments(itemData);
-            
-            // Clear validation errors and trigger input events
+            this.displayExistingAttachments(itemData);        
             this.hideValidationErrors();
             
             if (this.fieldConfigs && Array.isArray(this.fieldConfigs)) {
@@ -452,7 +399,6 @@ class ReportManager {
                 return;
             }
             
-            // Check if item has comments (attachments)
             if (itemData.comments && Array.isArray(itemData.comments) && itemData.comments.length > 0) {
                 existingAttachmentsDiv.style.display = 'block';
                 existingFilesList.innerHTML = '';
@@ -478,7 +424,6 @@ class ReportManager {
         }
     }
     
-    // Validation Functions
     showValidationErrors(errors) {
         const errorContainer = document.getElementById('validationErrors');
         const errorList = document.getElementById('errorList');
@@ -500,7 +445,6 @@ class ReportManager {
         }
     }
     
-    // Data Loading Functions
     async loadReportsWithFilters() {
         try {
             this.showLoadingIndicator();
@@ -512,7 +456,6 @@ class ReportManager {
                 return;
             }
 
-            // Load all items with retry mechanism
             let response;
             let retryCount = 0;
             const maxRetries = 3;
@@ -601,11 +544,9 @@ class ReportManager {
         }
     }
     
-    // Search and Filter Functions
     applySearch() {
         const searchInput = document.getElementById('searchFilter');
-        this.searchQuery = searchInput.value.trim();
-        
+        this.searchQuery = searchInput.value.trim();      
         this.currentPage = 1;
         this.currentResultIndex = 0;
         this.applyAllFilters();
@@ -681,10 +622,8 @@ class ReportManager {
 
         this.searchResults = this.filteredReports;
         this.currentResultIndex = 0;
-
         this.totalPages = Math.ceil(this.filteredReports.length / this.pageSize);
-        this.currentPage = Math.min(this.currentPage, this.totalPages || 1);
-        
+        this.currentPage = Math.min(this.currentPage, this.totalPages || 1);      
         this.displayReports();
         this.updatePaginationControls();
         this.updateSearchResultsInfo();
@@ -732,7 +671,6 @@ class ReportManager {
         return null;
     }
     
-    // VS Code Search Functions
     toggleCaseSensitive() {
         this.searchOptions.caseSensitive = !this.searchOptions.caseSensitive;
         const btn = document.getElementById('caseSensitiveBtn');
@@ -796,7 +734,6 @@ class ReportManager {
         }
     }
     
-    // Display Functions
     displayReports() {
         const reportsList = document.getElementById('reportsList');
         if (!reportsList) {
@@ -822,7 +759,6 @@ class ReportManager {
         this.formHandler.renderTable('reportsList', pageItems, this.sectionName, { pagination: false });
     }
     
-    // Pagination Functions
     nextPage() {
         if (this.currentPage < this.totalPages) {
             this.currentPage++;
@@ -869,7 +805,6 @@ class ReportManager {
         }
     }
     
-    // Edit/Delete Functions
     async editReport(id) {
         try {
             this.showLoadingIndicator();
@@ -926,7 +861,6 @@ class ReportManager {
         }
     }
     
-    // UI Helper Functions
     showLoadingIndicator() {
         const loadingIndicator = document.getElementById('loadingIndicator');
         if (loadingIndicator) {
@@ -961,7 +895,6 @@ class ReportManager {
     }
 }
 
-// Global bridge functions for onclick handlers
 function editItem(id) {
     if (window.reportManager) {
         window.reportManager.editReport(id);

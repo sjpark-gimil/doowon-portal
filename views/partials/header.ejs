@@ -12,7 +12,13 @@
 
 <body>
     <header class="header">
-        <div class="logo"><a href="http://codebeamer.mdsit.co.kr:3008"><img src="images/codebeamer.png" alt="Logo" /></a></div>
+        <div class="header-left">
+            <div class="logo"><a href="http://codebeamer.mdsit.co.kr:3008"><img src="images/codebeamer.png" alt="Logo" /></a></div>
+            <button class="mobile-back-button" onclick="goBackOrHome()">
+                <img src="images/home.svg" alt="Home" id="mobileBackIcon" />
+            </button>
+        </div>
+        
         <nav class="header-nav">
             <a href="/" class="nav-item <%= currentPath === '/' ? 'active' : '' %>">
                 <img src="images/home.svg" alt="Home" />
@@ -51,11 +57,11 @@
                 <span>관리자 설정</span>
             </a>
         </nav>
-        <button class="mobile-back-button" onclick="goBackOrHome()">
-            <span id="mobileBackIcon">←</span>
-        </button>
-        <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
-        <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" />Logout</a>
+        
+        <div class="header-menu">
+            <span class="menu-item"><img src="images/user.svg" alt="User" /><%= username %></span>
+            <a href="#" class="menu-item" onclick="handleLogout()"><img src="images/logout.svg" alt="Logout" /><span>Logout</span></a>
+        </div>
     </header>
 
 <script>
@@ -70,9 +76,7 @@
         }
 
         function goBackOrHome() {
-            // Check if there's history to go back to
             if (window.history.length > 1 && document.referrer) {
-                // If we came from another page in our app, go back
                 const referrer = new URL(document.referrer);
                 const currentHost = window.location.host;
                 
@@ -81,19 +85,31 @@
                     return;
                 }
             }
-            
-            // Otherwise, go to home page
             window.location.href = '/';
         }
 
-        // Update back button visibility based on current page
         document.addEventListener('DOMContentLoaded', function() {
             const mobileBackButton = document.querySelector('.mobile-back-button');
             const currentPath = window.location.pathname;
             
             if (mobileBackButton) {
-                // If we're on home page, hide the back button since home is already in navigation
-                if (currentPath === '/') {
+                const isMobile = window.innerWidth <= 768;               
+                if (currentPath === '/' || !isMobile) {
+                    mobileBackButton.style.display = 'none';
+                } else {
+                    mobileBackButton.style.display = 'flex';
+                }
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            const mobileBackButton = document.querySelector('.mobile-back-button');
+            const currentPath = window.location.pathname;
+            
+            if (mobileBackButton) {
+                const isMobile = window.innerWidth <= 768;
+                
+                if (currentPath === '/' || !isMobile) {
                     mobileBackButton.style.display = 'none';
                 } else {
                     mobileBackButton.style.display = 'flex';
